@@ -13,17 +13,19 @@ from optimizers import *
 import matplotlib.pyplot as plt
 from torch import nn, optim, autograd
 
+
 data = mnist_data()
+
 # Create loader with data, so that we can iterate over it
 data_loader = torch.utils.data.DataLoader(data, batch_size=100, shuffle=True)
-# Num batches
-num_batches = len(data_loader)
+
+#Learning rate
 lr = torch.tensor([0.001])
 lr_x = lr
 lr_y = lr
 
-generator = myGenerator()
-discriminator = myDiscriminator()
+generator = myGenerator() # we will refer to this as x
+discriminator = myDiscriminator() # we will refer to this as y
 
 loss =  torch.nn.BCEWithLogitsLoss()
 
