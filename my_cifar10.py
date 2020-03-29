@@ -8,13 +8,13 @@ Created on Tue Mar 17 17:12:41 2020
 import torch
 from modelli import *
 from foo import *
-from Dataloader import mnist_data
+from Dataloader import cifar10_data
 from optimizers import *
 import matplotlib.pyplot as plt
 from torch import nn, optim, autograd
 
 
-data = mnist_data()
+data = cifar10_data()
 
 # Create loader with data, so that we can iterate over it
 data_loader = torch.utils.data.DataLoader(data, batch_size=100, shuffle=True)
@@ -24,8 +24,8 @@ lr = torch.tensor([0.001])
 lr_x = lr
 lr_y = lr
 
-generator = myGeneratorMNIST() # we will refer to this as x
-discriminator = myDiscriminatorMNIST() # we will refer to this as y
+generator = myGeneratorCIFAR10() # we will refer to this as x
+discriminator = myDiscriminatorCIFAR10() # we will refer to this as y
 
 loss =  torch.nn.BCEWithLogitsLoss()
 
@@ -122,7 +122,7 @@ num_epochs = 100
 for epoch in range(num_epochs):
     for n_batch, (real_batch,_) in enumerate(data_loader):
         N = real_batch.size(0)
-        real_data = Variable(images_to_vectors_mnist(real_batch))
+        real_data = Variable(images_to_vectors_cifar10(real_batch))
         fake_data = generator(noise(N))
         #cg_x,cg_y  = train_CGD(real_data, fake_data)
         cg_x,cg_y  = train_CGDJacobi(real_data, fake_data)

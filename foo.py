@@ -43,11 +43,17 @@ def noise(size):
     n = Variable(torch.randn(size, 100))
     return n
 
-def images_to_vectors(images):
+def images_to_vectors_mnist(images):
     return images.view(images.size(0), 784)
 
-def vectors_to_images(vectors):
+def vectors_to_images_mnist(vectors):
     return vectors.view(vectors.size(0), 1, 28, 28)
+
+def images_to_vectors_cifar10(images):
+    return images.view(images.size(0), 3072)
+
+def vectors_to_images_cifar10(vectors):
+    return vectors.view(vectors.size(0), 3, 32, 32)
 #############################################################################
     
 def zero_grad(params):
