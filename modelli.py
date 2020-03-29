@@ -101,7 +101,9 @@ class myGenerator(torch.nn.Module):
         self.hidden1 = nn.Sequential(
                 nn.Linear(1000,1000),
                 nn.ReLU())
-      
+        self.hidden2 = nn.Sequential(
+                nn.Linear(1000,1000),
+                nn.ReLU())
         self.out = nn.Sequential(
             nn.Linear(1000, 784),
             nn.Tanh()
@@ -110,6 +112,7 @@ class myGenerator(torch.nn.Module):
     def forward(self, input):
         x = self.hidden0(input)
         y = self.hidden1(x)
-        z = self.out(y)
+        w = self.hidden2(y)
+        z = self.out(w)
         return z
     
