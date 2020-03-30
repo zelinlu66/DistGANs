@@ -12,7 +12,7 @@ from Dataloader import mnist_data
 from optimizers import *
 import matplotlib.pyplot as plt
 from torch import nn, optim, autograd
-
+import timeit
 
 data = mnist_data()
 
@@ -67,7 +67,7 @@ def train_CGD(real_data, fake_data):
             # grad_y + D_yx * delta x
     cg_y = hcg.mul(- lr_y)
     
-    return cg_x, cg_y
+    return cg_x, cg_y, error_real.data.item(), error_fake.data.item(), errorG.data.item()
 
 
 def train_CGDJacobi(real_data, fake_data):
@@ -94,7 +94,7 @@ def train_CGDJacobi(real_data, fake_data):
     p_x.mul_(lr_x.sqrt())
     p_y.mul_(lr_y.sqrt())
     
-    return p_x, p_y
+    return p_x, p_y, error_real.data.item(), error_fake.data.item(), errorG.data.item()
 
 def train_SGD(real_data, fake_data):
     prediction_real = discriminator(real_data)
@@ -111,22 +111,32 @@ def train_SGD(real_data, fake_data):
     scaled_grad_x = torch.mul(lr,grad_x_vec)
     scaled_grad_y = torch.mul(lr,grad_y_vec)
     
-    return scaled_grad_x, scaled_grad_y
+    return scaled_grad_x, scaled_grad_y, error_real.data.item(), error_fake.data.item(), errorG.data.item()
 
 
 
 num_test_samples = 16
 test_noise = noise(num_test_samples)
 
+errorDreal = []
+errorDfake = []
+errorG = []
+
 num_epochs = 100
+
+start = time.time()
+
 for epoch in range(num_epochs):
+    e1 = 0.0
+    e2 = 0.0
+    e3 = 0.0
     for n_batch, (real_batch,_) in enumerate(data_loader):
         N = real_batch.size(0)
         real_data = Variable(images_to_vectors_mnist(real_batch))
         fake_data = generator(noise(N))
-        #cg_x,cg_y  = train_CGD(real_data, fake_data)
-        cg_x,cg_y  = train_CGDJacobi(real_data, fake_data)
-        #cg_x,cg_y  = train_SGD(real_data, fake_data)
+        cg_x,cg_y, e1, e2, e3  = train_CGD(real_data, fake_data)
+        #cg_x,cg_y, e1, e2, e3  = train_CGDJacobi(real_data, fake_data)
+        #cg_x,cg_y, e1, e2, e3  = train_SGD(real_data, fake_data)
 
         index = 0
         for p in generator.parameters():
@@ -139,4 +149,22 @@ for epoch in range(num_epochs):
             p.data.add_(cg_y[index: index + p.numel()].reshape(p.shape))
             index += p.numel()
         
+
+    errorDreal.append(e1)
+    errorDfake.append(e2)
+    errorG.append(e3)
+
+end = time.time()
+
+print("Time passed: ", end - start)
+
+plt.figure()
+plt.plot([x for x in range(0,len(errorDreal))], errorDreal)
+plt.plot([x for x in range(0,len(errorDfake))], errorDfake)
+plt.plot([x for x in range(0,len(errorG))], errorG)
+plt.xlabel('Number of epochs')
+plt.ylabel('Loss function value')
+plt.legend(['Discriminator: Loss on Real Data', 'Discriminator: Loss on Fake Data', 'Generator: Loss'])
+plt.title('MNIST Dataset - Implicit CGD')
+plt.savefig('cgd.png', dpi=300)
 
