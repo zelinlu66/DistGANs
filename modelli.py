@@ -73,85 +73,75 @@ class GoodDiscriminator(nn.Module):
         return output
     
     
-    
-
-    
-class myDiscriminatorMNIST(nn.Module):
+class myDiscriminatorMNIST(torch.nn.Module):
+    """
+    A three hidden-layer discriminative neural network
+    """
     def __init__(self):
         super(myDiscriminatorMNIST, self).__init__()
-        self.hidden0 = nn.Sequential(nn.Linear(784, 250),
-                                     nn.ReLU())
-        self.hidden1 = nn.Sequential(nn.Linear(250,100),
-                                     nn.ReLU())
-        self.out = nn.Sequential(nn.Linear(100,1),
-                                 nn.Sigmoid())
-    def forward(self, input):
-        x = self.hidden0(input)
-        y = self.hidden1(x)
-        z = self.out(y)
-        return z
+        n_features = 784
+        n_out = 1
+        
+        self.hidden0 = nn.Sequential( 
+            nn.Linear(n_features, 1024),
+            nn.LeakyReLU(0.2),
+            nn.Dropout(0.3)
+        )
+        self.hidden1 = nn.Sequential(
+            nn.Linear(1024, 512),
+            nn.LeakyReLU(0.2),
+            nn.Dropout(0.3)
+        )
+        self.hidden2 = nn.Sequential(
+            nn.Linear(512, 256),
+            nn.LeakyReLU(0.2),
+            nn.Dropout(0.3)
+        )
+        self.out = nn.Sequential(
+            torch.nn.Linear(256, n_out),
+            torch.nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        x = self.hidden0(x)
+        x = self.hidden1(x)
+        x = self.hidden2(x)
+        x = self.out(x)
+        return x
+ 
+    
     
 class myGeneratorMNIST(torch.nn.Module):
-    
+    """
+    A three hidden-layer generative neural network
+    """
     def __init__(self):
-        super(myGeneratorMNIST, self).__init__()  
+        super(myGeneratorMNIST, self).__init__()
+        n_features = 100
+        n_out = 784
+        
         self.hidden0 = nn.Sequential(
-            nn.Linear(100, 1000),
-            nn.LeakyReLU(0.2))
-        self.hidden1 = nn.Sequential(
-                nn.Linear(1000,1000),
-                nn.ReLU())
+            nn.Linear(n_features, 256),
+            nn.LeakyReLU(0.2)
+        )
+        self.hidden1 = nn.Sequential(            
+            nn.Linear(256, 512),
+            nn.LeakyReLU(0.2)
+        )
         self.hidden2 = nn.Sequential(
-                nn.Linear(1000,1000),
-                nn.ReLU())
+            nn.Linear(512, 1024),
+            nn.LeakyReLU(0.2)
+        )
+        
         self.out = nn.Sequential(
-            nn.Linear(1000, 784),
+            nn.Linear(1024, n_out),
             nn.Tanh()
         )
 
-    def forward(self, input):
-        x = self.hidden0(input)
-        y = self.hidden1(x)
-        w = self.hidden2(y)
-        z = self.out(w)
-        return z
+    def forward(self, x):
+        x = self.hidden0(x)
+        x = self.hidden1(x)
+        x = self.hidden2(x)
+        x = self.out(x)
+        return x
     
-class myDiscriminatorCIFAR10(nn.Module):
-    def __init__(self):
-        super(myDiscriminatorCIFAR10, self).__init__()
-        self.hidden0 = nn.Sequential(nn.Linear(3072, 250),
-                                     nn.ReLU())
-        self.hidden1 = nn.Sequential(nn.Linear(250,100),
-                                     nn.ReLU())
-        self.out = nn.Sequential(nn.Linear(100,1),
-                                 nn.Sigmoid())
-    def forward(self, input):
-        x = self.hidden0(input)
-        y = self.hidden1(x)
-        z = self.out(y)
-        return z
-    
-class myGeneratorCIFAR10(torch.nn.Module):
-    
-    def __init__(self):
-        super(myGeneratorCIFAR10, self).__init__()  
-        self.hidden0 = nn.Sequential(
-            nn.Linear(100, 1000),
-            nn.LeakyReLU(0.2))
-        self.hidden1 = nn.Sequential(
-                nn.Linear(1000,1000),
-                nn.ReLU())
-        self.hidden2 = nn.Sequential(
-                nn.Linear(1000,1000),
-                nn.ReLU())
-        self.out = nn.Sequential(
-            nn.Linear(1000, 3072),
-            nn.Tanh()
-        )
-
-    def forward(self, input):
-        x = self.hidden0(input)
-        y = self.hidden1(x)
-        w = self.hidden2(y)
-        z = self.out(w)
-        return z
