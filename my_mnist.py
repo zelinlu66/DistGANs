@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from torch import nn, optim, autograd
 from Log import Logger
 import math
+import timeit
 
 data = mnist_data()
 # Create loader with data, so that we can iterate over it
@@ -32,57 +33,24 @@ criterion =  torch.nn.BCEWithLogitsLoss()
         
 optimizer = myCGD_Jacobi(generator, discriminator, lr)
 
-'''
-def train(real_data, fake_data):
-    d_pred_real = discriminator(real_data)
-    error_real = loss(d_pred_real, ones_target(N) )
-    d_pred_fake = discriminator(fake_data)
-    error_fake = loss(d_pred_fake, zeros_target(N))
-    g_error = error_fake
-    d_error = error_real + error_fake
-    error_tot = error_fake + error_real
-    # Zero grads
-    zero_grad(list(generator.parameters()))
-    zero_grad(list(discriminator.parameters()))
-    grad_x = autograd.grad(error_tot, generator.parameters(), create_graph=True, retain_graph=True, allow_unused= True)
-    grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
-    grad_y = autograd.grad(error_tot, discriminator.parameters(), create_graph=True, retain_graph=True)
-    grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
-    scaled_grad_x = torch.mul(lr,grad_x_vec)
-    scaled_grad_y = torch.mul(lr,grad_y_vec)
-    #l = autograd.grad(grad_x_vec, discriminator.parameters(), grad_outputs = torch.ones_like(grad_x_vec))
-    
-    hvp_x_vec = Hvp_vec(grad_y_vec, generator.parameters(), scaled_grad_y,retain_graph=True)  # D_xy * lr_y * grad_y 
-    hvp_y_vec = Hvp_vec(grad_x_vec, discriminator.parameters(), scaled_grad_x,retain_graph=True)  # D_yx * lr_x * grad_x
-    p_x = torch.add(grad_x_vec, - hvp_x_vec).detach_()  # grad_x - D_xy * lr_y * grad_y
-    p_y = torch.add(grad_y_vec, hvp_y_vec).detach_()  # grad_y + D_yx * lr_x * grad_x
-    p_x.mul_(lr_x.sqrt())
-    cg_x, iter_num = general_conjugate_gradient(grad_x=grad_x_vec, grad_y=grad_y_vec,
-                                                             x_params=generator.parameters(),
-                                                             y_params=discriminator.parameters(), kk=p_x,
-                                                             x=None,
-                                                             nsteps=p_x.shape[0] // 10000,
-                                                             lr_x=lr_x, lr_y=lr_y,
-                                                             )
-            # cg_x.detach_().mul_(p_x_norm)
-    # cg_x.detach_().mul_(p_x_norm)
-    cg_x.detach_().mul_(lr_x.sqrt())  # delta x = lr_x.sqrt() * cg_x
-    hcg = Hvp_vec(grad_x_vec, discriminator.parameters(), cg_x, retain_graph=True).add_(
-    grad_y_vec).detach_()
-            # grad_y + D_yx * delta x
-    cg_y = hcg.mul(- lr_y)
-    
-    return cg_x, cg_y, g_error, d_error, d_pred_real, d_pred_fake
-'''
 num_test_samples = 16
 test_noise = noise(num_test_samples)
 
 logger = Logger(model_name='VGAN', data_name='MNIST')
 
 
-num_epochs = 5
-'''
+errorDreal = []
+errorDfake = []
+errorG = []
+
+num_epochs = 100
+
+start = time.time()
+
 for epoch in range(num_epochs):
+    e1 = 0.0
+    e2 = 0.0
+    e3 = 0.0
     for n_batch, (real_batch,_) in enumerate(data_loader):
         N = real_batch.size(0)
         real_data = Variable(images_to_vectors(real_batch))
@@ -114,42 +82,4 @@ for epoch in range(num_epochs):
                 epoch, num_epochs, n_batch, num_batches,
                 d_error, g_error, d_pred_real, d_pred_fake
             )
-            
-            '''
-
-for e in range(num_epochs):
-            for n_batch, (real_batch,_) in enumerate(data_loader):
-                N = real_batch.size(0)
-                real_data = Variable(images_to_vectors(real_batch))
-                fake_data = generator(noise(N))
-                
-                d_pred_real = discriminator(real_data)
-                error_real = criterion(d_pred_real, ones_target(N) )
-                d_pred_fake = discriminator(fake_data)
-                error_fake = criterion(d_pred_fake, zeros_target(N))
-                g_error = criterion(d_pred_fake, ones_target(N))
-                d_error = error_real
-                #f = d_error
-                #g  = error_fake
-                loss = error_fake + error_real
-                #loss = d_pred_real.mean() - d_pred_fake.mean()
-
-                optimizer.zero_grad()
-                optimizer.step(loss)
-                iter_num = -1
-                # Log batch error
-                logger.log(d_error, g_error, e, n_batch, num_batches)
-                # Display Progress every few batches
-                if (n_batch) % 100 == 0: 
-                    test_images = vectors_to_images(generator(test_noise))
-                    test_images = test_images.data
-                    logger.log_images(
-                            test_images, num_test_samples, 
-                            e, n_batch, num_batches
-                            );
-                            # Display status Logs
-                    logger.display_status(
-                                    e, num_epochs, n_batch, num_batches,
-                                    d_error, g_error, d_pred_real, d_pred_fake
-                                    )
             
