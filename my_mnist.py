@@ -12,111 +12,32 @@ from Dataloader import mnist_data
 from optimizers import *
 import matplotlib.pyplot as plt
 from torch import nn, optim, autograd
+from Log import Logger
+import math
 import timeit
 
 data = mnist_data()
-
 # Create loader with data, so that we can iterate over it
 data_loader = torch.utils.data.DataLoader(data, batch_size=100, shuffle=True)
-
-#Learning rate
-lr = torch.tensor([0.001])
-lr_x = lr
-lr_y = lr
-
-generator = myGeneratorMNIST() # we will refer to this as x
-discriminator = myDiscriminatorMNIST() # we will refer to this as y
-
-loss =  torch.nn.BCEWithLogitsLoss()
+# Num batches
+num_batches = len(data_loader)
+lr = torch.tensor([0.0001])
 
 
+generator = myGeneratorMNIST()
+discriminator = myDiscriminatorMNIST()
 
-def train_CGD(real_data, fake_data):
-    prediction_real = discriminator(real_data)
-    error_real = loss(prediction_real, ones_target(N) )
-    prediction_fake = discriminator(fake_data)
-    error_fake = loss(prediction_fake, zeros_target(N))
-    error_tot = error_fake + error_real
-    errorG = loss(prediction_fake, ones_target(N))
-    print("Real - Discrim. Error: ", round(error_real.data.item(),5), "Fake - Discrim. Error: ", round(error_fake.data.item(),5), "Generator Error: ", round(errorG.data.item(),5))
-    grad_x = autograd.grad(error_tot, generator.parameters(), create_graph=True, retain_graph=True, allow_unused= True)
-    grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
-    grad_y = autograd.grad(error_tot, discriminator.parameters(), create_graph=True, retain_graph=True)
-    grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
-    scaled_grad_x = torch.mul(lr,grad_x_vec)
-    scaled_grad_y = torch.mul(lr,grad_y_vec)
-    #l = autograd.grad(grad_x_vec, discriminator.parameters(), grad_outputs = torch.ones_like(grad_x_vec))
-    
-    hvp_x_vec = Hvp_vec(grad_y_vec, generator.parameters(), scaled_grad_y,retain_graph=True)  # D_xy * lr_y * grad_y 
-    hvp_y_vec = Hvp_vec(grad_x_vec, discriminator.parameters(), scaled_grad_x,retain_graph=True)  # D_yx * lr_x * grad_x
-    p_x = torch.add(grad_x_vec, - hvp_x_vec).detach_()  # grad_x - D_xy * lr_y * grad_y
-    p_y = torch.add(grad_y_vec, hvp_y_vec).detach_()  # grad_y + D_yx * lr_x * grad_x
-    p_x.mul_(lr_x.sqrt())
-    cg_x, iter_num = general_conjugate_gradient(grad_x=grad_x_vec, grad_y=grad_y_vec,
-                                                             x_params=generator.parameters(),
-                                                             y_params=discriminator.parameters(), kk=p_x,
-                                                             x=None,
-                                                             nsteps=p_x.shape[0] // 10000,
-                                                             lr_x=lr_x, lr_y=lr_y,
-                                                             )
-            # cg_x.detach_().mul_(p_x_norm)
-    # cg_x.detach_().mul_(p_x_norm)
-    cg_x.detach_().mul_(lr_x.sqrt())  # delta x = lr_x.sqrt() * cg_x
-    hcg = Hvp_vec(grad_x_vec, discriminator.parameters(), cg_x, retain_graph=True).add_(
-    grad_y_vec).detach_()
-            # grad_y + D_yx * delta x
-    cg_y = hcg.mul(- lr_y)
-    
-    return cg_x, cg_y, error_real.data.item(), error_fake.data.item(), errorG.data.item()
+criterion =  torch.nn.BCEWithLogitsLoss()
 
 
-def train_CGDJacobi(real_data, fake_data):
-    prediction_real = discriminator(real_data)
-    error_real = loss(prediction_real, ones_target(N) )
-    prediction_fake = discriminator(fake_data)
-    error_fake = loss(prediction_fake, zeros_target(N))
-    error_tot = error_fake + error_real
-    errorG = loss(prediction_fake, ones_target(N))
-    print("Real - Discrim. Error: ", round(error_real.data.item(),5), "Fake - Discrim. Error: ", round(error_fake.data.item(),5), "Generator Error: ", round(errorG.data.item(),5))
-    grad_x = autograd.grad(error_tot, generator.parameters(), create_graph=True, retain_graph=True, allow_unused= True)
-    grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
-    grad_y = autograd.grad(error_tot, discriminator.parameters(), create_graph=True, retain_graph=True)
-    grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
-    scaled_grad_x = torch.mul(lr,grad_x_vec)
-    scaled_grad_y = torch.mul(lr,grad_y_vec)
-    #l = autograd.grad(grad_x_vec, discriminator.parameters(), grad_outputs = torch.ones_like(grad_x_vec))
-    
-    hvp_x_vec = Hvp_vec(grad_y_vec, generator.parameters(), torch.cat([param.view(-1) for param in discriminator.parameters()]),retain_graph=True)  # D_xy * lr_y * y 
-    hvp_y_vec = Hvp_vec(grad_x_vec, discriminator.parameters(), torch.cat([param.view(-1) for param in generator.parameters()]),retain_graph=True)  # D_yx * lr_x * x
-
-    p_x = torch.add(- grad_x_vec, - hvp_x_vec).detach_()  # grad_x + D_xy * lr_y * y
-    p_y = torch.add(grad_y_vec, hvp_y_vec).detach_()  # grad_y + D_yx * lr_x * x
-    p_x.mul_(lr_x.sqrt())
-    p_y.mul_(lr_y.sqrt())
-    
-    return p_x, p_y, error_real.data.item(), error_fake.data.item(), errorG.data.item()
-
-def train_SGD(real_data, fake_data):
-    prediction_real = discriminator(real_data)
-    error_real = loss(prediction_real, ones_target(N) )
-    prediction_fake = discriminator(fake_data)
-    error_fake = loss(prediction_fake, zeros_target(N))
-    error_tot = error_fake + error_real
-    errorG = loss(prediction_fake, ones_target(N))
-    print("Real - Discrim. Error: ", round(error_real.data.item(),5), "Fake - Discrim. Error: ", round(error_fake.data.item(),5), "Generator Error: ", round(errorG.data.item(),5))
-    grad_x = autograd.grad(error_tot, generator.parameters(), create_graph=True, retain_graph=True, allow_unused= True)
-    grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
-    grad_y = autograd.grad(error_tot, discriminator.parameters(), create_graph=True, retain_graph=True)
-    grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
-    scaled_grad_x = torch.mul(lr,grad_x_vec)
-    scaled_grad_y = torch.mul(lr,grad_y_vec)
-    
-    return scaled_grad_x, scaled_grad_y, error_real.data.item(), error_fake.data.item(), errorG.data.item()
-
-
+        
+optimizer = myCGD_Jacobi(generator, discriminator, lr)
 
 num_test_samples = 16
 test_noise = noise(num_test_samples)
+
+logger = Logger(model_name='VGAN', data_name='MNIST')
+
 
 errorDreal = []
 errorDfake = []
@@ -132,11 +53,9 @@ for epoch in range(num_epochs):
     e3 = 0.0
     for n_batch, (real_batch,_) in enumerate(data_loader):
         N = real_batch.size(0)
-        real_data = Variable(images_to_vectors_mnist(real_batch))
+        real_data = Variable(images_to_vectors(real_batch))
         fake_data = generator(noise(N))
-        cg_x,cg_y, e1, e2, e3  = train_CGD(real_data, fake_data)
-        #cg_x,cg_y, e1, e2, e3  = train_CGDJacobi(real_data, fake_data)
-        #cg_x,cg_y, e1, e2, e3  = train_SGD(real_data, fake_data)
+        cg_x, cg_y, g_error, d_error, d_pred_real, d_pred_fake  = train(real_data, fake_data)
 
         index = 0
         for p in generator.parameters():
@@ -148,23 +67,19 @@ for epoch in range(num_epochs):
         for p in discriminator.parameters():
             p.data.add_(cg_y[index: index + p.numel()].reshape(p.shape))
             index += p.numel()
-        
-
-    errorDreal.append(e1)
-    errorDfake.append(e2)
-    errorG.append(e3)
-
-end = time.time()
-
-print("Time passed: ", end - start)
-
-plt.figure()
-plt.plot([x for x in range(0,len(errorDreal))], errorDreal)
-plt.plot([x for x in range(0,len(errorDfake))], errorDfake)
-plt.plot([x for x in range(0,len(errorG))], errorG)
-plt.xlabel('Number of epochs')
-plt.ylabel('Loss function value')
-plt.legend(['Discriminator: Loss on Real Data', 'Discriminator: Loss on Fake Data', 'Generator: Loss'])
-plt.title('MNIST Dataset - Implicit CGD')
-plt.savefig('cgd.png', dpi=300)
-
+        # Log batch error
+        logger.log(d_error, g_error, epoch, n_batch, num_batches)
+        # Display Progress every few batches
+        if (n_batch) % 100 == 0: 
+            test_images = vectors_to_images(generator(test_noise))
+            test_images = test_images.data
+            logger.log_images(
+                test_images, num_test_samples, 
+                epoch, n_batch, num_batches
+            );
+            # Display status Logs
+            logger.display_status(
+                epoch, num_epochs, n_batch, num_batches,
+                d_error, g_error, d_pred_real, d_pred_fake
+            )
+            
