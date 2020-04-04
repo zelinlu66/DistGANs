@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 import torch
 from torch import autograd
 from torch.autograd.variable import Variable
-
+import math
 
 # Utils specific for MNIST
 # Utils for Hessian computation and matrix inverse
@@ -43,10 +43,10 @@ def noise(size):
     n = Variable(torch.randn(size, 100))
     return n
 
-def images_to_vectors_mnist(images):
+def images_to_vectors(images):
     return images.view(images.size(0), 784)
 
-def vectors_to_images_mnist(vectors):
+def vectors_to_images(vectors):
     return vectors.view(vectors.size(0), 1, 28, 28)
 
 def images_to_vectors_cifar10(images):
@@ -105,8 +105,8 @@ def general_conjugate_gradient(grad_x, grad_y, x_params, y_params, kk, lr_x, lr_
     :param y_params:
     :param b:
     :param lr_x:
-    :param lr_y:
-    :param x:
+    :param lr_y:      
+    :param x:            
     :param nsteps:
     :param residual_tol:
     :param device:
@@ -147,133 +147,271 @@ def general_conjugate_gradient(grad_x, grad_y, x_params, y_params, kk, lr_x, lr_
             break
     return x, i + 1
 
-
-
 #######################################################################
 
-class Logger:
 
-    def __init__(self, model_name, data_name):
-        self.model_name = model_name
-        self.data_name = data_name
-
-        self.comment = '{}_{}'.format(model_name, data_name)
-        self.data_subdir = '{}/{}'.format(model_name, data_name)
-
-        # TensorBoard
-        self.writer = SummaryWriter(comment=self.comment)
-
-    def log(self, d_error, g_error, epoch, n_batch, num_batches):
-
-        # var_class = torch.autograd.variable.Variable
-        if isinstance(d_error, torch.autograd.Variable):
-            d_error = d_error.data.cpu().numpy()
-        if isinstance(g_error, torch.autograd.Variable):
-            g_error = g_error.data.cpu().numpy()
-
-        step = Logger._step(epoch, n_batch, num_batches)
-        self.writer.add_scalar(
-            '{}/D_error'.format(self.comment), d_error, step)
-        self.writer.add_scalar(
-            '{}/G_error'.format(self.comment), g_error, step)
-
-    def log_images(self, images, num_images, epoch, n_batch, num_batches, format='NCHW', normalize=True):
-        '''
-        input images are expected in format (NCHW)
-        '''
-        if type(images) == np.ndarray:
-            images = torch.from_numpy(images)
-        
-        if format=='NHWC':
-            images = images.transpose(1,3)
-        
-
-        step = Logger._step(epoch, n_batch, num_batches)
-        img_name = '{}/images{}'.format(self.comment, '')
-
-        # Make horizontal grid from image tensor
-        horizontal_grid = vutils.make_grid(
-            images, normalize=normalize, scale_each=True)
-        # Make vertical grid from image tensor
-        nrows = int(np.sqrt(num_images))
-        grid = vutils.make_grid(
-            images, nrow=nrows, normalize=True, scale_each=True)
-
-        # Add horizontal images to tensorboard
-        self.writer.add_image(img_name, horizontal_grid, step)
-
-        # Save plots
-        self.save_torch_images(horizontal_grid, grid, epoch, n_batch)
-
-    def save_torch_images(self, horizontal_grid, grid, epoch, n_batch, plot_horizontal=True):
-        out_dir = './data/images/{}'.format(self.data_subdir)
-        Logger._make_dir(out_dir)
-
-        # Plot and save horizontal
-        fig = plt.figure(figsize=(16, 16))
-        plt.imshow(np.moveaxis(horizontal_grid.numpy(), 0, -1))
-        plt.axis('off')
-        if plot_horizontal:
-            display.display(plt.gcf())
-        self._save_images(fig, epoch, n_batch, 'hori')
-        plt.close()
-
-        # Save squared
-        fig = plt.figure()
-        plt.imshow(np.moveaxis(grid.numpy(), 0, -1))
-        plt.axis('off')
-        self._save_images(fig, epoch, n_batch)
-        plt.close()
-
-    def _save_images(self, fig, epoch, n_batch, comment=''):
-        out_dir = './data/images/{}'.format(self.data_subdir)
-        Logger._make_dir(out_dir)
-        fig.savefig('{}/{}_epoch_{}_batch_{}.png'.format(out_dir,
-                                                         comment, epoch, n_batch))
-
-    def display_status(self, epoch, num_epochs, n_batch, num_batches, d_error, g_error, d_pred_real, d_pred_fake):
-        
-        # var_class = torch.autograd.variable.Variable
-        if isinstance(d_error, torch.autograd.Variable):
-            d_error = d_error.data.cpu().numpy()
-        if isinstance(g_error, torch.autograd.Variable):
-            g_error = g_error.data.cpu().numpy()
-        if isinstance(d_pred_real, torch.autograd.Variable):
-            d_pred_real = d_pred_real.data
-        if isinstance(d_pred_fake, torch.autograd.Variable):
-            d_pred_fake = d_pred_fake.data
-        
-        
-        print('Epoch: [{}/{}], Batch Num: [{}/{}]'.format(
-            epoch,num_epochs, n_batch, num_batches)
-             )
-        print('Discriminator Loss: {:.4f}, Generator Loss: {:.4f}'.format(d_error, g_error))
-        print('D(x): {:.4f}, D(G(z)): {:.4f}'.format(d_pred_real.mean(), d_pred_fake.mean()))
-
-    def save_models(self, generator, discriminator, epoch):
-        out_dir = './data/models/{}'.format(self.data_subdir)
-        Logger._make_dir(out_dir)
-        torch.save(generator.state_dict(),
-                   '{}/G_epoch_{}'.format(out_dir, epoch))
-        torch.save(discriminator.state_dict(),
-                   '{}/D_epoch_{}'.format(out_dir, epoch))
-
-    def close(self):
-        self.writer.close()
-
-    # Private Functionality
-
-    @staticmethod
-    def _step(epoch, n_batch, num_batches):
-        return epoch * num_batches + n_batch
-
-    @staticmethod
-    def _make_dir(directory):
-        try:
-            os.makedirs(directory)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
 ###########################################
 ##########################################
 
+class myCGD(object):
+    def __init__(self, G, D, eps=1e-8, beta2=0.99, lr=1e-3, solve_x = False):
+        self.G_params = list(G.parameters())
+        self.D_params = list(D.parameters())
+        self.lr = lr
+        self.square_avgx = None
+        self.square_avgy = None
+        self.beta2 = beta2
+        self.eps = eps
+        self.cg_x = None
+        self.cg_y = None  
+        self.count = 0
+        self.old_x = None
+        self.old_y = None
+        self.solve_x = solve_x
+        
+    def zero_grad(self):
+        zero_grad(self.G_params)
+        zero_grad(self.D_params)
+
+    def step(self, loss):
+        self.count += 1
+        grad_x = autograd.grad(loss, self.G_params, create_graph=True,
+                               retain_graph=True)
+        grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
+        grad_y = autograd.grad(loss, self.D_params, create_graph=True,
+                               retain_graph=True)
+        grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
+
+        if self.square_avgx is None and self.square_avgy is None:
+            self.square_avgx = torch.zeros(grad_x_vec.size(), requires_grad=False)
+            self.square_avgy = torch.zeros(grad_y_vec.size(), requires_grad=False)
+        self.square_avgx.mul_(self.beta2).addcmul_(1 - self.beta2, grad_x_vec.data, grad_x_vec.data)
+        self.square_avgy.mul_(self.beta2).addcmul_(1 - self.beta2, grad_y_vec.data, grad_y_vec.data)
+
+        # Initialization bias correction
+        bias_correction2 = 1 - self.beta2 ** self.count
+
+        lr_x = math.sqrt(bias_correction2) * self.lr / self.square_avgx.sqrt().add(self.eps)
+        lr_y = math.sqrt(bias_correction2) * self.lr / self.square_avgy.sqrt().add(self.eps)
+        scaled_grad_x = torch.mul(lr_x, grad_x_vec).detach()  # lr_x * grad_x
+        scaled_grad_y = torch.mul(lr_y, grad_y_vec).detach()  # lr_y * grad_y
+        hvp_x_vec = Hvp_vec(grad_y_vec, self.G_params, scaled_grad_y,
+                           retain_graph=True)  # D_xy * lr_y * grad_y
+        hvp_y_vec = Hvp_vec(grad_x_vec, self.D_params, scaled_grad_x,
+                           retain_graph=True)  # D_yx * lr_x * grad_x
+
+        p_x = torch.add(grad_x_vec, - hvp_x_vec).detach_()  # grad_x - D_xy * lr_y * grad_y
+        p_y = torch.add(grad_y_vec, hvp_y_vec).detach_()  # grad_y + D_yx * lr_x * grad_x
+        
+        if self.solve_x:
+            p_y.mul_(lr_y.sqrt())
+            # p_y_norm = p_y.norm(p=2).detach_()
+            # if self.old_y is not None:
+            #     self.old_y = self.old_y / p_y_norm
+            cg_y, self.iter_num = general_conjugate_gradient(grad_x=grad_y_vec, grad_y=grad_x_vec,
+                                                             x_params=self.D_params,
+                                                             y_params=self.G_params, kk=p_y,
+                                                             x=self.old_y,
+                                                             nsteps=p_y.shape[0] // 10000,
+                                                             lr_x=lr_y, lr_y=lr_x)
+            # cg_y.mul_(p_y_norm)
+            cg_y.detach_().mul_(- lr_y.sqrt())
+            hcg = Hvp_vec(grad_y_vec, self.G_params, cg_y, retain_graph=True).add_(
+                grad_x_vec).detach_()
+            # grad_x + D_xy * delta y
+            cg_x = hcg.mul(lr_x)
+            self.old_x = hcg.mul(lr_x.sqrt())
+        else:
+
+            p_x.mul_(lr_x.sqrt())
+            # p_x_norm = p_x.norm(p=2).detach_()
+            # if self.old_x is not None:
+            #     self.old_x = self.old_x / p_x_norm
+            cg_x, self.iter_num = general_conjugate_gradient(grad_x=grad_x_vec, grad_y=grad_y_vec,
+                                                             x_params=self.G_params,
+                                                             y_params=self.D_params, kk=p_x,
+                                                             x=self.old_x,
+                                                             nsteps=p_x.shape[0] // 10000,
+                                                             lr_x=lr_x, lr_y=lr_y)
+            # cg_x.detach_().mul_(p_x_norm)
+            cg_x.detach_().mul_(lr_x.sqrt())  # delta x = lr_x.sqrt() * cg_x
+            hcg = Hvp_vec(grad_x_vec, self.D_params, cg_x, retain_graph=True).add_(grad_y_vec).detach_()
+            # grad_y + D_yx * delta x
+            cg_y = hcg.mul(- lr_y)
+            self.old_y = hcg.mul(lr_y.sqrt())
+            
+         
+        index = 0
+        for p in self.G_params:
+            p.data.add_(cg_x[index: index + p.numel()].reshape(p.shape))
+            index += p.numel()
+        if index != cg_x.numel():
+            raise RuntimeError('CG size mismatch')
+        index = 0
+        for p in self.D_params:
+            p.data.add_(cg_y[index: index + p.numel()].reshape(p.shape))
+            index += p.numel()
+        if index != cg_y.numel():
+            raise RuntimeError('CG size mismatch')
+        
+        self.solve_x = False if self.solve_x else True
+#########################################################
+class myCGD_fg(object):
+    def __init__(self, G, D, eps=1e-8, beta2=0.99, lr=1e-3, solve_x = False):
+        self.G_params = list(G.parameters())
+        self.D_params = list(D.parameters())
+        self.lr = lr
+        self.square_avgx = None
+        self.square_avgy = None
+        self.beta2 = beta2
+        self.eps = eps
+        self.cg_x = None
+        self.cg_y = None  
+        self.count = 0
+        self.old_x = None
+        self.old_y = None
+        self.solve_x = solve_x
+        
+    def zero_grad(self):
+        zero_grad(self.G_params)
+        zero_grad(self.D_params)
+
+    def step(self, f,g):
+        self.count += 1
+        # Derivatives of f
+        grad_f_x = autograd.grad(f, self.G_params, create_graph=True,
+                               retain_graph=True)
+        grad_f_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_f_x])
+        grad_f_y = autograd.grad(f, self.D_params, create_graph=True,
+                               retain_graph=True)
+        grad_f_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_f_y])
+        # Derivatives of g
+        grad_g_y = autograd.grad(g, self.D_params, create_graph=True,
+                               retain_graph=True)
+        grad_g_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_g_y])
+        
+        grad_g_x = autograd.grad(g, self.G_params, create_graph=True,
+                               retain_graph=True)
+        grad_g_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_g_x])
+        
+        if self.square_avgx is None and self.square_avgy is None:
+            self.square_avgx = torch.zeros(grad_f_x_vec.size(), requires_grad=False)
+            self.square_avgy = torch.zeros(grad_g_y_vec.size(), requires_grad=False)
+        self.square_avgx.mul_(self.beta2).addcmul_(1 - self.beta2, grad_f_x_vec.data, grad_f_x_vec.data)
+        self.square_avgy.mul_(self.beta2).addcmul_(1 - self.beta2, grad_g_y_vec.data, grad_g_y_vec.data)
+
+        # Initialization bias correction
+        bias_correction2 = 1 - self.beta2 ** self.count
+
+        lr_x = math.sqrt(bias_correction2) * self.lr / self.square_avgx.sqrt().add(self.eps)
+        lr_y = math.sqrt(bias_correction2) * self.lr / self.square_avgy.sqrt().add(self.eps)
+        scaled_grad_f_x = torch.mul(lr_x, grad_f_x_vec).detach()  # lr_x * grad_f_x
+        scaled_grad_g_y = torch.mul(lr_y, grad_g_y_vec).detach()  # lr_y * grad_g_y
+        # Hessians computations
+        
+        hvp_x_vec = Hvp_vec(grad_f_y_vec, self.G_params, scaled_grad_g_y,
+                           retain_graph=True)  # Df_xy * lr_y * grad_g_y
+        hvp_y_vec = Hvp_vec(grad_g_x_vec, self.D_params, scaled_grad_f_x,
+                           retain_graph=True)  # Dg_yx * lr_x * grad_f_x
+
+        p_x = torch.add(grad_f_x_vec, - hvp_x_vec).detach_()  # grad_f_x - Df_xy * lr_y * grad_y
+        p_y = torch.add(grad_g_y_vec, hvp_y_vec).detach_()  # grad_g_y + Dg_yx * lr_x * grad_x
+        
+        if self.solve_x:
+            p_y.mul_(lr_y.sqrt())
+            # p_y_norm = p_y.norm(p=2).detach_()
+            # if self.old_y is not None:                             
+            #     self.old_y = self.old_y / p_y_norm
+            cg_y, self.iter_num = general_conjugate_gradient(grad_x=grad_f_y_vec, grad_y=grad_g_x_vec,
+                                                             x_params=self.D_params,
+                                                             y_params=self.G_params, kk=p_y,
+                                                             x=self.old_y,
+                                                             nsteps=p_y.shape[0] // 10000,
+                                                             lr_x=lr_y, lr_y=lr_x)
+            # cg_y.mul_(p_y_norm)
+            cg_y.detach_().mul_(- lr_y.sqrt())
+            hcg = Hvp_vec(grad_y_vec, self.G_params, cg_y, retain_graph=True).add_(
+                grad_x_vec).detach_()
+            # grad_x + D_xy * delta y
+            cg_x = hcg.mul(lr_x)
+            self.old_x = hcg.mul(lr_x.sqrt())
+        else:
+
+            p_x.mul_(lr_x.sqrt())
+            # p_x_norm = p_x.norm(p=2).detach_()     (grad_g_x,  grad_f_y ,G, D)
+            # if self.old_x is not None:
+            #     self.old_x = self.old_x / p_x_norm
+            cg_x, self.iter_num = general_conjugate_gradient(grad_g_x_vec, grad_f_y_vec,
+                                                             x_params=self.G_params,
+                                                             y_params=self.D_params, kk=p_x,
+                                                             x=self.old_x,
+                                                             nsteps=p_x.shape[0] // 10000,
+                                                             lr_x=lr_x, lr_y=lr_y)
+            # cg_x.detach_().mul_(p_x_norm)
+            cg_x.detach_().mul_(lr_x.sqrt())  # delta x = lr_x.sqrt() * cg_x
+            hcg = Hvp_vec(grad_x_vec, self.D_params, cg_x, retain_graph=True).add_(grad_y_vec).detach_()
+            # grad_y + D_yx * delta x
+            cg_y = hcg.mul(- lr_y)
+            self.old_y = hcg.mul(lr_y.sqrt())
+            
+         
+        index = 0
+        for p in self.G_params:
+            p.data.add_(cg_x[index: index + p.numel()].reshape(p.shape))
+            index += p.numel()
+        if index != cg_x.numel():
+            raise RuntimeError('CG size mismatch')
+        index = 0
+        for p in self.D_params:
+            p.data.add_(cg_y[index: index + p.numel()].reshape(p.shape))
+            index += p.numel()
+        if index != cg_y.numel():
+            raise RuntimeError('CG size mismatch')
+        
+        self.solve_x = False if self.solve_x else True
+######################################
+class myCGD_Jacobi(object):
+    def __init__(self, G, D, lr=1e-3):
+        self.G_params = list(G.parameters())
+        self.D_params = list(D.parameters())
+        self.lr = lr
+        self.count = 0
+        
+    def zero_grad(self):
+        zero_grad(self.G_params)
+        zero_grad(self.D_params)
+
+    def step(self, loss):
+        self.count += 1
+        grad_x = autograd.grad(loss, self.G_params, create_graph=True,
+                               retain_graph=True)
+        grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
+        grad_y = autograd.grad(loss, self.D_params, create_graph=True,
+                               retain_graph=True)
+        grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
+
+        hvp_x_vec = Hvp_vec(grad_y_vec, self.G_params, grad_y_vec,
+                           retain_graph=True)  # D_xy * grad_y
+        hvp_y_vec = Hvp_vec(grad_x_vec, self.D_params, grad_x_vec,
+                           retain_graph=True)  # D_yx * grad_x
+        
+
+        p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x  +2 * D_xy * grad_y
+        p_y = torch.add(grad_y_vec, 2*hvp_y_vec).detach_()  # grad_y  +2 * D_yx * grad_x
+        
+        update_x = torch.mul(self.lr,p_x)
+        update_y = torch.mul(-self.lr,p_y)
+         
+        index = 0
+        for p in self.G_params:
+            p.data.add_(update_x[index: index + p.numel()].reshape(p.shape))
+            index += p.numel()
+        if index != update_x.numel():
+            raise RuntimeError('CG size mismatch')
+        index = 0
+        for p in self.D_params:
+            p.data.add_(update_y[index: index + p.numel()].reshape(p.shape))
+            index += p.numel()
+        if index != update_y.numel():
+            raise RuntimeError('CG size mismatch')
+        
