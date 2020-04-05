@@ -1,6 +1,9 @@
-
-
-############################################
+'''
+@authors: Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it)
+        : Massimiliano Lupo Pasini (e-mail: lupopasinim@ornl.gov)
+        : Nouamane Laanait (e-mail: laanaitn@ornl.gov)
+        : Simona Perotto (e-mail: simona.perotto@polimi.it)
+'''
 ##########################################
 import os
 import numpy as np
@@ -36,18 +39,19 @@ def zeros_target(size):
     data = Variable(torch.zeros(size, 1))
     return data
 
-def noise(size):
+def noise(size, noise_size):
     '''
     Generates a 1-d vector of gaussian sampled random values
     '''
-    n = Variable(torch.randn(size, 100))
+    n = Variable(torch.randn(size, noise_size))
     return n
 
 def images_to_vectors(images):
-    return images.view(images.size(0), 784)
+    image_dim = images.size(1)*images.size(2)*images.size(3)
+    return images.view(images.size(0), image_dim) 
 
-def vectors_to_images(vectors):
-    return vectors.view(vectors.size(0), 1, 28, 28)
+def vectors_to_images(vectors, array_dim):
+    return vectors.view(vectors.size(0), array_dim[0],array_dim[1],array_dim[2])
 
 def images_to_vectors_cifar10(images):
     return images.view(images.size(0), 3072)

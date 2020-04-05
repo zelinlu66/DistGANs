@@ -206,8 +206,8 @@ class ACGD(object):  # Support multi GPU
         self.solve_x = False if self.solve_x else True
 
 
-class myCGD(object):
-    def __init__(self, G, D, eps=1e-8, beta2=0.99, lr=1e-3, solve_x = False):
+class CGD(object): 
+    def __init__(self, G, D, criterion, eps=1e-8, beta2=0.99, lr=1e-3, solve_x = False):
         self.G_params = list(G.parameters())
         self.D_params = list(D.parameters())
         self.lr = lr
@@ -221,13 +221,22 @@ class myCGD(object):
         self.old_x = None
         self.old_y = None
         self.solve_x = solve_x
+        self.criterion = criterion
+        self.D = D
+        self.G = G
         
     def zero_grad(self):
         zero_grad(self.G_params)
         zero_grad(self.D_params)
-
-    def step(self, loss):
+        
+    def step(self,real_data, fake_data, N):
         self.count += 1
+        d_pred_real = self.D(real_data)
+        error_real = self.criterion(d_pred_real, ones_target(N) )
+        d_pred_fake = self.D(fake_data)
+        error_fake = self.criterion(d_pred_fake, zeros_target(N))
+        g_error = self.criterion(d_pred_fake, ones_target(N))
+        loss = error_fake + error_real
         grad_x = autograd.grad(loss, self.G_params, create_graph=True,
                                retain_graph=True)
         grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
@@ -308,6 +317,25 @@ class myCGD(object):
             raise RuntimeError('CG size mismatch')
         
         self.solve_x = False if self.solve_x else True
+        return error_real, error_fake, g_error
+
+'''
+    def step(self, loss):
+        self.count += 1
+        grad_x = autograd.grad(loss, self.G_params, create_graph=True,
+                               retain_graph=True)
+        grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
+        grad_y = autograd.grad(loss, self.D_params, create_graph=True,
+                               retain_graph=True)
+        grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
+
+        if self.square_avgx is None and self.square_avgy is None:
+            self.square_avgx = torch.zeros(grad_x_vec.size(), requires_grad=False)
+            self.square_avgy = torch.zeros(grad_y_vec.size(), requires_grad=False)
+        self.square_avgx.mul_(self.beta2).addcmul_(1 - self.beta2, grad_x_vec.data, grad_x_vec.data)
+        self.square_avgy.mul_(self.beta2).addcmul_(1 - self.beta2, grad_y_vec.data, grad_y_vec.data)
+'''
+
 #########################################################
 # CGD_fg NOT READY YET !!
 '''
@@ -427,19 +455,28 @@ class myCGD_fg(object):
 '''
 ######################################
         
-class myCGD_Jacobi(object):
-    def __init__(self, G, D, lr=1e-3):
+class Jacobi(object):
+    def __init__(self, G, D,criterion, lr=1e-3):
         self.G_params = list(G.parameters())
         self.D_params = list(D.parameters())
+        self.G = G
+        self.D = D
         self.lr = lr
         self.count = 0
+        self.criterion = criterion
         
     def zero_grad(self):
         zero_grad(self.G_params)
         zero_grad(self.D_params)
 
-    def step(self, loss):
-        self.count += 1
+    def step(self,real_data, fake_data, N):
+        d_pred_real = self.D(real_data)
+        error_real = self.criterion(d_pred_real, ones_target(N) )
+        d_pred_fake = self.D(fake_data)
+        error_fake = self.criterion(d_pred_fake, zeros_target(N))
+        g_error = self.criterion(d_pred_fake, ones_target(N))
+        loss = error_fake + error_real
+        #loss = d_pred_real.mean() - d_pred_fake.mean()
         grad_x = autograd.grad(loss, self.G_params, create_graph=True,
                                retain_graph=True)
         grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
@@ -449,17 +486,16 @@ class myCGD_Jacobi(object):
         scaled_grad_x = torch.mul(self.lr,grad_x_vec)
         scaled_grad_y = torch.mul(self.lr,grad_y_vec)
 
-        hvp_x_vec = Hvp_vec(grad_y_vec, self.G_params, scaled_grad_y,
-                           retain_graph=True)  # D_xy * lr_y * grad_y
-        hvp_y_vec = Hvp_vec(grad_x_vec, self.D_params, scaled_grad_x,
-                           retain_graph=True)  # D_yx * lr_x * grad_x
+        #hvp_x_vec = Hvp_vec(grad_y_vec, self.G_params, scaled_grad_y,
+                          # retain_graph=True)  # D_xy * lr_y * grad_y
+        #hvp_y_vec = Hvp_vec(grad_x_vec, self.D_params, scaled_grad_x,
+                          # retain_graph=True)  # D_yx * lr_x * grad_x
         
-        hvp_x_vec = Hvp_vec(grad_y_vec, self.G_params, torch.cat([param.view(-1) for param in self.D_params]),retain_graph=True)  # D_xy * lr_y * y 
-        hvp_y_vec = Hvp_vec(grad_x_vec, self.D_params, torch.cat([param.view(-1) for param in self.G_params]),retain_graph=True)  # D_yx * lr_x * x
-        
+        hvp_x_vec = Hvp_vec(grad_y_vec, self.G_params, grad_y_vec ,retain_graph=True)  # D_xy * lr_y * grad_y 
+        hvp_y_vec = Hvp_vec(grad_x_vec, self.D_params, grad_x_vec ,retain_graph=True)  # D_yx * lr_x * grad_x
 
-        p_x = torch.add(- grad_x_vec, - 2*hvp_x_vec).detach_()  # grad_x + D_xy * lr_y * y
-        p_y = torch.add(grad_y_vec, 2*hvp_y_vec).detach_()  # grad_y + D_yx * lr_x * x
+        p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x + D_xy * lr_y * y
+        p_y = torch.add(-grad_y_vec, -2*hvp_y_vec).detach_()  # grad_y + D_yx * lr_x * x
         p_x.mul_(self.lr.sqrt())
         p_y.mul_(self.lr.sqrt())
          
@@ -475,4 +511,55 @@ class myCGD_Jacobi(object):
             index += p.numel()
         if index != p_y.numel():
             raise RuntimeError('CG size mismatch')
+        return error_real, error_fake, g_error
+    
+##########################################
         
+class SGD(object):
+    def __init__(self, G, D,criterion, lr=1e-3):
+        self.G_params = list(G.parameters())
+        self.D_params = list(D.parameters())
+        self.G = G
+        self.D = D
+        self.lr = lr
+        self.count = 0
+        self.criterion = criterion
+        
+    def zero_grad(self):
+        zero_grad(self.G_params)
+        zero_grad(self.D_params)
+
+    def step(self,real_data, fake_data, N):
+        d_pred_real = self.D(real_data)
+        error_real = self.criterion(d_pred_real, ones_target(N) )
+        d_pred_fake = self.D(fake_data)
+        error_fake = self.criterion(d_pred_fake, zeros_target(N))
+        g_error = self.criterion(d_pred_fake, ones_target(N))
+        loss = error_fake + error_real
+        #loss = d_pred_real.mean() - d_pred_fake.mean()
+        grad_x = autograd.grad(loss, self.G_params, create_graph=True,
+                               retain_graph=True)
+        grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
+        grad_y = autograd.grad(loss, self.D_params, create_graph=True,
+                               retain_graph=True)
+        grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
+        scaled_grad_x = torch.mul(self.lr,grad_x_vec)
+        scaled_grad_y = torch.mul(self.lr,grad_y_vec)
+
+        p_x = scaled_grad_x  
+        p_y = scaled_grad_y 
+         
+        index = 0
+        for p in self.G_params:
+            p.data.add_(p_x[index: index + p.numel()].reshape(p.shape))
+            index += p.numel()
+        if index != p_x.numel():
+            raise RuntimeError('CG size mismatch')
+        index = 0
+        for p in self.D_params:
+            p.data.add_(p_y[index: index + p.numel()].reshape(p.shape))
+            index += p.numel()
+        if index != p_y.numel():
+            raise RuntimeError('CG size mismatch')
+        return error_real, error_fake, g_error
+    
