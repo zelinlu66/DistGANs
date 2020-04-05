@@ -7,5 +7,7 @@
 
 """
 
+from GANs_object import *
+
 model = GANs_model(mnist_data())
 model.train(num_epochs = 1)

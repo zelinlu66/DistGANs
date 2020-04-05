@@ -7,7 +7,8 @@ from torch import Tensor
 from torch import autograd
 from torch.autograd import Variable
 from torch.autograd import grad
-from foo import *
+from optimizers import *
+from utils import *
 
 def hessian_vec(grad_vec, var, retain_graph=False):
     v = torch.ones_like(var)

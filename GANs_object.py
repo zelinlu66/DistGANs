@@ -8,10 +8,11 @@ Created on Sat Apr  4 17:34:40 2020
         : Simona Perotto (e-mail: simona.perotto@polimi.it)
 
 """
-#from optimizers import *
-#from utils import *
-#from Dataloader import *
-#from models import *
+import torch
+import numpy
+from models import *
+from optimizers import *
+from Dataloader import *
 import time
 import PIL.Image as pil
 import numpy as np
