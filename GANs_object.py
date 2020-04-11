@@ -16,6 +16,8 @@ from Dataloader import *
 import time
 import PIL.Image as pil
 import numpy as np
+import os
+import matplotlib.pyplot as plt
 
 class GANs_model(object):
     def __init__(self, data):
@@ -25,6 +27,11 @@ class GANs_model(object):
         self.D_error_real_history = []
         self.D_error_fake_history = []
         self.G_error_history = []
+        
+        if self.data_dimension[0] == 3:
+            self.imtype = 'RGB'
+        else:
+            self.imtype = 'gray'
         
    
         
@@ -36,6 +43,13 @@ class GANs_model(object):
         D = self.build_discriminator()
         G = self.build_generator()
         return D, G
+    
+    def createFolder(self,directory):
+        try:
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+        except OSError:
+            print ('Error: Creating directory. ' +  directory)
         
     def build_discriminator(self):
         n_features = numpy.prod(self.data_dimension)
@@ -49,15 +63,22 @@ class GANs_model(object):
         return G
     
     
-    def train(self,loss = torch.nn.BCEWithLogitsLoss(), lr = torch.tensor([0.0001]), optimizer = 'Jacobi', num_epochs = 1, batch_size = 100, verbose = True):
+    def train(self,loss = torch.nn.BCEWithLogitsLoss(), lr = torch.tensor([0.0001]), optimizer = 'Jacobi', num_epochs = 1, batch_size = 100, verbose = True, save_path = './data_fake'):
         self.data_loader = torch.utils.data.DataLoader(self.data, batch_size=100, shuffle=True)
         self.verbose = verbose
         self.num_test_samples = 16
+        self.save_path = save_path
         self.test_noise = noise(self.num_test_samples, self.noise_dimension)
         if optimizer == 'Jacobi':
             optimizer = Jacobi(self.G, self.D, loss, lr)
         elif optimizer == 'CGD':
             optimizer = CGD(self.G, self.D, loss, lr)
+        elif optimizer == 'Newton':
+            optimizer = Newton(self.G, self.D, loss, lr)
+        elif optimizer == 'JacobiMultiCost':
+            optimizer = JacobiMultiCost(self.G, self.D, loss, lr)
+        elif optimizer == 'GaussSeidel':
+            optimizer = GaussSeidel(self.G, self.D, loss, lr)
         else:
             optimizer = SGD(self.G, self.D, loss, lr)
   
@@ -83,11 +104,25 @@ class GANs_model(object):
                     count = 0
                     for image_index in range(0,test_images.shape[0]):
                         count = count + 1
-                        image = test_images[image_index][0]
-                        image = image.detach().numpy()
-                        image = (image + 1)/2
-                        img = pil.fromarray(np.uint8(image * 255) , 'L')
-                        img.save('./data_mnist/fake_image'+'_Epoch_'+str(e)+'_Batch_'+str(n_batch)+'_N_image_'+str(count)+'.png')
+                        if self.imtype == 'RGB':
+                            image = test_images[image_index]#[0]
+                            image = image.detach().numpy()
+                            image = (image + 1)/2
+                            image = image.transpose([1, 2, 0])
+                            self.createFolder(self.save_path)
+                            path = str(self.save_path + '/fake_image'+'_Epoch_'+str(e)+'_Batch_'+str(n_batch)+'_N_image_'+str(count)+'.png')
+                            plt.imsave(path, image)
+                        else:
+                            image = test_images[image_index][0]
+                            image = image.detach().numpy()
+                            image = (image + 1)/2
+                            img = pil.fromarray(np.uint8(image * 255) , 'L')
+                            self.createFolder(self.save_path)
+                            path = str(self.save_path + '/fake_image'+'_Epoch_'+str(e)+'_Batch_'+str(n_batch)+'_N_image_'+str(count)+'.png')
+                            img.save(path)
+                            
+                            
+                            
                         
             self.print_verbose("######################################################")
         end = time.time()
