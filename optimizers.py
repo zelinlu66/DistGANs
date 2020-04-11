@@ -484,8 +484,6 @@ class Jacobi(object):
         grad_y = autograd.grad(loss, self.D_params, create_graph=True,
                                retain_graph=True)
         grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
-        scaled_grad_x = torch.mul(self.lr,grad_x_vec)
-        scaled_grad_y = torch.mul(self.lr,grad_y_vec)
 
         #hvp_x_vec = Hvp_vec(grad_y_vec, self.G_params, scaled_grad_y,
                           # retain_graph=True)  # D_xy * lr_y * grad_y
@@ -495,8 +493,8 @@ class Jacobi(object):
         hvp_x_vec = Hvp_vec(grad_y_vec, self.G_params, grad_y_vec ,retain_graph=True)  # D_xy * lr_y * grad_y 
         hvp_y_vec = Hvp_vec(grad_x_vec, self.D_params, grad_x_vec ,retain_graph=True)  # D_yx * lr_x * grad_x
 
-        p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x + D_xy * lr_y * y
-        p_y = torch.add(-grad_y_vec, -2*hvp_y_vec).detach_()  # grad_y + D_yx * lr_x * x
+        p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x +2 * D_xy * lr_y * y
+        p_y = torch.add(-grad_y_vec, -2*hvp_y_vec).detach_()  # grad_y +2 * D_yx * lr_x * x
         p_x.mul_(self.lr.sqrt())
         p_y.mul_(self.lr.sqrt())
          
@@ -556,6 +554,220 @@ class SGD(object):
             index += p.numel()
         if index != p_x.numel():
             raise RuntimeError('CG size mismatch')
+        index = 0
+        for p in self.D_params:
+            p.data.add_(p_y[index: index + p.numel()].reshape(p.shape))
+            index += p.numel()
+        if index != p_y.numel():
+            raise RuntimeError('CG size mismatch')
+        return error_real, error_fake, g_error
+    
+##############################################################################
+class Newton(object):
+    def __init__(self, G, D,criterion, lr=1e-3):
+        self.G_params = list(G.parameters())
+        self.D_params = list(D.parameters())
+        self.G = G
+        self.D = D
+        self.lr = lr
+        self.count = 0
+        self.criterion = criterion
+        
+    def zero_grad(self):
+        zero_grad(self.G_params)
+        zero_grad(self.D_params)
+
+    def step(self,real_data, fake_data, N):
+        d_pred_real = self.D(real_data)
+        error_real = self.criterion(d_pred_real, ones_target(N) )
+        d_pred_fake = self.D(fake_data)
+        error_fake = self.criterion(d_pred_fake, zeros_target(N))
+        g_error = self.criterion(d_pred_fake, ones_target(N))
+        loss = error_fake + error_real
+        #loss = d_pred_real.mean() - d_pred_fake.mean()
+        grad_x = autograd.grad(loss, self.G_params, create_graph=True,
+                               retain_graph=True)
+        grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
+        grad_y = autograd.grad(loss, self.D_params, create_graph=True,
+                               retain_graph=True)
+        grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
+        
+        grad_x_vec[grad_x_vec == float('inf')] = 1.7976931348623157e+38
+        grad_x_vec[grad_x_vec != grad_x_vec] = 0
+        grad_y_vec[grad_y_vec == float('inf')] = 1.7976931348623157e+38
+        grad_y_vec[grad_y_vec != grad_y_vec] = 0
+        
+
+        #Dxx = Hvp_vec(grad_x_vec, self.G_params, torch.ones_like(grad_x_vec) ,retain_graph=True)
+        #Dyy = Hvp_vec(grad_y_vec, self.D_params, torch.ones_like(grad_y_vec) ,retain_graph=True)
+        
+        hvp_x_vec = Hvp_vec(grad_y_vec, self.G_params, grad_y_vec ,retain_graph=True)  # D_xy * grad_y 
+        hvp_y_vec = Hvp_vec(grad_x_vec, self.D_params, grad_x_vec ,retain_graph=True)  # D_yx * grad_x
+        
+        right_term_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x + 2 * D_xy * grad_y
+        right_term_y = torch.add(-grad_y_vec, -2*hvp_y_vec).detach_()  # grad_y + 2 * D_yx * grad_x
+        
+        right_term_x_inv = 2/right_term_x     # 2 * (1/grad_x + D_xy * lr_y * grad_y)
+        right_term_y_inv = 2/right_term_y     # 2 * (1/grad_x + D_xy * lr_y * grad_x)
+        
+        right_term_x_inv[right_term_x_inv == float('inf')] = 1.7976931348623157e+38
+        right_term_x_inv[right_term_x_inv != right_term_x_inv] = 0
+        right_term_y_inv[right_term_y_inv == float('inf')] = 1.7976931348623157e+38
+        right_term_y_inv[right_term_y_inv != right_term_y_inv] = 0
+        
+        px_inv = Hvp_vec(grad_x_vec, self.G_params, right_term_x_inv, retain_graph = True)
+        py_inv = Hvp_vec(grad_y_vec, self.D_params, right_term_y_inv, retain_graph = True)
+        
+        p_x = 1/px_inv
+        p_y = 1/py_inv
+        
+        p_x.mul_(self.lr.sqrt())
+        p_y.mul_(self.lr.sqrt())
+         
+        index = 0
+        for p in self.G_params:
+            p.data.add_(p_x[index: index + p.numel()].reshape(p.shape))
+            index += p.numel()
+        if index != p_x.numel():
+            raise RuntimeError('CG size mismatch')
+        index = 0
+        for p in self.D_params:
+            p.data.add_(p_y[index: index + p.numel()].reshape(p.shape))
+            index += p.numel()
+        if index != p_y.numel():
+            raise RuntimeError('CG size mismatch')
+        return error_real, error_fake, g_error
+
+
+######################################################################################
+        
+class JacobiMultiCost(object):
+    def __init__(self, G, D,criterion, lr=1e-3):
+        self.G_params = list(G.parameters())
+        self.D_params = list(D.parameters())
+        self.G = G
+        self.D = D
+        self.lr = lr
+        self.count = 0
+        self.criterion = criterion
+        
+    def zero_grad(self):
+        zero_grad(self.G_params)
+        zero_grad(self.D_params)
+
+    def step(self,real_data, fake_data, N):
+        d_pred_real = self.D(real_data)
+        error_real = self.criterion(d_pred_real, ones_target(N) )
+        d_pred_fake = self.D(fake_data)
+        error_fake = self.criterion(d_pred_fake, zeros_target(N))
+        g_error = self.criterion(d_pred_fake, ones_target(N))
+        
+        f = error_fake + error_real  # f cost relative to discriminator
+        g = g_error                  # g cost relative to generator
+        
+        
+        #loss = d_pred_real.mean() - d_pred_fake.mean()
+        grad_f_x = autograd.grad(f, self.G_params, create_graph=True,
+                               retain_graph=True)
+        grad_g_x = autograd.grad(g, self.G_params, create_graph=True,
+                               retain_graph=True)
+        grad_f_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_f_x]) 
+        grad_g_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_g_x])
+        
+        grad_f_y = autograd.grad(f, self.D_params, create_graph=True,
+                               retain_graph=True)
+        grad_g_y = autograd.grad(g, self.D_params, create_graph=True,
+                               retain_graph=True)
+        grad_f_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_f_y]) 
+        grad_g_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_g_y]) 
+
+        
+        D_f_xy = Hvp_vec(grad_f_y_vec, self.G_params, grad_f_y_vec, retain_graph = True)
+        D_g_yx = Hvp_vec(grad_g_x_vec, self.D_params, grad_g_x_vec, retain_graph = True)
+
+        p_x = torch.add(grad_f_x_vec, 2*D_f_xy).detach_()  # grad_x + D_xy * lr_y * y
+        p_y = torch.add(grad_g_y_vec, 2*D_g_yx).detach_()  # grad_y + D_yx * lr_x * x
+        p_x.mul_(self.lr.sqrt())
+        p_y.mul_(self.lr.sqrt())
+         
+        index = 0
+        for p in self.G_params:
+            p.data.add_(p_x[index: index + p.numel()].reshape(p.shape))
+            index += p.numel()
+        if index != p_x.numel():
+            raise RuntimeError('CG size mismatch')
+        index = 0
+        for p in self.D_params:
+            p.data.add_(p_y[index: index + p.numel()].reshape(p.shape))
+            index += p.numel()
+        if index != p_y.numel():
+            raise RuntimeError('CG size mismatch')
+        return error_real, error_fake, g_error
+#################################################################################
+
+class GaussSeidel(object):
+    def __init__(self, G, D,criterion, lr=1e-3):
+        self.G_params = list(G.parameters())
+        self.D_params = list(D.parameters())
+        self.G = G
+        self.D = D
+        self.lr = lr
+        self.count = 0
+        self.criterion = criterion
+        
+    def zero_grad(self):
+        zero_grad(self.G_params)
+        zero_grad(self.D_params)
+
+    def step(self,real_data, fake_data, N):
+        
+        d_pred_real = self.D(real_data)
+        error_real = self.criterion(d_pred_real, ones_target(N) )
+        d_pred_fake = self.D(fake_data)
+        error_fake = self.criterion(d_pred_fake, zeros_target(N))
+        g_error = self.criterion(d_pred_fake, ones_target(N))
+        loss = error_fake + error_real
+        #loss = d_pred_real.mean() - d_pred_fake.mean()
+        grad_x = autograd.grad(loss, self.G_params, create_graph=True,
+                               retain_graph=True)
+        grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
+        grad_y = autograd.grad(loss, self.D_params, create_graph=True,
+                               retain_graph=True)
+        grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
+
+        #hvp_x_vec = Hvp_vec(grad_y_vec, self.G_params, scaled_grad_y,
+                          # retain_graph=True)  # D_xy * lr_y * grad_y
+        #hvp_y_vec = Hvp_vec(grad_x_vec, self.D_params, scaled_grad_x,
+                          # retain_graph=True)  # D_yx * lr_x * grad_x
+        
+        hvp_x_vec = Hvp_vec(grad_y_vec, self.G_params, grad_y_vec ,retain_graph=True)  # D_xy * lr_y * grad_y 
+        p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x + 2 * D_xy * lr_y * grad_y
+        
+        index = 0
+        for p in self.G_params:
+            p.data.add_(p_x[index: index + p.numel()].reshape(p.shape))
+            index += p.numel()
+        if index != p_x.numel():
+            raise RuntimeError('CG size mismatch')
+        
+        fake_data = self.G(noise(N, 100)) # Second argument of noise is the noise_dimension parameter of build_generator
+        d_pred_fake = self.D(fake_data)
+        error_fake = self.criterion(d_pred_fake, zeros_target(N))
+        g_error = self.criterion(d_pred_fake, ones_target(N))
+        loss = error_fake + error_real
+        
+        grad_x = autograd.grad(loss, self.G_params, create_graph=True,
+                               retain_graph=True)
+        grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
+        
+        hvp_y_vec = Hvp_vec(grad_x_vec, self.D_params, grad_x_vec ,retain_graph=True)  # D_yx * lr_x * grad_x
+        p_y = torch.add(-grad_y_vec, -2*hvp_y_vec).detach_()  # grad_y +2 * D_yx * lr_x * x
+        #p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x +2 * D_xy * lr_y * y
+        
+        p_x.mul_(self.lr.sqrt())
+        p_y.mul_(self.lr.sqrt())
+         
+        
         index = 0
         for p in self.D_params:
             p.data.add_(p_y[index: index + p.numel()].reshape(p.shape))
