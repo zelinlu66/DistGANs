@@ -88,7 +88,7 @@ class GANs_model(object):
             for n_batch, (real_batch,_) in enumerate(self.data_loader):
                 N = real_batch.size(0)
                 real_data = Variable(images_to_vectors(real_batch))
-                #optimizer.zero_grad()
+                optimizer.zero_grad()
                 error_real, error_fake, g_error = optimizer.step(real_data,N)
                 self.D_error_real_history.append(error_real)
                 self.D_error_fake_history.append(error_fake)
