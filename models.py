@@ -140,6 +140,49 @@ class Generator(torch.nn.Module):
         x = self.hidden2(x)
         x = self.out(x)
         return x
+    
+class DiscriminatorMax(nn.Module):
+    def __init__(self, n_features):
+        super(DiscriminatorMax, self).__init__()
+        self.hidden0 = nn.Sequential(nn.Linear(n_features, 250),
+                                     nn.ReLU())
+        self.hidden1 = nn.Sequential(nn.Linear(250,100),
+                                     nn.ReLU())
+        self.out = nn.Sequential(nn.Linear(100,1),
+                                 nn.Sigmoid())
+    def forward(self, input):
+        x = self.hidden0(input)
+        y = self.hidden1(x)
+        z = self.out(y)
+        return z
+    
+class GeneratorMax(torch.nn.Module):
+    
+    def __init__(self,noise_dimension, n_out):
+        super(GeneratorMax, self).__init__()  
+        self.hidden0 = nn.Sequential(
+            nn.Linear(noise_dimension, 1000),
+            nn.LeakyReLU(0.2))
+        self.hidden1 = nn.Sequential(
+                nn.Linear(1000,1000),
+                nn.ReLU())
+        self.hidden2 = nn.Sequential(
+                nn.Linear(1000,1000),
+                nn.ReLU())
+        self.out = nn.Sequential(
+            nn.Linear(1000, n_out),
+            nn.Tanh()
+        )
+
+    def forward(self, input):
+        x = self.hidden0(input)
+        y = self.hidden1(x)
+        w = self.hidden2(y)
+        z = self.out(w)
+        return z
+    
+    
+    
 
 class myDiscriminatorCIFAR10(nn.Module):
     def __init__(self):
