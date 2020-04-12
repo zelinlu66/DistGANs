@@ -78,136 +78,70 @@ class Richardson(object):
         return solution
 
 
-class ACGD(object):  # Support multi GPU
-    def __init__(self, max_params, min_params, eps=1e-8, beta2=0.99, lr=1e-3,
-                 solve_x=False, collect_info=True):
-        self.max_params = list(max_params)
-        self.min_params = list(min_params)
+class CGD(object): 
+    def __init__(self, G, D, criterion,lr=1e-3):
         self.lr = lr
-        self.solve_x = solve_x
-        self.collect_info = collect_info
-        self.square_avgx = None
-        self.square_avgy = None
-        self.beta2 = beta2
-        self.eps = eps
-        self.cg_x = None
-        self.cg_y = None
         self.count = 0
-
-        self.old_x = None
-        self.old_y = None
-
+        self.criterion = criterion
+        self.D = D
+        self.G = G
+        
     def zero_grad(self):
-        zero_grad(self.max_params)
-        zero_grad(self.min_params)
-
-    def getinfo(self):
-        if self.collect_info:
-            return self.norm_gx, self.norm_gy, self.norm_px, self.norm_py, self.norm_cgx, self.norm_cgy, \
-                   self.timer, self.iter_num
-        else:
-            raise ValueError(
-                'No update information stored. Set get_norms True before call this method')
-
-    def step(self, loss):
-        self.count += 1
-        grad_x = autograd.grad(loss, self.max_params, create_graph=True,retain_graph=True, allow_unused = True)
+        zero_grad(self.G.parameters())
+        zero_grad(self.D.parameters())
+        
+    def step(self,real_data, N):
+        fake_data = self.G(noise(N, 100))
+        prediction_real = self.D(real_data)
+        error_real = self.criterion(prediction_real, ones_target(N) )
+        prediction_fake = self.D(fake_data)
+        error_fake = self.criterion(prediction_fake, zeros_target(N))
+        error_tot = error_fake + error_real
+        errorG = self.criterion(prediction_fake, ones_target(N))
+        grad_x = autograd.grad(error_tot, self.G.parameters(), create_graph=True, retain_graph=True, allow_unused= True)
         grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
-        grad_y = autograd.grad(loss, self.min_params, create_graph=True,
-                               retain_graph=True)
+        grad_y = autograd.grad(error_tot, self.D.parameters(), create_graph=True, retain_graph=True)
         grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
-
-        if self.square_avgx is None and self.square_avgy is None:
-            self.square_avgx = torch.zeros(grad_x_vec.size(), requires_grad=False,
-                                           )
-            self.square_avgy = torch.zeros(grad_y_vec.size(), requires_grad=False,
-                                           )
-        self.square_avgx.mul_(self.beta2).addcmul_(1 - self.beta2, grad_x_vec.data, grad_x_vec.data)
-        self.square_avgy.mul_(self.beta2).addcmul_(1 - self.beta2, grad_y_vec.data, grad_y_vec.data)
-
-        # Initialization bias correction
-        bias_correction2 = 1 - self.beta2 ** self.count
-
-        lr_x = math.sqrt(bias_correction2) * self.lr / self.square_avgx.sqrt().add(self.eps)
-        lr_y = math.sqrt(bias_correction2) * self.lr / self.square_avgy.sqrt().add(self.eps)
-        scaled_grad_x = torch.mul(lr_x, grad_x_vec).detach()  # lr_x * grad_x
-        scaled_grad_y = torch.mul(lr_y, grad_y_vec).detach()  # lr_y * grad_y
-        hvp_x_vec = Hvp_vec(grad_y_vec, self.max_params, scaled_grad_y,
-                           retain_graph=True)  # D_xy * lr_y * grad_y
-        hvp_y_vec = Hvp_vec(grad_x_vec, self.min_params, scaled_grad_x,
-                           retain_graph=True)  # D_yx * lr_x * grad_x
-
+        scaled_grad_x = torch.mul(self.lr,grad_x_vec)
+        scaled_grad_y = torch.mul(self.lr,grad_y_vec)
+        #l = autograd.grad(grad_x_vec, discriminator.parameters(), grad_outputs = torch.ones_like(grad_x_vec))
+        
+        hvp_x_vec = Hvp_vec(grad_y_vec, self.G.parameters(), scaled_grad_y,retain_graph=True)  # D_xy * lr_y * grad_y 
+        hvp_y_vec = Hvp_vec(grad_x_vec, self.D.parameters(), scaled_grad_x,retain_graph=True)  # D_yx * lr_x * grad_x
         p_x = torch.add(grad_x_vec, - hvp_x_vec).detach_()  # grad_x - D_xy * lr_y * grad_y
         p_y = torch.add(grad_y_vec, hvp_y_vec).detach_()  # grad_y + D_yx * lr_x * grad_x
-
-        if self.collect_info:
-            self.norm_px = lr_x.max()
-            self.norm_py = lr_y.max()
-            self.timer = time.time()
-        if self.solve_x:
-            p_y.mul_(lr_y.sqrt())
-            # p_y_norm = p_y.norm(p=2).detach_()
-            # if self.old_y is not None:
-            #     self.old_y = self.old_y / p_y_norm
-            cg_y, self.iter_num = general_conjugate_gradient(grad_x=grad_y_vec, grad_y=grad_x_vec,
-                                                             x_params=self.min_params,
-                                                             y_params=self.max_params, b=p_y,
-                                                             x=self.old_y,
-                                                             nsteps=p_y.shape[0] // 10000,
-                                                             lr_x=lr_y, lr_y=lr_x,
-                                                             )
-            # cg_y.mul_(p_y_norm)
-            cg_y.detach_().mul_(- lr_y.sqrt())
-            hcg = Hvp_vec(grad_y_vec, self.max_params, cg_y, retain_graph=True).add_(
-                grad_x_vec).detach_()
-            # grad_x + D_xy * delta y
-            cg_x = hcg.mul(lr_x)
-            self.old_x = hcg.mul(lr_x.sqrt())
-        else:
-            p_x.mul_(lr_x.sqrt())
-            # p_x_norm = p_x.norm(p=2).detach_()
-            # if self.old_x is not None:
-            #     self.old_x = self.old_x / p_x_norm
-            cg_x, self.iter_num = general_conjugate_gradient(grad_x=grad_x_vec, grad_y=grad_y_vec,
-                                                             x_params=self.max_params,
-                                                             y_params=self.min_params, b=p_x,
-                                                             x=self.old_x,
+        p_x.mul_(self.lr.sqrt())
+        cg_x, iter_num = general_conjugate_gradient(grad_x=grad_x_vec, grad_y=grad_y_vec,
+                                                             x_params=self.G.parameters(),
+                                                             y_params=self.D.parameters(), kk=p_x,
+                                                             x=None,
                                                              nsteps=p_x.shape[0] // 10000,
-                                                             lr_x=lr_x, lr_y=lr_y,
+                                                             lr_x=self.lr, lr_y=self.lr,
                                                              )
             # cg_x.detach_().mul_(p_x_norm)
-            cg_x.detach_().mul_(lr_x.sqrt())  # delta x = lr_x.sqrt() * cg_x
-            hcg = Hvp_vec(grad_x_vec, self.min_params, cg_x, retain_graph=True).add_(
-                grad_y_vec).detach_()
-            # grad_y + D_yx * delta x
-            cg_y = hcg.mul(- lr_y)
-            self.old_y = hcg.mul(lr_y.sqrt())
-
-        if self.collect_info:
-            self.timer = time.time() - self.timer
-
+            # cg_x.detach_().mul_(p_x_norm)
+        cg_x.detach_().mul_(self.lr.sqrt())  # delta x = lr_x.sqrt() * cg_x
+        hcg = Hvp_vec(grad_x_vec, self.D.parameters(), cg_x, retain_graph=True).add_(grad_y_vec).detach_()
+                # grad_y + D_yx * delta x
+        cg_y = hcg.mul(- self.lr.sqrt())
+            
         index = 0
-        for p in self.max_params:
+        for p in self.G.parameters():
             p.data.add_(cg_x[index: index + p.numel()].reshape(p.shape))
             index += p.numel()
         if index != cg_x.numel():
             raise RuntimeError('CG size mismatch')
         index = 0
-        for p in self.min_params:
+        for p in self.D.parameters():
             p.data.add_(cg_y[index: index + p.numel()].reshape(p.shape))
             index += p.numel()
         if index != cg_y.numel():
             raise RuntimeError('CG size mismatch')
-        if self.collect_info:
-            self.norm_gx = torch.norm(grad_x_vec, p=2)
-            self.norm_gy = torch.norm(grad_y_vec, p=2)
-            self.norm_cgx = torch.norm(cg_x, p=2)
-            self.norm_cgy = torch.norm(cg_y, p=2)
-
-        self.solve_x = False if self.solve_x else True
-
-
-class CGD(object): 
+        
+        return error_real, error_fake, errorG
+                
+            
+class CGD_shafer(object): 
     def __init__(self, G, D, criterion, eps=1e-8, beta2=0.99, lr=1e-3, solve_x = False):
         self.G_params = list(G.parameters())
         self.D_params = list(D.parameters())
@@ -387,8 +321,8 @@ class Jacobi(object):
         
 class SGD(object):
     def __init__(self, G, D,criterion, lr=1e-3):
-        self.G_params = list(G.parameters())
-        self.D_params = list(D.parameters())
+        #self.G_params = list(G.parameters())
+        #self.D_params = list(D.parameters())
         self.G = G
         self.D = D
         self.lr = lr
@@ -396,8 +330,8 @@ class SGD(object):
         self.criterion = criterion
         
     def zero_grad(self):
-        zero_grad(self.G_params)
-        zero_grad(self.D_params)
+        zero_grad(self.G.parameters())
+        zero_grad(self.D.parameters())
 
     def step(self,real_data, N):
         fake_data = self.G(noise(N, 100)) # Second argument of noise is the noise_dimension parameter of build_generator
@@ -408,10 +342,10 @@ class SGD(object):
         g_error = self.criterion(d_pred_fake, ones_target(N))
         loss = error_fake + error_real
         #loss = d_pred_real.mean() - d_pred_fake.mean()
-        grad_x = autograd.grad(loss, self.G_params, create_graph=True,
+        grad_x = autograd.grad(loss, self.G.parameters(), create_graph=True,
                                retain_graph=True)
         grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
-        grad_y = autograd.grad(loss, self.D_params, create_graph=True,
+        grad_y = autograd.grad(loss, self.D.parameters(), create_graph=True,
                                retain_graph=True)
         grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
         scaled_grad_x = torch.mul(self.lr,grad_x_vec)
@@ -421,13 +355,13 @@ class SGD(object):
         p_y = scaled_grad_y 
          
         index = 0
-        for p in self.G_params:
+        for p in self.G.parameters():
             p.data.add_(p_x[index: index + p.numel()].reshape(p.shape))
             index += p.numel()
         if index != p_x.numel():
             raise RuntimeError('CG size mismatch')
         index = 0
-        for p in self.D_params:
+        for p in self.D.parameters():
             p.data.add_(p_y[index: index + p.numel()].reshape(p.shape))
             index += p.numel()
         if index != p_y.numel():
@@ -498,8 +432,8 @@ class Newton(object):
         
 class JacobiMultiCost(object):
     def __init__(self, G, D,criterion, lr=1e-3):
-        self.G_params = list(G.parameters())
-        self.D_params = list(D.parameters())
+        #self.G_params = list(G.parameters())
+        #self.D_params = list(D.parameters())
         self.G = G
         self.D = D
         self.lr = lr
@@ -507,8 +441,8 @@ class JacobiMultiCost(object):
         self.criterion = criterion
         
     def zero_grad(self):
-        zero_grad(self.G_params)
-        zero_grad(self.D_params)
+        zero_grad(self.G.parameters())
+        zero_grad(self.D.parameters())
 
     def step(self,real_data, N):
         fake_data = self.G(noise(N, 100)) # Second argument of noise is the noise_dimension parameter of build_generator
@@ -523,23 +457,23 @@ class JacobiMultiCost(object):
         
         
         #loss = d_pred_real.mean() - d_pred_fake.mean()
-        grad_f_x = autograd.grad(f, self.G_params, create_graph=True,
+        grad_f_x = autograd.grad(f, self.G.parameters(), create_graph=True,
                                retain_graph=True)
-        grad_g_x = autograd.grad(g, self.G_params, create_graph=True,
+        grad_g_x = autograd.grad(g, self.G.parameters(), create_graph=True,
                                retain_graph=True)
         grad_f_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_f_x]) 
         grad_g_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_g_x])
         
-        grad_f_y = autograd.grad(f, self.D_params, create_graph=True,
+        grad_f_y = autograd.grad(f, self.D.parameters(), create_graph=True,
                                retain_graph=True)
-        grad_g_y = autograd.grad(g, self.D_params, create_graph=True,
+        grad_g_y = autograd.grad(g, self.D.parameters(), create_graph=True,
                                retain_graph=True)
         grad_f_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_f_y]) 
         grad_g_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_g_y]) 
 
         
-        D_f_xy = Hvp_vec(grad_f_y_vec, self.G_params, grad_f_y_vec, retain_graph = True)
-        D_g_yx = Hvp_vec(grad_g_x_vec, self.D_params, grad_g_x_vec, retain_graph = True)
+        D_f_xy = Hvp_vec(grad_f_y_vec, self.G.parameters(), grad_f_y_vec, retain_graph = True)
+        D_g_yx = Hvp_vec(grad_g_x_vec, self.D.parameters(), grad_g_x_vec, retain_graph = True)
 
         p_x = torch.add(grad_f_x_vec, 2*D_f_xy).detach_()  # grad_x + D_xy * lr_y * y
         p_y = torch.add(grad_g_y_vec, 2*D_g_yx).detach_()  # grad_y + D_yx * lr_x * x
@@ -547,13 +481,13 @@ class JacobiMultiCost(object):
         p_y.mul_(self.lr.sqrt())
          
         index = 0
-        for p in self.G_params:
+        for p in self.G.parameters():
             p.data.add_(p_x[index: index + p.numel()].reshape(p.shape))
             index += p.numel()
         if index != p_x.numel():
             raise RuntimeError('CG size mismatch')
         index = 0
-        for p in self.D_params:
+        for p in self.D.parameters():
             p.data.add_(p_y[index: index + p.numel()].reshape(p.shape))
             index += p.numel()
         if index != p_y.numel():
@@ -563,8 +497,8 @@ class JacobiMultiCost(object):
 
 class GaussSeidel(object):
     def __init__(self, G, D,criterion, lr=1e-3):
-        self.G_params = list(G.parameters())
-        self.D_params = list(D.parameters())
+        #self.G_params = list(G.parameters())
+        #self.D_params = list(D.parameters())
         self.G = G
         self.D = D
         self.lr = lr
@@ -572,8 +506,8 @@ class GaussSeidel(object):
         self.criterion = criterion
         
     def zero_grad(self):
-        zero_grad(self.G_params)
-        zero_grad(self.D_params)
+        zero_grad(self.G.parameters())
+        zero_grad(self.D.parameters())
 
     def step(self,real_data, N):
         fake_data = self.G(noise(N, 100)) # Second argument of noise is the noise_dimension parameter of build_generator
@@ -584,23 +518,18 @@ class GaussSeidel(object):
         g_error = self.criterion(d_pred_fake, ones_target(N))
         loss = error_fake + error_real
         #loss = d_pred_real.mean() - d_pred_fake.mean()
-        grad_x = autograd.grad(loss, self.G_params, create_graph=True,
+        grad_x = autograd.grad(loss, self.G.parameters(), create_graph=True,
                                retain_graph=True)
         grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
-        grad_y = autograd.grad(loss, self.D_params, create_graph=True,
+        grad_y = autograd.grad(loss, self.D.parameters(), create_graph=True,
                                retain_graph=True)
         grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
-
-        #hvp_x_vec = Hvp_vec(grad_y_vec, self.G_params, scaled_grad_y,
-                          # retain_graph=True)  # D_xy * lr_y * grad_y
-        #hvp_y_vec = Hvp_vec(grad_x_vec, self.D_params, scaled_grad_x,
-                          # retain_graph=True)  # D_yx * lr_x * grad_x
         
-        hvp_x_vec = Hvp_vec(grad_y_vec, self.G_params, grad_y_vec ,retain_graph=True)  # D_xy * lr_y * grad_y 
+        hvp_x_vec = Hvp_vec(grad_y_vec, self.G.parameters(), grad_y_vec ,retain_graph=True)  # D_xy * lr_y * grad_y 
         p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x + 2 * D_xy * lr_y * grad_y
         
         index = 0
-        for p in self.G_params:
+        for p in self.G.parameters():
             p.data.add_(p_x[index: index + p.numel()].reshape(p.shape))
             index += p.numel()
         if index != p_x.numel():
@@ -612,17 +541,17 @@ class GaussSeidel(object):
         g_error = self.criterion(d_pred_fake, ones_target(N))
         loss = error_fake + error_real
         
-        grad_x = autograd.grad(loss, self.G_params, create_graph=True,
+        grad_x = autograd.grad(loss, self.G.parameters(), create_graph=True,
                                retain_graph=True)
         grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
         
-        hvp_y_vec = Hvp_vec(grad_x_vec, self.D_params, grad_x_vec ,retain_graph=True)  # D_yx * lr_x * grad_x
+        hvp_y_vec = Hvp_vec(grad_x_vec, self.D.parameters(), grad_x_vec ,retain_graph=True)  # D_yx * lr_x * grad_x
         p_y = torch.add(-grad_y_vec, -2*hvp_y_vec).detach_()  # grad_y +2 * D_yx * lr_x * x
         #p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x +2 * D_xy * lr_y * y
         p_y.mul_(self.lr.sqrt())
          
         index = 0
-        for p in self.D_params:
+        for p in self.D.parameters():
             p.data.add_(p_y[index: index + p.numel()].reshape(p.shape))
             index += p.numel()
         if index != p_y.numel():
