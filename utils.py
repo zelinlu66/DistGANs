@@ -59,17 +59,6 @@ def images_to_vectors_cifar10(images):
 def vectors_to_images_cifar10(vectors):
     return vectors.view(vectors.size(0), 3, 32, 32)
 
-def visualize_image(X,Y,names,id):
-	rgb = X[:,id]
-	#print(rgb.shape)
-	img = rgb.reshape(3,32,32).transpose([1, 2, 0])
-	#print(img.shape)
-	#plt.imshow(img)
-	#plt.title(names[id])
-	#print(Y[id])
-	#plt.show()
-	dir = os.path.abspath("output/samples")
-	plt.savefig(dir+"/"+names[id].decode('ascii'))
 #############################################################################
     
 def zero_grad(params):
@@ -163,7 +152,7 @@ def general_conjugate_gradient(grad_x, grad_y, x_params, y_params, kk, lr_x, lr_
     return x, i + 1
 
 #######################################################################
-def general_conjugate_gradient_jacobi(grad_x, grad_y, x_params, y_params, right_side, lr_x, lr_y, x=None, nsteps=10,
+def general_conjugate_gradient_jacobi(grad_x, x_params, right_side, lr, x=None, nsteps=10,
                                residual_tol=1e-16,
                                device=torch.device('cpu')):
     '''
@@ -179,38 +168,29 @@ def general_conjugate_gradient_jacobi(grad_x, grad_y, x_params, y_params, right_
     :param nsteps:
     :param residual_tol:
     :param device:
-    :return: (I + sqrt(lr_x) * D_xy * lr_y * D_yx * sqrt(lr_x)) ** -1 * (right_side)
+    :return: (A) ** -1 * (right_side)
 
     '''
     if x is None:
         x = torch.zeros(right_side.shape[0], device=device)
-    if grad_x.shape != right_side.shape:
-        raise RuntimeError('CG: hessian vector product shape mismatch')
-    lr_x = lr_x.sqrt()
-    mm = right_side.clone().detach()
-    jj = mm.clone().detach()
-    rdotr = torch.dot(mm, mm)
+    lr = lr.sqrt()
+    right_side_clone1 = right_side.clone().detach()
+    right_side_clone2 = right_side_clone1.clone().detach()
+    rdotr = torch.dot(right_side_clone1, right_side_clone1)
     residual_tol = residual_tol * rdotr
     x_params = tuple(x_params)
-    y_params = tuple(y_params)
+    
     for i in range(nsteps):
-        # To compute Avp
-        # h_1 = Hvp_vec(grad_vec=grad_x, params=y_params, vec=lr_x * p, retain_graph=True)
-        h_1 = Hvp_vec(grad_vec=grad_x, params=x_params, vec=lr_x * jj, retain_graph=True).mul_(lr_y)
-        # h_1.mul_(lr_y)
-        # lr_y * D_yx * b
-        # h_2 = Hvp_vec(grad_vec=grad_y, params=x_params, vec=lr_y * h_1, retain_graph=True)
-        h_2 = Hvp_vec(grad_vec=grad_y, params=x_params, vec=h_1, retain_graph=True).mul_(lr_x)
-        # h_2.mul_(lr_x)
-        # lr_x * D_xy * lr_y * D_yx * b
-        Avp_ = jj + h_2
+        h_1 = Hvp_vec(grad_vec=grad_x, params=x_params, vec=lr * x, retain_graph=True).mul_(lr)
+        H = -2*h_1 + x
+        Avp_ = right_side_clone2 + H
 
-        alpha = rdotr / torch.dot(jj, Avp_)
-        x.data.add_(alpha * jj)
-        mm.data.add_(- alpha * Avp_)
-        new_rdotr = torch.dot(mm, mm)
+        alpha = rdotr / torch.dot(right_side_clone2, Avp_)
+        x.data.add_(alpha * right_side_clone2)
+        right_side_clone1.data.add_(- alpha * Avp_)
+        new_rdotr = torch.dot(right_side_clone1, right_side_clone1)
         beta = new_rdotr / rdotr
-        jj = mm + beta * jj
+        right_side_clone2 = right_side_clone1 + beta * right_side_clone2
         rdotr = new_rdotr
         if rdotr < residual_tol:
             break
