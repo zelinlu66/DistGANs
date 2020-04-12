@@ -53,13 +53,13 @@ class GANs_model(object):
         
     def build_discriminator(self):
         n_features = numpy.prod(self.data_dimension)
-        D = Discriminator(n_features)
+        D = DiscriminatorMax(n_features)
         return D
     
     def build_generator(self, noise_dimension = 100):
         self.noise_dimension = noise_dimension
         n_out = numpy.prod(self.data_dimension)
-        G = Generator(noise_dimension, n_out)
+        G = GeneratorMax(noise_dimension, n_out)
         return G
     
     
