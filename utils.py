@@ -66,7 +66,11 @@ def zero_grad(params):
         if p.grad is not None:
             p.grad.detach()
             p.grad.zero_()
-            
+    
+def init_weights(m):
+    classname = m.__class__.__name__
+    if classname.find('Conv') != -1 or classname.find('BatchNorm') != -1:
+        m.weight.data.normal_(0.00, 0.02)
             
 
 def Hvp_vec(grad_vec, params, vec, retain_graph=False):
@@ -174,8 +178,10 @@ def general_conjugate_gradient_jacobi(grad_x, x_params, right_side, lr, x=None, 
     if x is None:
         x = torch.zeros(right_side.shape[0], device=device)
     lr = lr.sqrt()
+    
     right_side_clone1 = right_side.clone().detach()
     right_side_clone2 = right_side_clone1.clone().detach()
+    
     rdotr = torch.dot(right_side_clone1, right_side_clone1)
     residual_tol = residual_tol * rdotr
     x_params = tuple(x_params)

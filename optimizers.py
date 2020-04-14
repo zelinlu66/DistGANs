@@ -123,7 +123,7 @@ class CGD(object):
         cg_x.detach_().mul_(self.lr.sqrt())  # delta x = lr_x.sqrt() * cg_x
         hcg = Hvp_vec(grad_x_vec, self.D.parameters(), cg_x, retain_graph=True).add_(grad_y_vec).detach_()
                 # grad_y + D_yx * delta x
-        cg_y = hcg.mul(- self.lr.sqrt())
+        cg_y = hcg.mul(- self.lr)
             
         index = 0
         for p in self.G.parameters():
@@ -378,8 +378,8 @@ class Newton(object):
         self.criterion = criterion
         
     def zero_grad(self):
-        zero_grad(self.G_params)
-        zero_grad(self.D_params)
+        zero_grad(self.G.parameters())
+        zero_grad(self.D.parameters())
 
     def step(self,real_data, N):
         fake_data = self.G(noise(N, 100)) # Second argument of noise is the noise_dimension parameter of build_generator
