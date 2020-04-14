@@ -53,16 +53,16 @@ class GANs_model(object):
         
     def build_discriminator(self):
         n_features = numpy.prod(self.data_dimension)
-        D = DiscriminatorMax(n_features)
+        D = Discriminator(n_features)
         return D
     
     def build_generator(self, noise_dimension = 100):
         self.noise_dimension = noise_dimension
         n_out = numpy.prod(self.data_dimension)
-        G = GeneratorMax(noise_dimension, n_out)
+        G = Generator(noise_dimension, n_out)
         return G
     
-    
+# BCEWithLogitsLoss()
     def train(self,loss = torch.nn.BCEWithLogitsLoss(), lr = torch.tensor([0.001]), optimizer = 'Jacobi', num_epochs = 1, batch_size = 100, verbose = True, save_path = './data_fake'):
         self.data_loader = torch.utils.data.DataLoader(self.data, batch_size=100, shuffle=True)
         self.verbose = verbose
@@ -86,10 +86,18 @@ class GANs_model(object):
         for e in range(num_epochs):
             self.print_verbose("######################################################")
             for n_batch, (real_batch,_) in enumerate(self.data_loader):
-                N = real_batch.size(0)
-                real_data = Variable(images_to_vectors(real_batch))
-                optimizer.zero_grad()
-                error_real, error_fake, g_error = optimizer.step(real_data,N)
+                DCgans = False
+                if DCgans:
+                    real_data = Variable((real_batch))
+                    N = real_batch.size(0)
+                    optimizer.zero_grad()
+                    error_real, error_fake, g_error = optimizer.step(real_data,N)
+                else:
+                
+                    N = real_batch.size(0)
+                    real_data = Variable(images_to_vectors(real_batch))
+                    optimizer.zero_grad()
+                    error_real, error_fake, g_error = optimizer.step(real_data,N)
                 self.D_error_real_history.append(error_real)
                 self.D_error_fake_history.append(error_fake)
                 self.G_error_history.append(g_error)
@@ -98,8 +106,13 @@ class GANs_model(object):
                 self.print_verbose('Batch Number: ', str(n_batch + 1))
                 self.print_verbose('Error_discriminator__real: ', round(error_real.item(),3), 'Error_discriminator__fake: ', round(error_fake.item(),3),'Error_generator: ', round(g_error.item(),3))
                 
-                if (n_batch) % 100 == 0: 
-                    test_images = vectors_to_images(optimizer.G(self.test_noise), self.data_dimension) # data_dimension: dimension of output image ex: [1,28,28]
+                if (n_batch) % 100 == 0:
+                    
+                    if DCgans:
+                        test_images = optimizer.G(self.test_noise)
+                    else:
+                    
+                        test_images = vectors_to_images(optimizer.G(self.test_noise), self.data_dimension) # data_dimension: dimension of output image ex: [1,28,28]
                     count = 0
                     for image_index in range(0,test_images.shape[0]):
                         count = count + 1
