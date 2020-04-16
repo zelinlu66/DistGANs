@@ -259,20 +259,23 @@ class CGD_shafer(object):
 ######################################
         
 class Jacobi(object):
-    def __init__(self, G, D,criterion, lr=1e-3):
+    def __init__(self, G, D,criterion, lr=1e-3, eps=1e-8, beta2=0.99):
         self.G = G
         self.D = D
-        #self.G_params = list(self.G.parameters())
-        #self.D_params = list(self.D.parameters())
         self.lr = lr
         self.count = 0
         self.criterion = criterion
+        self.square_avgx = None
+        self.square_avgy = None
+        self.beta2 = beta2
+        self.eps = eps
         
     def zero_grad(self):
         zero_grad(self.G.parameters())
         zero_grad(self.D.parameters())
 
     def step(self,real_data, N):
+        self.count += 1
         fake_data = self.G(noise(N, 100)) # Second argument of noise is the noise_dimension parameter of build_generator
         d_pred_real = self.D(real_data)
         error_real = self.criterion(d_pred_real, ones_target(N) )
@@ -287,19 +290,29 @@ class Jacobi(object):
         grad_y = autograd.grad(loss, self.D.parameters(), create_graph=True,
                                retain_graph=True)
         grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
-
-        #hvp_x_vec = Hvp_vec(grad_y_vec, self.G_params, scaled_grad_y,
-                          # retain_graph=True)  # D_xy * lr_y * grad_y
-        #hvp_y_vec = Hvp_vec(grad_x_vec, self.D_params, scaled_grad_x,
-                          # retain_graph=True)  # D_yx * lr_x * grad_x
         
-        hvp_x_vec = Hvp_vec(grad_y_vec, self.G.parameters(), grad_y_vec ,retain_graph=True)  # D_xy * lr_y * grad_y 
-        hvp_y_vec = Hvp_vec(grad_x_vec, self.D.parameters(), grad_x_vec ,retain_graph=True)  # D_yx * lr_x * grad_x
+        if self.square_avgx is None and self.square_avgy is None:
+            self.square_avgx = torch.zeros(grad_x_vec.size(), requires_grad=False)
+            self.square_avgy = torch.zeros(grad_y_vec.size(), requires_grad=False)
+        self.square_avgx.mul_(self.beta2).addcmul_(1 - self.beta2, grad_x_vec.data, grad_x_vec.data)
+        self.square_avgy.mul_(self.beta2).addcmul_(1 - self.beta2, grad_y_vec.data, grad_y_vec.data)
+        
+        # Initialization bias correction
+        bias_correction2 = 1 - self.beta2 ** self.count
 
-        p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x +2 * D_xy * lr_y * y
-        p_y = torch.add(-grad_y_vec, -2*hvp_y_vec).detach_()  # grad_y +2 * D_yx * lr_x * x
-        p_x.mul_(self.lr.sqrt())
-        p_y.mul_(self.lr.sqrt())
+        lr_x = math.sqrt(bias_correction2) * self.lr / self.square_avgx.sqrt().add(self.eps)
+        lr_y = math.sqrt(bias_correction2) * self.lr / self.square_avgy.sqrt().add(self.eps)
+        
+        scaled_grad_x = torch.mul(lr_x, grad_x_vec).detach()  # lr_x * grad_x
+        scaled_grad_y = torch.mul(lr_y, grad_y_vec).detach()  # lr_y * grad_y
+        
+        hvp_x_vec = Hvp_vec(grad_y_vec, self.G.parameters(), grad_y_vec ,retain_graph=True)  # D_xy * grad_y 
+        hvp_y_vec = Hvp_vec(grad_x_vec, self.D.parameters(), grad_x_vec ,retain_graph=True)  # D_yx * grad_x
+
+        p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x +2 * D_xy * grad_y
+        p_y = torch.add(grad_y_vec, 2*hvp_y_vec).detach_()  # grad_y +2 * D_yx * grad_x
+        p_x = p_x.mul_(self.lr)     #p_x.mul_(self.lr.sqrt())
+        p_y = p_y.mul_(self.lr)     #p_y.mul_(self.lr.sqrt())
          
         index = 0
         for p in self.G.parameters():
@@ -410,8 +423,8 @@ class Newton(object):
         p_x = p_x[0]
         p_y = p_y[0]
         
-        p_x.mul_(self.lr.sqrt())
-        p_y.mul_(self.lr.sqrt())
+        p_x.mul_(self.lr)
+        p_y.mul_(self.lr)
          
         index = 0
         for p in self.G.parameters():
@@ -475,10 +488,10 @@ class JacobiMultiCost(object):
         D_f_xy = Hvp_vec(grad_f_y_vec, self.G.parameters(), grad_f_y_vec, retain_graph = True)
         D_g_yx = Hvp_vec(grad_g_x_vec, self.D.parameters(), grad_g_x_vec, retain_graph = True)
 
-        p_x = torch.add(grad_f_x_vec, 2*D_f_xy).detach_()  # grad_x + D_xy * lr_y * y
-        p_y = torch.add(grad_g_y_vec, 2*D_g_yx).detach_()  # grad_y + D_yx * lr_x * x
-        p_x.mul_(self.lr.sqrt())
-        p_y.mul_(self.lr.sqrt())
+        p_x = torch.add(grad_f_x_vec, 2*D_f_xy).detach_()  # grad_x + 2*D_xy * grad_y
+        p_y = torch.add(grad_g_y_vec, 2*D_g_yx).detach_()  # grad_y + 2*D_yx * grad_x
+        p_x.mul_(self.lr)
+        p_y.mul_(self.lr)
          
         index = 0
         for p in self.G.parameters():
@@ -525,8 +538,10 @@ class GaussSeidel(object):
                                retain_graph=True)
         grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
         
-        hvp_x_vec = Hvp_vec(grad_y_vec, self.G.parameters(), grad_y_vec ,retain_graph=True)  # D_xy * lr_y * grad_y 
-        p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x + 2 * D_xy * lr_y * grad_y
+        hvp_x_vec = Hvp_vec(grad_y_vec, self.G.parameters(), grad_y_vec ,retain_graph=True)  # D_xy * grad_y 
+        p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x + 2 * D_xy *  grad_y
+        
+        p_x.mul_(self.lr)
         
         index = 0
         for p in self.G.parameters():
@@ -539,16 +554,17 @@ class GaussSeidel(object):
         d_pred_fake = self.D(fake_data)
         error_fake = self.criterion(d_pred_fake, zeros_target(N))
         g_error = self.criterion(d_pred_fake, ones_target(N))
+        
         loss = error_fake + error_real
         
         grad_x = autograd.grad(loss, self.G.parameters(), create_graph=True,
                                retain_graph=True)
         grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
         
-        hvp_y_vec = Hvp_vec(grad_x_vec, self.D.parameters(), grad_x_vec ,retain_graph=True)  # D_yx * lr_x * grad_x
-        p_y = torch.add(-grad_y_vec, -2*hvp_y_vec).detach_()  # grad_y +2 * D_yx * lr_x * x
-        #p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x +2 * D_xy * lr_y * y
-        p_y.mul_(self.lr.sqrt())
+        hvp_y_vec = Hvp_vec(grad_x_vec, self.D.parameters(), grad_x_vec ,retain_graph=True)  # D_yx * grad_x
+        p_y = torch.add(-grad_y_vec, -2*hvp_y_vec).detach_()  # grad_y +2 * D_yx * x
+        #p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x +2 * D_xy * y
+        p_y.mul_(self.lr)
          
         index = 0
         for p in self.D.parameters():

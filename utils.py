@@ -177,7 +177,6 @@ def general_conjugate_gradient_jacobi(grad_x, x_params, right_side, lr, x=None, 
     '''
     if x is None:
         x = torch.zeros(right_side.shape[0], device=device)
-    lr = lr.sqrt()
     
     right_side_clone1 = right_side.clone().detach()
     right_side_clone2 = right_side_clone1.clone().detach()
@@ -187,8 +186,8 @@ def general_conjugate_gradient_jacobi(grad_x, x_params, right_side, lr, x=None, 
     x_params = tuple(x_params)
     
     for i in range(nsteps):
-        h_1 = Hvp_vec(grad_vec=grad_x, params=x_params, vec=lr * x, retain_graph=True).mul_(lr)
-        H = -2*h_1 + x
+        h_1 = Hvp_vec(grad_vec=grad_x, params=x_params, vec= 2 * x, retain_graph=True)
+        H = -h_1 + x
         Avp_ = right_side_clone2 + H
 
         alpha = rdotr / torch.dot(right_side_clone2, Avp_)
