@@ -2,13 +2,16 @@
 """
 Created on Tue Mar 17 11:26:08 2020
 
-@author: claud
+@authors: Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it)
+        : Massimiliano Lupo Pasini (e-mail: lupopasinim@ornl.gov)
+        : Nouamane Laanait (e-mail: laanaitn@ornl.gov)
+        : Simona Perotto (e-mail: simona.perotto@polimi.it)
+
 """
 import torch
 import torch.nn as nn
 
 # GoodGenerator and GoodDiscriminator by Florian Shafer for CIFAR10
-# MyGenerator and MyDiscriminator by me for MNIST
 
 DIM = 64
 
@@ -162,7 +165,7 @@ class Generator(torch.nn.Module):
         super(Generator, self).__init__()  
         self.hidden0 = nn.Sequential(
             nn.Linear(noise_dimension, 1000),
-            nn.LeakyReLU(0.2))
+            nn.ReLU())                      #  ORIGINAL:   nn.LeakyReLU(0.2))
         self.hidden1 = nn.Sequential(
                 nn.Linear(1000,1000),
                 nn.ReLU())

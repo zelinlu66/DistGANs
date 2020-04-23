@@ -32,11 +32,25 @@ def ones_target(size):
     data = Variable(torch.ones(size, 1))
     return data
 
+def ones_target_smooth(size):
+    '''
+    Tensor containing 0.9s, with shape = size
+    '''
+    data = torch.full((size,), 0.9)
+    return data
+
 def zeros_target(size):
     '''
     Tensor containing zeros, with shape = size
     '''
     data = Variable(torch.zeros(size, 1))
+    return data
+
+def zeros_target_smooth(size):
+    '''
+    Tensor containing zeros, with shape = size
+    '''
+    data = torch.full((size,), 0.1)
     return data
 
 def noise(size, noise_size):
@@ -101,6 +115,10 @@ def Hvp_vec(grad_vec, params, vec, retain_graph=False):
             raise ValueError('hvp Nan')
     return hvp
 
+def binary_cross_entropy(x, y):
+    loss = -(x.log() * y + (1 - x).log() * (1 - y))
+    return loss.mean()
+
 
 def general_conjugate_gradient(grad_x, grad_y, x_params, y_params, kk, lr_x, lr_y, x=None, nsteps=10,
                                residual_tol=1e-16,
@@ -156,7 +174,7 @@ def general_conjugate_gradient(grad_x, grad_y, x_params, y_params, kk, lr_x, lr_
     return x, i + 1
 
 #######################################################################
-def general_conjugate_gradient_jacobi(grad_x, x_params, right_side, lr, x=None, nsteps=10,
+def general_conjugate_gradient_jacobi(grad_x, x_params, right_side, x=None, nsteps=10,
                                residual_tol=1e-16,
                                device=torch.device('cpu')):
     '''
