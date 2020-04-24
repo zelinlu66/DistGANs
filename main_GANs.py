@@ -12,7 +12,7 @@ from DCGANs_object import *
 
 
 '''
-!!!!!!! READ ME !!!!!!!!
+! READ ME !
 
 X = Generator
 Y = Discriminaror
@@ -32,14 +32,14 @@ TO TRY: Setting much lower learning rates to see if model collapse is avoided (e
 '''
 
 
-model = GANs_model(mnist_data())
-model.train(num_epochs = 15, lr_x = torch.tensor([0.01]), lr_y = torch.tensor([0.01]), 
-            optimizer = 'Jacobi', verbose = True, save_path = 'JM_BCE', label_smoothing = False) # save_path = './J_BCE'
-
-
-#model = DCGANs_model(cifar_data_dcgans())
+#model = GANs_model(mnist_data())
 #model.train(num_epochs = 1, lr_x = torch.tensor([0.01]), lr_y = torch.tensor([0.01]), 
-#            optimizer = 'GaussSeidel', verbose = True, label_smoothing = True) #save_path = 'WGAN') 
+#            optimizer = 'Jacobi', verbose = True, save_path = 'JM_BCE', label_smoothing = False) # save_path = './J_BCE'
+
+
+model = DCGANs_model(mnist_data_dcgans())
+model.train(num_epochs = 1, lr_x = torch.tensor([0.01]), lr_y = torch.tensor([0.01]), 
+            optimizer = 'Jacobi', verbose = True, label_smoothing = True) #save_path = 'WGAN') 
 
 plt.figure()
 plt.plot([x for x in range(0,len(model.D_error_real_history))], model.D_error_real_history)
