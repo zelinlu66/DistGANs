@@ -52,19 +52,19 @@ class DCGANs_model(object):
             print ('Error: Creating directory. ' +  directory)
         
     def build_discriminator(self):
-        D = DiscriminativeNet(self.data_dimension[0])
+        D = DiscriminativeCNN(self.data_dimension[0])
         D.apply(init_weights)
         return D
     
     def build_generator(self, noise_dimension = 100):
         self.noise_dimension = noise_dimension
-        G = GenerativeNet(noise_dimension, self.data_dimension[0])
+        G = GenerativeCNN(noise_dimension, self.data_dimension[0])
         G.apply(init_weights)
         return G
     
 # loss = torch.nn.BCEWithLogitsLoss()
 #loss = binary_cross_entropy
-    def train(self,loss = binary_cross_entropy, lr_x = torch.tensor([0.01]), lr_y = torch.tensor([0.01]), optimizer = 'Jacobi', num_epochs = 1, batch_size = 100, verbose = True, save_path = './data_fake_DCGANS',label_smoothing = False):
+    def train(self,loss = torch.nn.BCEWithLogitsLoss(), lr_x = torch.tensor([0.01]), lr_y = torch.tensor([0.01]), optimizer = 'Jacobi', num_epochs = 1, batch_size = 100, verbose = True, save_path = './data_fake_DCGANS',label_smoothing = False):
         self.data_loader = torch.utils.data.DataLoader(self.data, batch_size=100, shuffle=True)
         self.verbose = verbose
         self.num_test_samples = 10
