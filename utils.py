@@ -7,7 +7,6 @@
 ##########################################
 import os
 import numpy as np
-import errno
 import torchvision.utils as vutils
 from tensorboardX import SummaryWriter
 from IPython import display
@@ -17,14 +16,8 @@ from torch import autograd
 from torch.autograd.variable import Variable
 import math
 
-# Utils specific for MNIST
-# Utils for Hessian computation and matrix inverse
-# Logger
-
-
 ################################################################
 
-''' UTILS PER IL MY MNIST'''
 def ones_target(size):
     '''
     Tensor containing ones, with shape = size
@@ -118,6 +111,58 @@ def Hvp_vec(grad_vec, params, vec, retain_graph=False):
 def binary_cross_entropy(x, y):
     loss = -(x.log() * y + (1 - x).log() * (1 - y))
     return loss.mean()
+
+
+class Richardson(object):
+
+    def __init__(self, matrix, rhs, tol, maxiter, relaxation, verbose=False):
+
+        """
+        :param matrix: coefficient matrix
+        :param rhs: right hand side
+        :param tol: tolerance for stopping criterion based on the relative residual
+        :param maxiter: maximum number of iterations
+        :param relaxation: relaxation parameter for Richardson
+        :param initial_guess: initial guess
+        :return: matrix ** -1 * rhs
+        """
+
+        self.rhs = rhs
+        self.matrix = matrix
+        self.tol = tol
+        self.maxiter = maxiter
+        self.relaxation = relaxation
+        self.rhs_norm = torch.norm(rhs, 2)
+        self.iteration_count = 0
+        self.verbose = verbose
+
+    def print_verbose(self, *args, **kwargs):
+        if self.verbose :
+            print(*args, **kwargs)
+
+    def solve(self, initial_guess):
+        ## TODO: consider passing initial guess to solve()
+
+        residual = self.rhs - self.matrix @ initial_guess
+        residual_norm = residual.norm()
+        relative_residual_norm = residual_norm / self.rhs_norm
+
+        solution = initial_guess
+
+        while relative_residual_norm > self.tol and self.iteration_count < self.maxiter:
+            ## TODO: consider making all of these non-attributes and just return them
+            solution = solution + self.relaxation * residual
+            
+            residual = self.rhs - torch.matmul(self.matrix, solution)
+            residual_norm = residual.norm()
+            relative_residual_norm = residual_norm / self.rhs_norm
+            self.iteration_count += 1
+            self.print_verbose("Richardson converged in ", str(self.iteration_count), " iteration with relative residual norm: ",
+                                     str(relative_residual_norm), end='...')
+
+        # Do not return because it's already an attribute
+        return solution
+    
 
 
 def general_conjugate_gradient(grad_x, grad_y, x_params, y_params, kk, lr_x, lr_y, x=None, nsteps=10,

@@ -8,7 +8,7 @@ Created on Thu Mar 12 14:22:47 2020
         : Simona Perotto (e-mail: simona.perotto@polimi.it)
 
 """
-# DATA LOADER MNIST
+
 import torch
 from torch import nn, optim
 from torch.autograd.variable import Variable

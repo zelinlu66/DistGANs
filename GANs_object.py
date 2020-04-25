@@ -65,7 +65,7 @@ class GANs_model(object):
     
 # loss = torch.nn.BCEWithLogitsLoss()
 # loss = binary_cross_entropy
-    def train(self,loss = binary_cross_entropy, lr_x = torch.tensor([0.001]), lr_y = torch.tensor([0.001]), optimizer = 'Jacobi', num_epochs = 1, 
+    def train(self,loss = torch.nn.BCEWithLogitsLoss(), lr_x = torch.tensor([0.001]), lr_y = torch.tensor([0.001]), optimizer = 'Jacobi', num_epochs = 1, 
                batch_size = 100, verbose = True, save_path = './data_fake', label_smoothing = False):
         self.data_loader = torch.utils.data.DataLoader(self.data, batch_size=100, shuffle=True)
         self.verbose = verbose
