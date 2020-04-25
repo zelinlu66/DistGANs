@@ -2,7 +2,11 @@
 """
 Created on Thu Mar 12 14:22:47 2020
 
-@author: claud
+@authors: Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it)
+        : Massimiliano Lupo Pasini (e-mail: lupopasinim@ornl.gov)
+        : Nouamane Laanait (e-mail: laanaitn@ornl.gov)
+        : Simona Perotto (e-mail: simona.perotto@polimi.it)
+
 """
 # DATA LOADER MNIST
 import torch

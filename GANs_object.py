@@ -13,6 +13,7 @@ import numpy
 from models import *
 from optimizers import *
 from Dataloader import *
+from utils import *
 import time
 import PIL.Image as pil
 import numpy as np
@@ -62,25 +63,27 @@ class GANs_model(object):
         G = Generator(noise_dimension, n_out)
         return G
     
-# BCEWithLogitsLoss()
-    def train(self,loss = torch.nn.BCEWithLogitsLoss(), lr = torch.tensor([0.001]), optimizer = 'Jacobi', num_epochs = 1, batch_size = 100, verbose = True, save_path = './data_fake'):
+# loss = torch.nn.BCEWithLogitsLoss()
+# loss = binary_cross_entropy
+    def train(self,loss = binary_cross_entropy, lr_x = torch.tensor([0.001]), lr_y = torch.tensor([0.001]), optimizer = 'Jacobi', num_epochs = 1, 
+               batch_size = 100, verbose = True, save_path = './data_fake', label_smoothing = False):
         self.data_loader = torch.utils.data.DataLoader(self.data, batch_size=100, shuffle=True)
         self.verbose = verbose
         self.num_test_samples = 16
         self.save_path = save_path
         self.test_noise = noise(self.num_test_samples, self.noise_dimension)
         if optimizer == 'Jacobi':
-            optimizer = Jacobi(self.G, self.D, loss, lr)
+            optimizer = Jacobi(self.G, self.D, loss, lr_x, lr_y, label_smoothing = label_smoothing)
         elif optimizer == 'CGD':
-            optimizer = CGD(self.G, self.D, loss, lr)
+            optimizer = CGD(self.G, self.D, loss, lr_x, lr_y)
         elif optimizer == 'Newton':
-            optimizer = Newton(self.G, self.D, loss, lr)
+            optimizer = Newton(self.G, self.D, loss, lr_x, lr_y)
         elif optimizer == 'JacobiMultiCost':
-            optimizer = JacobiMultiCost(self.G, self.D, loss, lr)
+            optimizer = JacobiMultiCost(self.G, self.D, loss, lr_x, lr_y)
         elif optimizer == 'GaussSeidel':
-            optimizer = GaussSeidel(self.G, self.D, loss, lr)
+            optimizer = GaussSeidel(self.G, self.D, loss, lr_x, lr_y)
         else:
-            optimizer = SGD(self.G, self.D, loss, lr)
+            optimizer = SGD(self.G, self.D, loss, lr_x)
   
         start = time.time()
         for e in range(num_epochs):

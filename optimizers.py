@@ -259,16 +259,18 @@ class CGD_shafer(object):
 ######################################
         
 class Jacobi(object):
-    def __init__(self, G, D,criterion, lr=1e-3, eps=1e-8, beta2=0.99):
+    def __init__(self, G, D,criterion, lr_x=1e-3,lr_y = 1e-3 , eps=1e-8, beta2=0.99, label_smoothing = False):
         self.G = G
         self.D = D
-        self.lr = lr
+        self.lr_x = lr_x
+        self.lr_y = lr_y
         self.count = 0
         self.criterion = criterion
         self.square_avgx = None
         self.square_avgy = None
         self.beta2 = beta2
         self.eps = eps
+        self.label_smoothing = label_smoothing
         
     def zero_grad(self):
         zero_grad(self.G.parameters())
@@ -278,9 +280,15 @@ class Jacobi(object):
         self.count += 1
         fake_data = self.G(noise(N, 100)) # Second argument of noise is the noise_dimension parameter of build_generator
         d_pred_real = self.D(real_data)
-        error_real = self.criterion(d_pred_real, ones_target(N) )
+        if self.label_smoothing:
+            error_real = self.criterion(d_pred_real, ones_target_smooth(N) )
+        else:
+            error_real = self.criterion(d_pred_real, ones_target(N) )
         d_pred_fake = self.D(fake_data)
-        error_fake = self.criterion(d_pred_fake, zeros_target(N))
+        if self.label_smoothing:
+            error_fake = self.criterion(d_pred_fake, zeros_target_smooth(N))
+        else:
+            error_fake = self.criterion(d_pred_fake, zeros_target(N))
         g_error = self.criterion(d_pred_fake, ones_target(N))
         loss = error_fake + error_real
         #loss = d_pred_real.mean() - d_pred_fake.mean()
@@ -291,6 +299,8 @@ class Jacobi(object):
                                retain_graph=True)
         grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
         
+        ###################### Momentum correction #############################
+        
         if self.square_avgx is None and self.square_avgy is None:
             self.square_avgx = torch.zeros(grad_x_vec.size(), requires_grad=False)
             self.square_avgy = torch.zeros(grad_y_vec.size(), requires_grad=False)
@@ -299,9 +309,14 @@ class Jacobi(object):
         
         # Initialization bias correction
         bias_correction2 = 1 - self.beta2 ** self.count
+        
+        grad_x_correct = self.square_avgx/bias_correction2
+        grad_y_correct = self.square_avgy/bias_correction2
 
-        lr_x = math.sqrt(bias_correction2) * self.lr / self.square_avgx.sqrt().add(self.eps)
-        lr_y = math.sqrt(bias_correction2) * self.lr / self.square_avgy.sqrt().add(self.eps)
+        lr_x = math.sqrt(bias_correction2) * self.lr_x / self.square_avgx.sqrt().add(self.eps)
+        lr_y = math.sqrt(bias_correction2) * self.lr_y / self.square_avgy.sqrt().add(self.eps)
+        
+        ###################### End #############################
         
         scaled_grad_x = torch.mul(lr_x, grad_x_vec).detach()  # lr_x * grad_x
         scaled_grad_y = torch.mul(lr_y, grad_y_vec).detach()  # lr_y * grad_y
@@ -310,9 +325,9 @@ class Jacobi(object):
         hvp_y_vec = Hvp_vec(grad_x_vec, self.D.parameters(), grad_x_vec ,retain_graph=True)  # D_yx * grad_x
 
         p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x +2 * D_xy * grad_y
-        p_y = torch.add(grad_y_vec, 2*hvp_y_vec).detach_()  # grad_y +2 * D_yx * grad_x
-        p_x = p_x.mul_(self.lr)     #p_x.mul_(self.lr.sqrt())
-        p_y = p_y.mul_(self.lr)     #p_y.mul_(self.lr.sqrt())
+        p_y = torch.add(-grad_y_vec, -2*hvp_y_vec).detach_()  # grad_y +2 * D_yx * grad_x
+        p_x = p_x.mul_(self.lr_x)     #p_x.mul_(self.lr.sqrt())
+        p_y = p_y.mul_(self.lr_y)     #p_y.mul_(self.lr.sqrt())
          
         index = 0
         for p in self.G.parameters():
@@ -383,10 +398,11 @@ class SGD(object):
     
 ##############################################################################
 class Newton(object):
-    def __init__(self, G, D,criterion, lr=1e-3):
+    def __init__(self, G, D,criterion,  lr_x=1e-3,lr_y = 1e-3):
         self.G = G
         self.D = D
-        self.lr = lr
+        self.lr_x = lr_x
+        self.lr_y = lr_y
         self.count = 0
         self.criterion = criterion
         
@@ -416,15 +432,15 @@ class Newton(object):
         right_side_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x + 2 * D_xy * grad_y
         right_side_y = torch.add(-grad_y_vec, -2*hvp_y_vec).detach_()  # grad_y + 2 * D_yx * grad_x
         
-        p_x = general_conjugate_gradient_jacobi(grad_x_vec, self.G.parameters(),  right_side_x, self.lr, x=None, nsteps=1000,
+        p_x = general_conjugate_gradient_jacobi(grad_x_vec, self.G.parameters(),  right_side_x, x=None, nsteps=1000,
                                residual_tol=1e-16)
-        p_y = general_conjugate_gradient_jacobi(grad_y_vec, self.D.parameters(),  right_side_y, self.lr, x=None, nsteps=1000,
+        p_y = general_conjugate_gradient_jacobi(grad_y_vec, self.D.parameters(),  right_side_y, x=None, nsteps=1000,
                                residual_tol=1e-16)
         p_x = p_x[0]
         p_y = p_y[0]
         
-        p_x.mul_(self.lr)
-        p_y.mul_(self.lr)
+        p_x.mul_(self.lr_x)
+        p_y.mul_(self.lr_y)
          
         index = 0
         for p in self.G.parameters():
@@ -444,12 +460,13 @@ class Newton(object):
 ######################################################################################
         
 class JacobiMultiCost(object):
-    def __init__(self, G, D,criterion, lr=1e-3):
+    def __init__(self, G, D,criterion, lr_x=1e-3, lr_y=1e-3):
         #self.G_params = list(G.parameters())
         #self.D_params = list(D.parameters())
         self.G = G
         self.D = D
-        self.lr = lr
+        self.lr_x = lr_x
+        self.lr_y = lr_y
         self.count = 0
         self.criterion = criterion
         
@@ -467,8 +484,6 @@ class JacobiMultiCost(object):
         
         f = error_fake + error_real  # f cost relative to discriminator
         g = g_error                  # g cost relative to generator
-        
-        
         #loss = d_pred_real.mean() - d_pred_fake.mean()
         grad_f_x = autograd.grad(f, self.G.parameters(), create_graph=True,
                                retain_graph=True)
@@ -490,8 +505,8 @@ class JacobiMultiCost(object):
 
         p_x = torch.add(grad_f_x_vec, 2*D_f_xy).detach_()  # grad_x + 2*D_xy * grad_y
         p_y = torch.add(grad_g_y_vec, 2*D_g_yx).detach_()  # grad_y + 2*D_yx * grad_x
-        p_x.mul_(self.lr)
-        p_y.mul_(self.lr)
+        p_x.mul_(self.lr_x)
+        p_y.mul_(self.lr_y)
          
         index = 0
         for p in self.G.parameters():
@@ -509,12 +524,13 @@ class JacobiMultiCost(object):
 #################################################################################
 
 class GaussSeidel(object):
-    def __init__(self, G, D,criterion, lr=1e-3):
+    def __init__(self, G, D,criterion, lr_x=1e-3, lr_y=1e-3):
         #self.G_params = list(G.parameters())
         #self.D_params = list(D.parameters())
         self.G = G
         self.D = D
-        self.lr = lr
+        self.lr_x = lr_x
+        self.lr_y = lr_y
         self.count = 0
         self.criterion = criterion
         
@@ -541,7 +557,7 @@ class GaussSeidel(object):
         hvp_x_vec = Hvp_vec(grad_y_vec, self.G.parameters(), grad_y_vec ,retain_graph=True)  # D_xy * grad_y 
         p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x + 2 * D_xy *  grad_y
         
-        p_x.mul_(self.lr)
+        p_x.mul_(self.lr_x)
         
         index = 0
         for p in self.G.parameters():
@@ -564,7 +580,7 @@ class GaussSeidel(object):
         hvp_y_vec = Hvp_vec(grad_x_vec, self.D.parameters(), grad_x_vec ,retain_graph=True)  # D_yx * grad_x
         p_y = torch.add(-grad_y_vec, -2*hvp_y_vec).detach_()  # grad_y +2 * D_yx * x
         #p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x +2 * D_xy * y
-        p_y.mul_(self.lr)
+        p_y.mul_(self.lr_y)
          
         index = 0
         for p in self.D.parameters():
