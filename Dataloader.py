@@ -18,14 +18,15 @@ import os
 #from utils import Logger
 
 def mnist_data():
-    compose = transform = transforms.Compose([transforms.ToTensor(),
-                                              transforms.Normalize((0.5,), (0.5,))
-                                              ])
+    compose = transforms.Compose([transforms.ToTensor(),
+                                  transforms.Normalize((0.5,), (0.5,))
+                                  ])
     out_dir = './dataset'
     return datasets.MNIST(root=out_dir, train=True, transform=compose, download=True)
 
 def cifar10_data():
-    compose = transform = transforms.Compose([transforms.ToTensor(), 
+
+    compose = transforms.Compose([transforms.ToTensor(), 
                                               transforms.Normalize((.5,.5,.5), (.5,.5,.5))
                                               ])
     out_dir = './dataset'
