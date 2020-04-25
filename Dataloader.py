@@ -36,7 +36,7 @@ def mnist_data_dcgans():
         [
             transforms.Resize(64),
             transforms.ToTensor(),
-            transforms.Normalize((.5, .5, .5), (.5, .5, .5))
+            transforms.Normalize((0.5,), (0.5,))
         ])
     out_dir = '{}/dataset'.format(os.getcwd())
     return datasets.MNIST(root=out_dir, train=True, transform=compose, download=True)
@@ -47,7 +47,7 @@ def cifar_data_dcgans():
         [
             transforms.Resize(64),
             transforms.ToTensor(),
-            transforms.Normalize((.5, .5, .5), (.5, .5, .5))
+            transforms.Normalize((0.5,), (0.5,))
         ])
     out_dir = '{}/dataset'.format(os.getcwd())
     return datasets.CIFAR10(root=out_dir, train=True, transform=compose, download=True)
