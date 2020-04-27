@@ -40,13 +40,23 @@ def cifar10_data():
     out_dir = './dataset'
     return datasets.CIFAR10(root=out_dir, train=True, transform=compose, download=True)
 
-def mnist_data_dcgans():
-    compose = transforms.Compose(
-        [
-            transforms.Resize(64),
-            transforms.ToTensor(),
-            transforms.Normalize((0.5,), (0.5,))
-        ])
+def mnist_data_dcgans(rand_rotation = False, max_degree = 90):
+    if rand_rotation == True:
+        compose = transforms.Compose(
+                [
+                        transforms.Resize(64),
+                        transforms.RandomRotation(max_degree),
+                        transforms.ToTensor(),
+                        transforms.Normalize((0.5,), (0.5,))
+                        ])
+        
+    else:
+        compose = transforms.Compose(
+                [
+                        transforms.Resize(64),
+                        transforms.ToTensor(),
+                        transforms.Normalize((0.5,), (0.5,))
+                        ])
     out_dir = '{}/dataset'.format(os.getcwd())
     return datasets.MNIST(root=out_dir, train=True, transform=compose, download=True)
 
