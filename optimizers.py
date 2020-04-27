@@ -465,8 +465,6 @@ class Newton(object):
         
 class JacobiMultiCost(object):
     def __init__(self, G, D,criterion, lr_x=1e-3, lr_y=1e-3):
-        #self.G_params = list(G.parameters())
-        #self.D_params = list(D.parameters())
         self.G = G
         self.D = D
         self.lr_x = lr_x
