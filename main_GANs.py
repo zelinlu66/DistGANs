@@ -32,14 +32,14 @@ TO TRY: Setting much lower learning rates to see if model collapse is avoided (e
 '''
 
 
-model = GANs_model(mnist_data(rand_rotation = True, max_degree = 90))
-model.train(num_epochs = 1, lr_x = torch.tensor([0.01]), lr_y = torch.tensor([0.01]), 
-            optimizer = 'JacobiMultiCost', verbose = True, label_smoothing = False) # save_path = ''
-
-
-#model = DCGANs_model(mnist_data_dcgans())
+#model = GANs_model(mnist_data(rand_rotation = False, max_degree = 90))
 #model.train(num_epochs = 1, lr_x = torch.tensor([0.01]), lr_y = torch.tensor([0.01]), 
-#           optimizer = 'Jacobi', verbose = True, label_smoothing = False) #save_path = ''
+#            optimizer = 'JacobiMultiCost', verbose = True, label_smoothing = False) # save_path = ''
+
+
+model = DCGANs_model(mnist_data_dcgans(rand_rotation = True, max_degree = 90))
+model.train(num_epochs = 1, lr_x = torch.tensor([0.01]), lr_y = torch.tensor([0.01]), 
+           optimizer = 'Jacobi', verbose = True, label_smoothing = False) #save_path = ''
 
 plt.figure()
 plt.plot([x for x in range(0,len(model.D_error_real_history))], model.D_error_real_history)
