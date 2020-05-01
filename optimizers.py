@@ -14,8 +14,6 @@ GaussSeidel: GaussSeidel variation of the algorithm
 Newton: Same algorithm but with pure essian term not set to identity
 '''
 
-
-from typing import Any
 import time
 import torch
 import numpy
@@ -25,11 +23,6 @@ from torch.autograd import Variable
 from torch.autograd import grad
 from optimizers import *
 from utils import *
-
-def hessian_vec(grad_vec, var, retain_graph=False):
-    v = torch.ones_like(var)
-    vec, = autograd.grad(grad_vec, var, grad_outputs=v, allow_unused=True, retain_graph=retain_graph)
-    return vec
 
 
 class CGD(object): 
@@ -215,17 +208,13 @@ class CGD_shafer(object):
 ######################################
         
 class Jacobi(object):
-    def __init__(self, G, D,criterion, lr_x=1e-3,lr_y = 1e-3 , eps=1e-8, beta2=0.99, label_smoothing = False):
+    def __init__(self, G, D,criterion, lr_x=1e-3,lr_y = 1e-3 , label_smoothing = False):
         self.G = G
         self.D = D
         self.lr_x = lr_x
         self.lr_y = lr_y
         self.count = 0
         self.criterion = criterion
-        self.square_avgx = None
-        self.square_avgy = None
-        self.beta2 = beta2
-        self.eps = eps
         self.label_smoothing = label_smoothing
         
     def zero_grad(self):
@@ -235,18 +224,25 @@ class Jacobi(object):
     def step(self,real_data, N):
         self.count += 1
         fake_data = self.G(noise(N, 100)) # Second argument of noise is the noise_dimension parameter of build_generator
+        #fake_data_copy = self.G(noise(N, 100))
         d_pred_real = self.D(real_data)
+        #d_pred_real_copy = self.D(real_data)
         if self.label_smoothing:
             error_real = self.criterion(d_pred_real, ones_target_smooth(N) )
         else:
             error_real = self.criterion(d_pred_real, ones_target(N) )
+        #    error_real_copy = self.criterion(d_pred_real_copy, ones_target(N) )
         d_pred_fake = self.D(fake_data)
+        #d_pred_fake_copy = self.D(fake_data_copy)
         if self.label_smoothing:
             error_fake = self.criterion(d_pred_fake, zeros_target_smooth(N))
         else:
             error_fake = self.criterion(d_pred_fake, zeros_target(N))
+        #    error_fake_copy = self.criterion(d_pred_fake_copy, zeros_target(N))
         g_error = self.criterion(d_pred_fake, ones_target(N))
+        
         loss = error_fake + error_real
+        #loss_copy = error_fake_copy + error_real_copy
         #loss = d_pred_real.mean() - d_pred_fake.mean()
         grad_x = autograd.grad(loss, self.G.parameters(), create_graph=True,
                                retain_graph=True)
@@ -255,16 +251,21 @@ class Jacobi(object):
                                retain_graph=True)
         grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
                
-        #scaled_grad_x = torch.mul(lr_x, grad_x_vec).detach()  # lr_x * grad_x
-        #scaled_grad_y = torch.mul(lr_y, grad_y_vec).detach()  # lr_y * grad_y
-        
-        hvp_x_vec = Hvp_vec(grad_y_vec, self.G.parameters(), grad_y_vec ,retain_graph=True)  # D_xy * grad_y 
-        hvp_y_vec = Hvp_vec(grad_x_vec, self.D.parameters(), grad_x_vec ,retain_graph=True)  # D_yx * grad_x
+        hvp_x_vec = Hvp_vec(grad_y_vec, self.G.parameters(), grad_y_vec, retain_graph = True)  # D_xy * grad_y 
+        hvp_y_vec = Hvp_vec(grad_x_vec, self.D.parameters(), grad_x_vec, retain_graph = False)  # D_yx * grad_x
 
         p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x +2 * D_xy * grad_y
         p_y = torch.add(-grad_y_vec, -2*hvp_y_vec).detach_()  # grad_y +2 * D_yx * grad_x
         p_x = p_x.mul_(self.lr_x)     #p_x.mul_(self.lr.sqrt())
         p_y = p_y.mul_(self.lr_y)     #p_y.mul_(self.lr.sqrt())
+        
+        del hvp_x_vec
+        del hvp_y_vec
+        del grad_x
+        del grad_y
+        del grad_x_vec
+        del grad_y_vec
+        torch.cuda.empty_cache()
          
         index = 0
         for p in self.G.parameters():
@@ -280,6 +281,7 @@ class Jacobi(object):
             raise RuntimeError('CG size mismatch')
         
         return error_real, error_fake, g_error
+
 ################################################
 class GaussSeidel(object):
     def __init__(self, G, D,criterion, lr_x=1e-3, lr_y=1e-3):
