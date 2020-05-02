@@ -85,7 +85,7 @@ class CGD(object):
         if index != cg_y.numel():
             raise RuntimeError('CG size mismatch')
         
-        return error_real, error_fake, errorG
+        return error_real.item(), error_fake.item(), errorG.item()
                 
             
 class CGD_shafer(object): 
@@ -202,7 +202,7 @@ class CGD_shafer(object):
             raise RuntimeError('CG size mismatch')
         
         self.solve_x = False if self.solve_x else True
-        return error_real, error_fake, g_error
+        return error_real.item(), error_fake.item(), g_error.item()
 
 
 ######################################
@@ -280,7 +280,7 @@ class Jacobi(object):
         if index != p_y.numel():
             raise RuntimeError('CG size mismatch')
         
-        return error_real, error_fake, g_error
+        return error_real.item(), error_fake.item(), g_error.item()
 
 ################################################
 class GaussSeidel(object):
@@ -348,7 +348,7 @@ class GaussSeidel(object):
             index += p.numel()
         if index != p_y.numel():
             raise RuntimeError('CG size mismatch')
-        return error_real, error_fake, g_error
+        return error_real.item(), error_fake.item(), g_error.item()
     
         
 ##########################################
@@ -400,7 +400,7 @@ class SGD(object):
             index += p.numel()
         if index != p_y.numel():
             raise RuntimeError('CG size mismatch')
-        return error_real, error_fake, g_error
+        return error_real.item(), error_fake.item(), g_error.item()
     
 ##############################################################################
 class Newton(object):
@@ -460,7 +460,7 @@ class Newton(object):
             index += p.numel()
         if index != p_y.numel():
             raise RuntimeError('CG size mismatch')
-        return error_real, error_fake, g_error
+        return error_real.item(), error_fake.item(), g_error.item()
 
 
 ######################################################################################
@@ -524,6 +524,6 @@ class JacobiMultiCost(object):
             index += p.numel()
         if index != p_y.numel():
             raise RuntimeError('CG size mismatch')
-        return error_real, error_fake, g_error
+        return error_real.item(), error_fake.item(), g_error.item()
 #################################################################################
 

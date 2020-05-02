@@ -99,7 +99,7 @@ class GANs_model(object):
                 
                 self.print_verbose('Epoch: ',str(e + 1 ) ,'/',str(num_epochs))
                 self.print_verbose('Batch Number: ', str(n_batch + 1))
-                self.print_verbose('Error_discriminator__real: ', round(error_real.item(),3), 'Error_discriminator__fake: ', round(error_fake.item(),3),'Error_generator: ', round(g_error.item(),3))
+                self.print_verbose('Error_discriminator__real: ', round(error_real,3), 'Error_discriminator__fake: ', round(error_fake,3),'Error_generator: ', round(g_error,3))
                 
                 if (n_batch) % 100 == 0:    
                     test_images = vectors_to_images(optimizer.G(self.test_noise), self.data_dimension) # data_dimension: dimension of output image ex: [1,28,28]
