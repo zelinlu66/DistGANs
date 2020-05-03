@@ -97,7 +97,7 @@ class DCGANs_model(object):
                 
                 self.print_verbose('Epoch: ',str(e + 1 ) ,'/',str(num_epochs))
                 self.print_verbose('Batch Number: ', str(n_batch + 1))
-                self.print_verbose('Error_discriminator__real: ', round(error_real,3), 'Error_discriminator__fake: ', round(error_fake,3),'Error_generator: ', round(g_error,3))
+                self.print_verbose('Error_discriminator__real: ', "{:.5e}".format(error_real), 'Error_discriminator__fake: ', "{:.5e}".format(error_fake),'Error_generator: ', "{:.5e}".format(g_error))
                 
                 if (n_batch) % 100 == 0:
                     test_images = optimizer.G(self.test_noise)
