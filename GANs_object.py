@@ -75,7 +75,7 @@ class GANs_model(object):
         if optimizer == 'Jacobi':
             optimizer = Jacobi(self.G, self.D, loss, lr_x, lr_y, label_smoothing = label_smoothing)
         elif optimizer == 'CGD':
-            optimizer = CGD(self.G, self.D, loss, lr_x, lr_y)
+            optimizer = CGD(self.G, self.D, loss, lr_x)
         elif optimizer == 'Newton':
             optimizer = Newton(self.G, self.D, loss, lr_x, lr_y)
         elif optimizer == 'JacobiMultiCost':
