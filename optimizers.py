@@ -23,20 +23,32 @@ from torch.autograd import Variable
 from torch.autograd import grad
 from optimizers import *
 from utils import *
+from abc import ABCMeta, abstractmethod
 
 
-class CGD(object): 
-    def __init__(self, G, D, criterion,lr=1e-3):
-        self.lr = lr
+class Optimizer(object, metaclass=ABCMeta):
+    
+    def __init__(self, G, D, criterion):
         self.count = 0
         self.criterion = criterion
         self.D = D
-        self.G = G
+        self.G = G    
         
     def zero_grad(self):
         zero_grad(self.G.parameters())
-        zero_grad(self.D.parameters())
-        
+        zero_grad(self.D.parameters())        
+    
+    @abstractmethod
+    def step(self, real_data, N):
+        pass
+
+
+class CGD(Optimizer): 
+    
+    def __init__(self, G, D, criterion,lr=1e-3):
+        super(CGD, self).__init__(G, D, criterion)
+        self.lr = lr
+                
     def step(self,real_data, N):
         fake_data = self.G(noise(N, 100))
         prediction_real = self.D(real_data)
@@ -88,8 +100,10 @@ class CGD(object):
         return error_real.item(), error_fake.item(), errorG.item()
                 
             
-class CGD_shafer(object): 
+class CGD_shafer(Optimizer): 
+    
     def __init__(self, G, D, criterion, eps=1e-8, beta2=0.99, lr=1e-3, solve_x = False):
+        super(CGD_shafer, self).__init__(G, D, criterion)     
         self.G_params = list(G.parameters())
         self.D_params = list(D.parameters())
         self.lr = lr
@@ -103,14 +117,7 @@ class CGD_shafer(object):
         self.old_x = None
         self.old_y = None
         self.solve_x = solve_x
-        self.criterion = criterion
-        self.D = D
-        self.G = G
-        
-    def zero_grad(self):
-        zero_grad(self.G_params)
-        zero_grad(self.D_params)
-        
+
     def step(self,real_data, N):
         self.count += 1
         fake_data = self.G(noise(N, 100)) # Second argument of noise is the noise_dimension parameter of build_generator
@@ -207,20 +214,14 @@ class CGD_shafer(object):
 
 ######################################
         
-class Jacobi(object):
-    def __init__(self, G, D,criterion, lr_x=1e-3,lr_y = 1e-3 , label_smoothing = False):
-        self.G = G
-        self.D = D
+class Jacobi(Optimizer):
+    
+    def __init__(self, G, D, criterion, lr_x=1e-3,lr_y = 1e-3 , label_smoothing = False):
+        super(Jacobi, self).__init__(G, D, criterion)
         self.lr_x = lr_x
         self.lr_y = lr_y
-        self.count = 0
-        self.criterion = criterion
         self.label_smoothing = label_smoothing
         
-    def zero_grad(self):
-        zero_grad(self.G.parameters())
-        zero_grad(self.D.parameters())
-
     def step(self,real_data, N):
         self.count += 1
         fake_data = self.G(noise(N, 100)) # Second argument of noise is the noise_dimension parameter of build_generator
@@ -283,20 +284,12 @@ class Jacobi(object):
         return error_real.item(), error_fake.item(), g_error.item()
 
 ################################################
-class GaussSeidel(object):
-    def __init__(self, G, D,criterion, lr_x=1e-3, lr_y=1e-3):
-        #self.G_params = list(G.parameters())
-        #self.D_params = list(D.parameters())
-        self.G = G
-        self.D = D
+class GaussSeidel(Optimizer):
+    
+    def __init__(self, G, D, criterion, lr_x=1e-3, lr_y=1e-3):
+        super(GaussSeidel, self).__init__(G, D, criterion)        
         self.lr_x = lr_x
-        self.lr_y = lr_y
-        self.count = 0
-        self.criterion = criterion
-        
-    def zero_grad(self):
-        zero_grad(self.G.parameters())
-        zero_grad(self.D.parameters())
+        self.lr_y = lr_y       
 
     def step(self,real_data, N):
         fake_data = self.G(noise(N, 100)) # Second argument of noise is the noise_dimension parameter of build_generator
@@ -353,19 +346,11 @@ class GaussSeidel(object):
         
 ##########################################
         
-class SGD(object):
-    def __init__(self, G, D,criterion, lr=1e-3):
-        #self.G_params = list(G.parameters())
-        #self.D_params = list(D.parameters())
-        self.G = G
-        self.D = D
+class SGD(Optimizer):
+    
+    def __init__(self, G, D, criterion, lr=1e-3): 
+        super(SGD, self).__init__(G, D, criterion)   
         self.lr = lr
-        self.count = 0
-        self.criterion = criterion
-        
-    def zero_grad(self):
-        zero_grad(self.G.parameters())
-        zero_grad(self.D.parameters())
 
     def step(self,real_data, N):
         fake_data = self.G(noise(N, 100)) # Second argument of noise is the noise_dimension parameter of build_generator
@@ -403,19 +388,13 @@ class SGD(object):
         return error_real.item(), error_fake.item(), g_error.item()
     
 ##############################################################################
-class Newton(object):
+class Newton(Optimizer):
+    
     def __init__(self, G, D,criterion,  lr_x=1e-3,lr_y = 1e-3):
-        self.G = G
-        self.D = D
+        super(Newton, self).__init__(G, D, criterion)   
         self.lr_x = lr_x
         self.lr_y = lr_y
-        self.count = 0
-        self.criterion = criterion
         
-    def zero_grad(self):
-        zero_grad(self.G.parameters())
-        zero_grad(self.D.parameters())
-
     def step(self,real_data, N):
         fake_data = self.G(noise(N, 100)) # Second argument of noise is the noise_dimension parameter of build_generator
         d_pred_real = self.D(real_data)
@@ -465,19 +444,13 @@ class Newton(object):
 
 ######################################################################################
         
-class JacobiMultiCost(object):
-    def __init__(self, G, D,criterion, lr_x=1e-3, lr_y=1e-3):
-        self.G = G
-        self.D = D
+class JacobiMultiCost(Optimizer):
+    
+    def __init__(self, G, D, criterion, lr_x=1e-3, lr_y=1e-3):
+        super(JacobiMultiCost, self).__init__(G, D, criterion)           
         self.lr_x = lr_x
         self.lr_y = lr_y
-        self.count = 0
-        self.criterion = criterion
         
-    def zero_grad(self):
-        zero_grad(self.G.parameters())
-        zero_grad(self.D.parameters())
-
     def step(self,real_data, N):
         fake_data = self.G(noise(N, 100)) # Second argument of noise is the noise_dimension parameter of build_generator
         d_pred_real = self.D(real_data)
