@@ -63,24 +63,32 @@ class GANs_model(object):
         G = Generator(noise_dimension, n_out)
         return G
     
+    def save_models(self):
+        #G_directory = self.createFolder("/G_model")
+        #D_directory = self.createFolder("/D_model")
+        filename_D = 'D_state_dict.pth'
+        filename_G = 'G_state_dict.pth'
+        torch.save(self.G.state_dict(), filename_G)
+        torch.save(self.D.state_dict(), filename_D)
+    
 # loss = torch.nn.BCEWithLogitsLoss()
 # loss = binary_cross_entropy
-    def train(self,loss = torch.nn.BCEWithLogitsLoss(), lr_x = torch.tensor([0.001]), lr_y = torch.tensor([0.001]), optimizer = 'Jacobi', num_epochs = 1, 
+    def train(self,loss = torch.nn.BCEWithLogitsLoss(), lr_x = torch.tensor([0.001]), lr_y = torch.tensor([0.001]), optimizer_name = 'Jacobi', num_epochs = 1, 
                batch_size = 100, verbose = True, save_path = './data_fake', label_smoothing = False):
         self.data_loader = torch.utils.data.DataLoader(self.data, batch_size=100, shuffle=True)
         self.verbose = verbose
         self.num_test_samples = 16
         self.save_path = save_path
         self.test_noise = noise(self.num_test_samples, self.noise_dimension)
-        if optimizer == 'Jacobi':
+        if optimizer_name == 'Jacobi':
             optimizer = Jacobi(self.G, self.D, loss, lr_x, lr_y, label_smoothing = label_smoothing)
-        elif optimizer == 'CGD':
+        elif optimizer_name == 'CGD':
             optimizer = CGD(self.G, self.D, loss, lr_x)
-        elif optimizer == 'Newton':
+        elif optimizer_name == 'Newton':
             optimizer = Newton(self.G, self.D, loss, lr_x, lr_y)
-        elif optimizer == 'JacobiMultiCost':
+        elif optimizer_name == 'JacobiMultiCost':
             optimizer = JacobiMultiCost(self.G, self.D, loss, lr_x, lr_y)
-        elif optimizer == 'GaussSeidel':
+        elif optimizer_name == 'GaussSeidel':
             optimizer = GaussSeidel(self.G, self.D, loss, lr_x, lr_y)
         else:
             optimizer = SGD(self.G, self.D, loss, lr_x)
@@ -91,8 +99,29 @@ class GANs_model(object):
             for n_batch, (real_batch,_) in enumerate(self.data_loader):
                 N = real_batch.size(0)
                 real_data = Variable(images_to_vectors(real_batch))
+                optimizer.G = self.G
+                optimizer.D = self.D
                 optimizer.zero_grad()
-                error_real, error_fake, g_error = optimizer.step(real_data,N)
+                
+                if optimizer_name == 'GaussSeidel':
+                    error_real, error_fake, g_error = optimizer.step(real_data,N)
+                    self.D = optimizer.D
+                    self.G = optimizer.G
+                else:
+                    error_real, error_fake, g_error, p_x, p_y = optimizer.step(real_data,N)
+                    index = 0
+                    for p in self.G.parameters():
+                        p.data.add_(p_x[index: index + p.numel()].reshape(p.shape))
+                        index += p.numel()
+                    if index != p_x.numel():
+                        raise RuntimeError('CG size mismatch')
+                    index = 0
+                    for p in self.D.parameters():
+                        p.data.add_(p_y[index: index + p.numel()].reshape(p.shape))
+                        index += p.numel()
+                    if index != p_y.numel():
+                        raise RuntimeError('CG size mismatch')
+                
                 self.D_error_real_history.append(error_real)
                 self.D_error_fake_history.append(error_fake)
                 self.G_error_history.append(g_error)
@@ -102,7 +131,7 @@ class GANs_model(object):
                 self.print_verbose('Error_discriminator__real: ', "{:.5e}".format(error_real), 'Error_discriminator__fake: ', "{:.5e}".format(error_fake),'Error_generator: ', "{:.5e}".format(g_error))
                 
                 if (n_batch) % 100 == 0:    
-                    test_images = vectors_to_images(optimizer.G(self.test_noise), self.data_dimension) # data_dimension: dimension of output image ex: [1,28,28]
+                    test_images = vectors_to_images(self.G(self.test_noise), self.data_dimension) # data_dimension: dimension of output image ex: [1,28,28]
                     count = 0
                     for image_index in range(0,test_images.shape[0]):
                         count = count + 1

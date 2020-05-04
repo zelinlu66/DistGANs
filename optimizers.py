@@ -71,21 +71,8 @@ class CGD(object):
         hcg = Hvp_vec(grad_x_vec, self.D.parameters(), cg_x, retain_graph=True).add_(grad_y_vec).detach_()
                 # grad_y + D_yx * delta x
         cg_y = hcg.mul(- self.lr)
-            
-        index = 0
-        for p in self.G.parameters():
-            p.data.add_(cg_x[index: index + p.numel()].reshape(p.shape))
-            index += p.numel()
-        if index != cg_x.numel():
-            raise RuntimeError('CG size mismatch')
-        index = 0
-        for p in self.D.parameters():
-            p.data.add_(cg_y[index: index + p.numel()].reshape(p.shape))
-            index += p.numel()
-        if index != cg_y.numel():
-            raise RuntimeError('CG size mismatch')
         
-        return error_real.item(), error_fake.item(), errorG.item()
+        return error_real.item(), error_fake.item(), errorG.item(), cg_x, cg_y
                 
             
 class CGD_shafer(object): 
@@ -187,22 +174,7 @@ class CGD_shafer(object):
             cg_y = hcg.mul(- lr_y)
             self.old_y = hcg.mul(lr_y.sqrt())
             
-         
-        index = 0
-        for p in self.G_params:
-            p.data.add_(cg_x[index: index + p.numel()].reshape(p.shape))
-            index += p.numel()
-        if index != cg_x.numel():
-            raise RuntimeError('CG size mismatch')
-        index = 0
-        for p in self.D_params:
-            p.data.add_(cg_y[index: index + p.numel()].reshape(p.shape))
-            index += p.numel()
-        if index != cg_y.numel():
-            raise RuntimeError('CG size mismatch')
-        
-        self.solve_x = False if self.solve_x else True
-        return error_real.item(), error_fake.item(), g_error.item()
+        return error_real.item(), error_fake.item(), g_error.item(), cg_x, cg_y
 
 
 ######################################
@@ -259,28 +231,7 @@ class Jacobi(object):
         p_x = p_x.mul_(self.lr_x)     #p_x.mul_(self.lr.sqrt())
         p_y = p_y.mul_(self.lr_y)     #p_y.mul_(self.lr.sqrt())
         
-        del hvp_x_vec
-        del hvp_y_vec
-        del grad_x
-        del grad_y
-        del grad_x_vec
-        del grad_y_vec
-        torch.cuda.empty_cache()
-         
-        index = 0
-        for p in self.G.parameters():
-            p.data.add_(p_x[index: index + p.numel()].reshape(p.shape))
-            index += p.numel()
-        if index != p_x.numel():
-            raise RuntimeError('CG size mismatch')
-        index = 0
-        for p in self.D.parameters():
-            p.data.add_(p_y[index: index + p.numel()].reshape(p.shape))
-            index += p.numel()
-        if index != p_y.numel():
-            raise RuntimeError('CG size mismatch')
-        
-        return error_real.item(), error_fake.item(), g_error.item()
+        return error_real.item(), error_fake.item(), g_error.item(), p_x, p_y
 
 ################################################
 class GaussSeidel(object):
@@ -387,20 +338,10 @@ class SGD(object):
 
         p_x = scaled_grad_x  
         p_y = scaled_grad_y 
+        
+        return error_real.item(), error_fake.item(), g_error.item(), p_x, p_y
          
-        index = 0
-        for p in self.G.parameters():
-            p.data.add_(p_x[index: index + p.numel()].reshape(p.shape))
-            index += p.numel()
-        if index != p_x.numel():
-            raise RuntimeError('CG size mismatch')
-        index = 0
-        for p in self.D.parameters():
-            p.data.add_(p_y[index: index + p.numel()].reshape(p.shape))
-            index += p.numel()
-        if index != p_y.numel():
-            raise RuntimeError('CG size mismatch')
-        return error_real.item(), error_fake.item(), g_error.item()
+
     
 ##############################################################################
 class Newton(object):
@@ -448,19 +389,7 @@ class Newton(object):
         p_x.mul_(self.lr_x)
         p_y.mul_(self.lr_y)
          
-        index = 0
-        for p in self.G.parameters():
-            p.data.add_(p_x[index: index + p.numel()].reshape(p.shape))
-            index += p.numel()
-        if index != p_x.numel():
-            raise RuntimeError('CG size mismatch')
-        index = 0
-        for p in self.D.parameters():
-            p.data.add_(p_y[index: index + p.numel()].reshape(p.shape))
-            index += p.numel()
-        if index != p_y.numel():
-            raise RuntimeError('CG size mismatch')
-        return error_real.item(), error_fake.item(), g_error.item()
+        return error_real.item(), error_fake.item(), g_error.item(), p_x, p_y
 
 
 ######################################################################################
@@ -512,18 +441,6 @@ class JacobiMultiCost(object):
         p_x.mul_(self.lr_x)
         p_y.mul_(self.lr_y)
          
-        index = 0
-        for p in self.G.parameters():
-            p.data.add_(p_x[index: index + p.numel()].reshape(p.shape))
-            index += p.numel()
-        if index != p_x.numel():
-            raise RuntimeError('CG size mismatch')
-        index = 0
-        for p in self.D.parameters():
-            p.data.add_(p_y[index: index + p.numel()].reshape(p.shape))
-            index += p.numel()
-        if index != p_y.numel():
-            raise RuntimeError('CG size mismatch')
-        return error_real.item(), error_fake.item(), g_error.item()
+        error_real.item(), error_fake.item(), g_error.item(), p_x, p_y
 #################################################################################
 
