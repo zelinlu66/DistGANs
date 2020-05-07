@@ -108,6 +108,12 @@ def Hvp_vec(grad_vec, params, vec, retain_graph=False):
             raise ValueError('hvp Nan')
     return hvp
 
+def hessian_vec(grad_vec, var, retain_graph=False):
+    v = torch.ones_like(var)
+    vec, = autograd.grad(grad_vec, var, grad_outputs=v, allow_unused=True, retain_graph=retain_graph)
+    return vec
+
+
 def binary_cross_entropy(x, y):
     loss = -(x.log() * y + (1 - x).log() * (1 - y))
     return loss.mean()

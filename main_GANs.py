@@ -27,19 +27,24 @@ Label smoothing variation is implemented only for optimizer 'Jacobi' and only fo
 
 To swich from GANs (DCGANs) to DCGANs (GANs) comment lines 35,36,37 (40,41,42) and uncomment 40,41,42 (35,36,37)
 
+Attribute save_models of both training object saves the state dicts of the networks into 2 different folders 
+inside your current directory
+
 TO TRY: Setting much lower learning rates to see if model collapse is avoided (ex. lr_x = 0.0001 , lr_y = 0.0004)
 
 '''
 
+'''
+model = GANs_model(mnist_data(rand_rotation = False, max_degree = 90))
+model.train(num_epochs = 1, lr_x = torch.tensor([0.01]), lr_y = torch.tensor([0.01]), 
+            optimizer_name = 'Jacobi', verbose = True, label_smoothing = False) # save_path = ''
 
-#model = GANs_model(mnist_data(rand_rotation = False, max_degree = 90))
-#model.train(num_epochs = 1, lr_x = torch.tensor([0.01]), lr_y = torch.tensor([0.01]), 
-#            optimizer = 'JacobiMultiCost', verbose = True, label_smoothing = False) # save_path = ''
-
-
+'''
 model = DCGANs_model(mnist_data_dcgans(rand_rotation = True, max_degree = 90))
 model.train(num_epochs = 1, lr_x = torch.tensor([0.01]), lr_y = torch.tensor([0.01]), 
-           optimizer = 'Jacobi', verbose = True, label_smoothing = False) #save_path = ''
+           optimizer_name = 'Jacobi', verbose = True, label_smoothing = False) #save_path = ''
+
+#model.save_models()
 
 plt.figure()
 plt.plot([x for x in range(0,len(model.D_error_real_history))], model.D_error_real_history)
