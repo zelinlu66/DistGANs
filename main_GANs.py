@@ -34,23 +34,23 @@ TO TRY: Setting much lower learning rates to see if model collapse is avoided (e
 
 '''
 
-'''
+
 model = GANs_model(mnist_data(rand_rotation = False, max_degree = 90))
-model.train(num_epochs = 1, lr_x = torch.tensor([0.01]), lr_y = torch.tensor([0.01]), 
-            optimizer_name = 'Jacobi', verbose = True, label_smoothing = False) # save_path = ''
+model.train(num_epochs = 200, lr_x = torch.tensor([0.001]), lr_y = torch.tensor([0.001]), 
+            optimizer_name = 'Jacobi', verbose = False, label_smoothing = False, single_number = 4) # save_path = ''
 
 '''
 model = DCGANs_model(mnist_data_dcgans(rand_rotation = True, max_degree = 90))
 model.train(num_epochs = 1, lr_x = torch.tensor([0.01]), lr_y = torch.tensor([0.01]), 
-           optimizer_name = 'Jacobi', verbose = True, label_smoothing = False) #save_path = ''
-
+           optimizer_name = 'Jacobi', verbose = True, label_smoothing = False, single_number = 9) #save_path = ''
+'''
 #model.save_models()
 
 plt.figure()
 plt.plot([x for x in range(0,len(model.D_error_real_history))], model.D_error_real_history)
 plt.plot([x for x in range(0,len(model.D_error_fake_history))], model.D_error_fake_history)
 plt.plot([x for x in range(0,len(model.G_error_history))], model.G_error_history)
-plt.xlabel('Number of epochs')
+plt.xlabel('Iterations')
 plt.ylabel('Loss function value')
 plt.legend(['Discriminator: Loss on Real Data', 'Discriminator: Loss on Fake Data', 'Generator: Loss'])
 plt.savefig('cost_report.png')
