@@ -74,10 +74,18 @@ class GANs_model(object):
 # loss = torch.nn.BCEWithLogitsLoss()
 # loss = binary_cross_entropy
     def train(self,loss = torch.nn.BCEWithLogitsLoss(), lr_x = torch.tensor([0.001]), lr_y = torch.tensor([0.001]), optimizer_name = 'Jacobi', num_epochs = 1, 
-               batch_size = 100, verbose = True, save_path = './data_fake', label_smoothing = False):
-        self.data_loader = torch.utils.data.DataLoader(self.data, batch_size=100, shuffle=True)
+               batch_size = 100, verbose = True, save_path = './data_fake', label_smoothing = False, single_number = None):
+        if single_number is not None:
+            self.data = [i for i in self.data if i[1] == torch.tensor(single_number)]
+            self.data_loader = torch.utils.data.DataLoader(self.data, batch_size=100, shuffle=True)
+            self.num_test_samples = 5
+            self.display_progress = 50
+        else: 
+            self.data_loader = torch.utils.data.DataLoader(self.data, batch_size=100, shuffle=True)
+            self.num_test_samples = 16
+            self.display_progress = 100
         self.verbose = verbose
-        self.num_test_samples = 16
+        
         self.save_path = save_path
         self.test_noise = noise(self.num_test_samples, self.noise_dimension)
         if optimizer_name == 'Jacobi':
@@ -130,7 +138,7 @@ class GANs_model(object):
                 self.print_verbose('Batch Number: ', str(n_batch + 1))
                 self.print_verbose('Error_discriminator__real: ', "{:.5e}".format(error_real), 'Error_discriminator__fake: ', "{:.5e}".format(error_fake),'Error_generator: ', "{:.5e}".format(g_error))
                 
-                if (n_batch) % 100 == 0:    
+                if (n_batch) % self.display_progress == 0:    
                     test_images = vectors_to_images(self.G(self.test_noise), self.data_dimension) # data_dimension: dimension of output image ex: [1,28,28]
                     count = 0
                     for image_index in range(0,test_images.shape[0]):
