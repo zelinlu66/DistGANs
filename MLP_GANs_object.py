@@ -13,6 +13,7 @@ import numpy
 from models import *
 from optimizers import *
 from Dataloader import *
+from utils import *
 import time
 import PIL.Image as pil
 import numpy as np
@@ -21,34 +22,34 @@ import matplotlib.pyplot as plt
 import GANs_abstract_object
 from GANs_abstract_object import *
 
-class DCGANs_model(GANs_model):
+class MLP_GANs_model(GANs_model):
     
     def __init__(self, data):
-        super(DCGANs_model, self).__init__(data)
-        
+        super(MLP_GANs_model, self).__init__(data)
+                    
     def build_discriminator(self):
-        D = DiscriminativeCNN(self.data_dimension[0])
-        D.apply(init_weights)
+        n_features = numpy.prod(self.data_dimension)
+        D = Discriminator(n_features)
         return D
     
     def build_generator(self, noise_dimension = 100):
         self.noise_dimension = noise_dimension
-        G = GenerativeCNN(noise_dimension, self.data_dimension[0])
-        G.apply(init_weights)
+        n_out = numpy.prod(self.data_dimension)
+        G = Generator(noise_dimension, n_out)
         return G
-        
+    
     # loss = torch.nn.BCEWithLogitsLoss()
-    #loss = binary_cross_entropy
-    def train(self,loss = torch.nn.BCEWithLogitsLoss(), lr_x = torch.tensor([0.01]), lr_y = torch.tensor([0.01]), optimizer_name = 'Jacobi', num_epochs = 1, batch_size = 100, verbose = True, save_path = './data_fake_DCGANS',label_smoothing = False, single_number = None):
-        self.data_loader = torch.utils.data.DataLoader(self.data, batch_size=100, shuffle=True)
+    # loss = binary_cross_entropy
+    def train(self,loss = torch.nn.BCEWithLogitsLoss(), lr_x = torch.tensor([0.001]), lr_y = torch.tensor([0.001]), optimizer_name = 'SGD', num_epochs = 1, 
+               batch_size = 100, verbose = True, save_path = './data_fake', label_smoothing = False, single_number = None):
         if single_number is not None:
-            self.num_test_samples = 5
             self.data = [i for i in self.data if i[1] == torch.tensor(single_number)]
             self.data_loader = torch.utils.data.DataLoader(self.data, batch_size=100, shuffle=True)
+            self.num_test_samples = 5
             self.display_progress = 50
         else: 
             self.data_loader = torch.utils.data.DataLoader(self.data, batch_size=100, shuffle=True)
-            self.num_test_samples = 10
+            self.num_test_samples = 16
             self.display_progress = 100
 
         self.verbose = verbose        
@@ -59,16 +60,18 @@ class DCGANs_model(GANs_model):
         for e in range(num_epochs):
             self.print_verbose("######################################################")
             for n_batch, (real_batch,_) in enumerate(self.data_loader):
-                real_data = Variable((real_batch))
                 N = real_batch.size(0)
+                real_data = Variable(images_to_vectors(real_batch))
+                self.optimizer.G = self.G
+                self.optimizer.D = self.D
                 self.optimizer.zero_grad()
+                
                 if optimizer_name == 'GaussSeidel':
                     error_real, error_fake, g_error = self.optimizer.step(real_data,N)
-                    self.D = optimizer.D
-                    self.G = optimizer.G
+                    self.D = self.optimizer.D
+                    self.G = self.optimizer.G
                 else:
                     error_real, error_fake, g_error, p_x, p_y = self.optimizer.step(real_data,N)
-                
                     index = 0
                     for p in self.G.parameters():
                         p.data.add_(p_x[index: index + p.numel()].reshape(p.shape))
@@ -81,7 +84,7 @@ class DCGANs_model(GANs_model):
                         index += p.numel()
                     if index != p_y.numel():
                         raise RuntimeError('CG size mismatch')
-            
+                
                 self.D_error_real_history.append(error_real)
                 self.D_error_fake_history.append(error_fake)
                 self.G_error_history.append(g_error)
@@ -90,9 +93,9 @@ class DCGANs_model(GANs_model):
                 self.print_verbose('Batch Number: ', str(n_batch + 1))
                 self.print_verbose('Error_discriminator__real: ', "{:.5e}".format(error_real), 'Error_discriminator__fake: ', "{:.5e}".format(error_fake),'Error_generator: ', "{:.5e}".format(g_error))
                 
-                if (n_batch) % self.display_progress == 0:
-                    test_images = self.optimizer.G(self.test_noise)
-                    self.save_images(e, n_batch, test_images)      
+                if (n_batch) % self.display_progress == 0:    
+                    test_images = vectors_to_images(self.G(self.test_noise), self.data_dimension) # data_dimension: dimension of output image ex: [1,28,28]
+                    self.save_images(e, n_batch, test_images)                                                                                  
                         
             self.print_verbose("######################################################")
         end = time.time()

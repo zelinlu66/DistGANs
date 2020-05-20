@@ -74,7 +74,7 @@ class CGD(Optimizer):
                                                              x_params=self.G.parameters(),
                                                              y_params=self.D.parameters(), kk=p_x,
                                                              x=None,
-                                                             nsteps=p_x.shape[0] // 10000,
+                                                             nsteps=p_x.shape[0],
                                                              lr_x=self.lr, lr_y=self.lr,
                                                              )
             # cg_x.detach_().mul_(p_x_norm)
