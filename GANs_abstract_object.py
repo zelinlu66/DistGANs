@@ -23,7 +23,6 @@ from abc import ABCMeta, abstractmethod
 
 
 class GANs_model(object):
-    
     def __init__(self, data):
         self.data = data
         self.data_dimension = self.data[0][0].numpy().shape
@@ -31,22 +30,22 @@ class GANs_model(object):
         self.D_error_real_history = []
         self.D_error_fake_history = []
         self.G_error_history = []
-        
+
         if self.data_dimension[0] == 3:
             self.imtype = 'RGB'
         else:
             self.imtype = 'gray'
-            
+
     def print_verbose(self, *args, **kwargs):
-        if self.verbose :
+        if self.verbose:
             print(*args, **kwargs)
-            
-    def createFolder(self,directory):
+
+    def createFolder(self, directory):
         try:
             if not os.path.exists(directory):
                 os.makedirs(directory)
         except OSError:
-            print ('Error: Creating directory. ' +  directory)
+            print('Error: Creating directory. ' + directory)
 
     def save_models(self):
         #G_directory = self.createFolder("/G_model")
@@ -69,9 +68,15 @@ class GANs_model(object):
     def build_generator(self):
         pass
 
-    def optimizer_initialize(self, loss, lr_x, lr_y, optimizer_name='SGD', label_smoothing=False):    
+    def optimizer_initialize(self,
+                             loss,
+                             lr_x,
+                             lr_y,
+                             optimizer_name='SGD',
+                             label_smoothing=False):
         if optimizer_name == 'Jacobi':
-            self.optimizer = Jacobi(self.G, self.D, loss, lr_x, lr_y, label_smoothing)
+            self.optimizer = Jacobi(self.G, self.D, loss, lr_x, lr_y,
+                                    label_smoothing)
         elif optimizer_name == 'CGD':
             self.optimizer = CGD(self.G, self.D, loss, lr_x)
         elif optimizer_name == 'Newton':
@@ -82,33 +87,42 @@ class GANs_model(object):
             self.optimizer = GaussSeidel(self.G, self.D, loss, lr_x, lr_y)
         else:
             self.optimizer = SGD(self.G, self.D, loss, lr_x)
-            
+
     def save_images(self, epoch_number, n_batch, images):
         count = 0
-        for image_index in range(0,images.shape[0]):
+        for image_index in range(0, images.shape[0]):
             count = count + 1
             if self.imtype == 'RGB':
-                image = images[image_index]#[0]
+                image = images[image_index]  #[0]
                 image = image.detach().numpy()
-                image = (image + 1)/2
+                image = (image + 1) / 2
                 image = image.transpose([1, 2, 0])
                 self.createFolder(self.save_path)
-                path = str(self.save_path + '/fake_image'+'_Epoch_'+str(e + 1)+'_Batch_'+str(n_batch)+'_N_image_'+str(count)+'.png')
+                path = str(self.save_path + '/fake_image' + '_Epoch_' +
+                           str(e + 1) + '_Batch_' + str(n_batch) +
+                           '_N_image_' + str(count) + '.png')
                 plt.imsave(path, image)
             else:
                 image = images[image_index][0]
                 image = image.detach().numpy()
-                image = (image + 1)/2
-                img = pil.fromarray(np.uint8(image * 255) , 'L')
+                image = (image + 1) / 2
+                img = pil.fromarray(np.uint8(image * 255), 'L')
                 self.createFolder(self.save_path)
-                path = str(self.save_path + '/fake_image'+'_Epoch_'+str(epoch_number + 1)+'_Batch_'+str(n_batch)+'_N_image_'+str(count)+'.png')
+                path = str(self.save_path + '/fake_image' + '_Epoch_' +
+                           str(epoch_number + 1) + '_Batch_' + str(n_batch) +
+                           '_N_image_' + str(count) + '.png')
                 img.save(path)
-        
-    
+
     @abstractmethod
-    def train(self,loss = torch.nn.BCEWithLogitsLoss(), lr_x = torch.tensor([0.001]), lr_y = torch.tensor([0.001]), optimizer_name = 'Jacobi', num_epochs = 1, 
-               batch_size = 100, verbose = True, save_path = './data_fake', label_smoothing = False, single_number = None):
+    def train(self,
+              loss=torch.nn.BCEWithLogitsLoss(),
+              lr_x=torch.tensor([0.001]),
+              lr_y=torch.tensor([0.001]),
+              optimizer_name='Jacobi',
+              num_epochs=1,
+              batch_size=100,
+              verbose=True,
+              save_path='./data_fake',
+              label_smoothing=False,
+              single_number=None):
         pass
-    
-
-
