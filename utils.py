@@ -215,8 +215,8 @@ def general_conjugate_gradient(grad_x,
     :param y_params:
     :param b:
     :param lr_x:
-    :param lr_y:      
-    :param x:            
+    :param lr_y:
+    :param x:
     :param nsteps:
     :param residual_tol:
     :param device:
@@ -278,8 +278,8 @@ def general_conjugate_gradient_jacobi(grad_x,
     :param y_params:
     :param b:
     :param lr_x:
-    :param lr_y:      
-    :param x:            
+    :param lr_y:
+    :param x:
     :param nsteps:
     :param residual_tol:
     :param device:

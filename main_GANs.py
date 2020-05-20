@@ -25,7 +25,7 @@ Label smoothing variation is implemented only for optimizer 'Jacobi' and only fo
 
 To swich from MLP_GANs (DCGANs) to DCGANs (MLP_GANs) comment lines 38,39,40 (43,44,45) and uncomment 43,44,45 (38,39,40)
 
-Attribute save_models of both training object saves the state dicts of the networks into 2 different folders 
+Attribute save_models of both training object saves the state dicts of the networks into 2 different folders
 inside your current directory
 
 TO TRY: Setting much lower learning rates to see if model collapse is avoided (ex. lr_x = 0.0001 , lr_y = 0.0004)
