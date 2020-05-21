@@ -15,6 +15,7 @@ import torch
 from torch import autograd
 from torch.autograd.variable import Variable
 import math
+import yapf
 
 ################################################################
 
@@ -48,6 +49,9 @@ def zeros_target_smooth(size):
     Tensor containing zeros, with shape = size
     '''
     data = torch.full((size, ), 0.1)
+    
+    
+    
     return data
 
 
