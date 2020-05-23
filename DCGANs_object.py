@@ -27,14 +27,14 @@ class DCGANs_model(GANs_model):
         super(DCGANs_model, self).__init__(data)
 
     def build_discriminator(self):
-        D = DiscriminativeCNN(self.data_dimension[0])
-        D.apply(init_weights)
+        D = DiscriminatorCNN(self.data_dimension[0], self.data_dimension[1])
+        D.apply(weights_init_normal)
         return D
 
     def build_generator(self, noise_dimension=100):
         self.noise_dimension = noise_dimension
-        G = GenerativeCNN(noise_dimension, self.data_dimension[0])
-        G.apply(init_weights)
+        G = GeneratorCNN(noise_dimension, self.data_dimension[0], self.data_dimension[1])
+        G.apply(weights_init_normal)
         return G
 
     # loss = torch.nn.BCEWithLogitsLoss()

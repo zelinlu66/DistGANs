@@ -50,7 +50,7 @@ def cifar10_data():
 def mnist_data_dcgans(rand_rotation=False, max_degree=90):
     if rand_rotation == True:
         compose = transforms.Compose([
-            transforms.Resize(64),
+            transforms.Resize(32),
             transforms.RandomRotation(max_degree),
             transforms.ToTensor(),
             transforms.Normalize((0.5, ), (0.5, ))
@@ -58,7 +58,7 @@ def mnist_data_dcgans(rand_rotation=False, max_degree=90):
 
     else:
         compose = transforms.Compose([
-            transforms.Resize(64),
+            transforms.Resize(32),
             transforms.ToTensor(),
             transforms.Normalize((0.5, ), (0.5, ))
         ])

@@ -80,3 +80,4 @@ if __name__ == '__main__':
         'Generator: Loss'
     ])
     plt.savefig('cost_report.png')
+
