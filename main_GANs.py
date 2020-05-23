@@ -36,9 +36,9 @@ TO TRY: Setting much lower learning rates to see if model collapse is avoided (e
 #model.train(num_epochs = 200, lr_x = torch.tensor([0.01]), lr_y = torch.tensor([0.01]),
 #            optimizer_name = 'CGD', verbose = True, label_smoothing = False, single_number = 4) # save_path = ''
 
-#model = DCGANs_model(mnist_data_dcgans(rand_rotation = False, max_degree = 90))
-#model.train(num_epochs = 1, lr_x = torch.tensor([0.01]), lr_y = torch.tensor([0.01]),
-#           optimizer_name = 'Jacobi', verbose = True, label_smoothing = False, single_number = 9) #save_path = ''
+model = DCGANs_model(mnist_data_dcgans(rand_rotation = False, max_degree = 90))
+model.train(num_epochs = 1, lr_x = torch.tensor([0.01]), lr_y = torch.tensor([0.01]),
+           optimizer_name = 'Jacobi', verbose = True, label_smoothing = False, single_number = 9) #save_path = ''
 
 #model.save_models()
 

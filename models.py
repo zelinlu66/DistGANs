@@ -30,8 +30,8 @@ class Generator(torch.nn.Module):
     def __init__(self, noise_dimension, n_out):
         super(Generator, self).__init__()
         self.hidden0 = nn.Sequential(
-            nn.Linear(noise_dimension, 1000),
-            nn.ReLU())  #  ORIGINAL:   nn.LeakyReLU(0.2))
+            nn.Linear(noise_dimension,
+                      1000), nn.ReLU())  #  ORIGINAL:   nn.LeakyReLU(0.2))
         self.hidden1 = nn.Sequential(nn.Linear(1000, 1000), nn.ReLU())
         self.hidden2 = nn.Sequential(nn.Linear(1000, 1000), nn.ReLU())
         self.out = nn.Sequential(nn.Linear(1000, n_out), nn.Tanh())
@@ -44,116 +44,64 @@ class Generator(torch.nn.Module):
         return z
 
 
-class DiscriminativeCNN(torch.nn.Module):
-    def __init__(self, n_channels):
-        super(DiscriminativeCNN, self).__init__()
+class GeneratorCNN(nn.Module):
+    def __init__(self, noise_dimension, n_channels, image_dimension):
+        super(GeneratorCNN, self).__init__()
 
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(
-                in_channels=n_channels,
-                out_channels=128,
-                kernel_size=4,
-                stride=2,
-                padding=1,
-                bias=False), nn.LeakyReLU(0.2, inplace=True))
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(
-                in_channels=128,
-                out_channels=256,
-                kernel_size=4,
-                stride=2,
-                padding=1,
-                bias=False), nn.BatchNorm2d(256),
-            nn.LeakyReLU(0.2, inplace=True))
-        self.conv3 = nn.Sequential(
-            nn.Conv2d(
-                in_channels=256,
-                out_channels=512,
-                kernel_size=4,
-                stride=2,
-                padding=1,
-                bias=False), nn.BatchNorm2d(512),
-            nn.LeakyReLU(0.2, inplace=True))
-        self.conv4 = nn.Sequential(
-            nn.Conv2d(
-                in_channels=512,
-                out_channels=1024,
-                kernel_size=4,
-                stride=2,
-                padding=1,
-                bias=False), nn.BatchNorm2d(1024),
-            nn.LeakyReLU(0.2, inplace=True))
-        self.out = nn.Sequential(
-            nn.Linear(1024 * 4 * 4, 1),
-            nn.Sigmoid(),
+        self.init_size = image_dimension // 4
+        self.l1 = nn.Sequential(
+            nn.Linear(noise_dimension, 128 * self.init_size**2))
+
+        self.conv_blocks = nn.Sequential(
+            nn.BatchNorm2d(128),
+            nn.Upsample(scale_factor=2),
+            nn.Conv2d(128, 128, 3, stride=1, padding=1),
+            nn.BatchNorm2d(128, 0.8),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Upsample(scale_factor=2),
+            nn.Conv2d(128, 64, 3, stride=1, padding=1),
+            nn.BatchNorm2d(64, 0.8),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(64, n_channels, 3, stride=1, padding=1),
+            nn.Tanh(),
         )
 
-    def forward(self, x):
-        # Convolutional layers
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = self.conv4(x)
-        # Flatten and apply sigmoid
-        x = x.view(-1, 1024 * 4 * 4)
-        x = self.out(x)
-        return x
+    def forward(self, z):
+        out = self.l1(z)
+        out = out.view(out.shape[0], 128, self.init_size, self.init_size)
+        img = self.conv_blocks(out)
+        return img
 
 
-class GenerativeCNN(torch.nn.Module):
-    def __init__(self, noise_dimension, n_channels):
-        super(GenerativeCNN, self).__init__()
+class DiscriminatorCNN(nn.Module):
+    def __init__(self, n_channels, image_dimension):
+        super(DiscriminatorCNN, self).__init__()
 
-        self.linear = torch.nn.Linear(noise_dimension, 1024 * 4 * 4)
+        def discriminator_block(in_filters, out_filters, bn=True):
+            block = [
+                nn.Conv2d(in_filters, out_filters, 3, 2, 1),
+                nn.LeakyReLU(0.2, inplace=True),
+                nn.Dropout2d(0.25)
+            ]
+            if bn:
+                block.append(nn.BatchNorm2d(out_filters, 0.8))
+            return block
 
-        self.conv1 = nn.Sequential(
-            nn.ConvTranspose2d(
-                in_channels=1024,
-                out_channels=512,
-                kernel_size=4,
-                stride=2,
-                padding=1,
-                bias=False),
-            nn.BatchNorm2d(512),
-            nn.ReLU(inplace=True))
-        self.conv2 = nn.Sequential(
-            nn.ConvTranspose2d(
-                in_channels=512,
-                out_channels=256,
-                kernel_size=4,
-                stride=2,
-                padding=1,
-                bias=False),
-            nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True))
-        self.conv3 = nn.Sequential(
-            nn.ConvTranspose2d(
-                in_channels=256,
-                out_channels=128,
-                kernel_size=4,
-                stride=2,
-                padding=1,
-                bias=False),
-            nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True))
-        self.conv4 = nn.Sequential(
-            nn.ConvTranspose2d(
-                in_channels=128,
-                out_channels=n_channels,
-                kernel_size=4,
-                stride=2,
-                padding=1,
-                bias=False))
-        self.out = torch.nn.Tanh()
+        self.model = nn.Sequential(
+            *discriminator_block(n_channels, 16, bn=False),
+            *discriminator_block(16, 32),
+            *discriminator_block(32, 64),
+            *discriminator_block(64, 128),
+        )
 
-    def forward(self, x):
-        # Project and reshape
-        x = self.linear(x)
-        x = x.view(x.shape[0], 1024, 4, 4)
-        # Convolutional layers
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = self.conv4(x)
-        # Apply Tanh
-        return self.out(x)
+        # The height and width of downsampled image
+        ds_size = image_dimension // 2**4
+        self.adv_layer = nn.Sequential(nn.Linear(128 * ds_size**2, 1),
+                                       nn.Sigmoid())
+
+    def forward(self, img):
+        out = self.model(img)
+        out = out.view(out.shape[0], -1)
+        validity = self.adv_layer(out)
+
+        return validity
