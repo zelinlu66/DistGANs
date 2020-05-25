@@ -48,8 +48,8 @@ class GANs_model(object):
             print('Error: Creating directory. ' + directory)
 
     def save_models(self):
-        #G_directory = self.createFolder("/G_model")
-        #D_directory = self.createFolder("/D_model")
+        # G_directory = self.createFolder("/G_model")
+        # D_directory = self.createFolder("/D_model")
         filename_D = 'D_state_dict.pth'
         filename_G = 'G_state_dict.pth'
         torch.save(self.G.state_dict(), filename_G)
@@ -68,15 +68,13 @@ class GANs_model(object):
     def build_generator(self):
         pass
 
-    def optimizer_initialize(self,
-                             loss,
-                             lr_x,
-                             lr_y,
-                             optimizer_name='SGD',
-                             label_smoothing=False):
+    def optimizer_initialize(
+        self, loss, lr_x, lr_y, optimizer_name='SGD', label_smoothing=False
+    ):
         if optimizer_name == 'Jacobi':
-            self.optimizer = Jacobi(self.G, self.D, loss, lr_x, lr_y,
-                                    label_smoothing)
+            self.optimizer = Jacobi(
+                self.G, self.D, loss, lr_x, lr_y, label_smoothing
+            )
         elif optimizer_name == 'CGD':
             self.optimizer = CGD(self.G, self.D, loss, lr_x)
         elif optimizer_name == 'Newton':
@@ -93,14 +91,22 @@ class GANs_model(object):
         for image_index in range(0, images.shape[0]):
             count = count + 1
             if self.imtype == 'RGB':
-                image = images[image_index]  #[0]
+                image = images[image_index]  # [0]
                 image = image.detach().numpy()
                 image = (image + 1) / 2
                 image = image.transpose([1, 2, 0])
                 self.createFolder(self.save_path)
-                path = str(self.save_path + '/fake_image' + '_Epoch_' +
-                           str(e + 1) + '_Batch_' + str(n_batch) +
-                           '_N_image_' + str(count) + '.png')
+                path = str(
+                    self.save_path
+                    + '/fake_image'
+                    + '_Epoch_'
+                    + str(e + 1)
+                    + '_Batch_'
+                    + str(n_batch)
+                    + '_N_image_'
+                    + str(count)
+                    + '.png'
+                )
                 plt.imsave(path, image)
             else:
                 image = images[image_index][0]
@@ -108,21 +114,31 @@ class GANs_model(object):
                 image = (image + 1) / 2
                 img = pil.fromarray(np.uint8(image * 255), 'L')
                 self.createFolder(self.save_path)
-                path = str(self.save_path + '/fake_image' + '_Epoch_' +
-                           str(epoch_number + 1) + '_Batch_' + str(n_batch) +
-                           '_N_image_' + str(count) + '.png')
+                path = str(
+                    self.save_path
+                    + '/fake_image'
+                    + '_Epoch_'
+                    + str(epoch_number + 1)
+                    + '_Batch_'
+                    + str(n_batch)
+                    + '_N_image_'
+                    + str(count)
+                    + '.png'
+                )
                 img.save(path)
 
     @abstractmethod
-    def train(self,
-              loss=torch.nn.BCEWithLogitsLoss(),
-              lr_x=torch.tensor([0.001]),
-              lr_y=torch.tensor([0.001]),
-              optimizer_name='Jacobi',
-              num_epochs=1,
-              batch_size=100,
-              verbose=True,
-              save_path='./data_fake',
-              label_smoothing=False,
-              single_number=None):
+    def train(
+        self,
+        loss=torch.nn.BCEWithLogitsLoss(),
+        lr_x=torch.tensor([0.001]),
+        lr_y=torch.tensor([0.001]),
+        optimizer_name='Jacobi',
+        num_epochs=1,
+        batch_size=100,
+        verbose=True,
+        save_path='./data_fake',
+        label_smoothing=False,
+        single_number=None,
+    ):
         pass

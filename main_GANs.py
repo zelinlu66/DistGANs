@@ -22,6 +22,7 @@ Options:
 from docopt import docopt
 from MLP_GANs_object import *
 from DCGANs_object import *
+
 '''
 ! READ ME !
 
@@ -56,28 +57,43 @@ if __name__ == '__main__':
     optimizer_name = arguments['--optimizer']
     learning_rate = float(arguments['--learning_rate'])
 
-    model = MLP_GANs_model(mnist_data(rand_rotation = False, max_degree = 90))
-    model.train(num_epochs = epochs, lr_x = torch.tensor([learning_rate]), lr_y = torch.tensor([learning_rate]),
-                optimizer_name = optimizer_name, verbose = True, label_smoothing = False, single_number = 4) # save_path = ''
+    model = MLP_GANs_model(mnist_data(rand_rotation=False, max_degree=90))
+    model.train(
+        num_epochs=epochs,
+        lr_x=torch.tensor([learning_rate]),
+        lr_y=torch.tensor([learning_rate]),
+        optimizer_name=optimizer_name,
+        verbose=True,
+        label_smoothing=False,
+        single_number=4,
+    )  # save_path = ''
 
-    #model = DCGANs_model(mnist_data_dcgans(rand_rotation = False, max_degree = 90))
-    #model.train(num_epochs = epochs, lr_x = torch.tensor([learning_rate]), lr_y = torch.tensor([learning_rate]),
-#                optimizer_name = optimizer_name, verbose = True, label_smoothing = False, single_number = 9) #save_path = ''
+    # model = DCGANs_model(mnist_data_dcgans(rand_rotation = False, max_degree = 90))
+    # model.train(num_epochs = epochs, lr_x = torch.tensor([learning_rate]), lr_y = torch.tensor([learning_rate]),
+    #                optimizer_name = optimizer_name, verbose = True, label_smoothing = False, single_number = 9) #save_path = ''
 
-    #model.save_models()
+    # model.save_models()
 
     plt.figure()
-    plt.plot([x for x in range(0, len(model.D_error_real_history))],
-             model.D_error_real_history)
-    plt.plot([x for x in range(0, len(model.D_error_fake_history))],
-             model.D_error_fake_history)
-    plt.plot([x for x in range(0, len(model.G_error_history))],
-             model.G_error_history)
+    plt.plot(
+        [x for x in range(0, len(model.D_error_real_history))],
+        model.D_error_real_history,
+    )
+    plt.plot(
+        [x for x in range(0, len(model.D_error_fake_history))],
+        model.D_error_fake_history,
+    )
+    plt.plot(
+        [x for x in range(0, len(model.G_error_history))],
+        model.G_error_history,
+    )
     plt.xlabel('Iterations')
     plt.ylabel('Loss function value')
-    plt.legend([
-        'Discriminator: Loss on Real Data', 'Discriminator: Loss on Fake Data',
-        'Generator: Loss'
-    ])
+    plt.legend(
+        [
+            'Discriminator: Loss on Real Data',
+            'Discriminator: Loss on Fake Data',
+            'Generator: Loss',
+        ]
+    )
     plt.savefig('cost_report.png')
-
