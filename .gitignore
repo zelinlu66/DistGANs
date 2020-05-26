@@ -1,5 +1,8 @@
-*.swp
+.*.swp
+.*.swo
 
 __pycache__
 
+# data directories
+dataset
 data_mnist/*
