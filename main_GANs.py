@@ -30,6 +30,7 @@ import sys
 from docopt import docopt
 from MLP_GANs_object import *
 from DCGANs_object import *
+
 '''
 ! READ ME !
 Multi-layer perceptrons neural networks (MLP), convolutional neural networks (CNN) 
@@ -65,17 +66,30 @@ if __name__ == '__main__':
     learning_rate = float(arguments['--learning_rate'])
     model_switch = arguments['--model']
 
-    if model_switch=='MLP':
+    if model_switch == 'MLP':
         print("Using MLP implementation of GANs: MLP_GANs_model")
-        model = MLP_GANs_model(mnist_data(rand_rotation = False, max_degree = 90))
-    elif model_switch=='CNN':
+        model = MLP_GANs_model(mnist_data(rand_rotation=False, max_degree=90))
+    elif model_switch == 'CNN':
         print("Using CNN implementation of GANs: DCGANs_model")
-        model = DCGANs_model(mnist_data_dcgans(rand_rotation = False, max_degree = 90))
+        model = DCGANs_model(
+            mnist_data_dcgans(rand_rotation=False, max_degree=90)
+        )
     else:
-        sys.exit('\n   *** Error. Specified model name: {} is not valid. Please choose MLP or CNN'.format(model_switch))
-        
-    model.train(num_epochs = epochs, lr_x = torch.tensor([learning_rate]), lr_y = torch.tensor([learning_rate]),
-             optimizer_name = optimizer_name, verbose = True, label_smoothing = False, single_number = 4) # save_path = ''
+        sys.exit(
+            '\n   *** Error. Specified model name: {} is not valid. Please choose MLP or CNN'.format(
+                model_switch
+            )
+        )
+
+    model.train(
+        num_epochs=epochs,
+        lr_x=torch.tensor([learning_rate]),
+        lr_y=torch.tensor([learning_rate]),
+        optimizer_name=optimizer_name,
+        verbose=True,
+        label_smoothing=False,
+        single_number=4,
+    )  # save_path = ''
 
     if arguments['--save']:
         print("Saving the model...")
@@ -83,17 +97,25 @@ if __name__ == '__main__':
 
     if arguments['--display']:
         plt.figure()
-        plt.plot([x for x in range(0, len(model.D_error_real_history))],
-                 model.D_error_real_history)
-        plt.plot([x for x in range(0, len(model.D_error_fake_history))],
-                 model.D_error_fake_history)
-        plt.plot([x for x in range(0, len(model.G_error_history))],
-                 model.G_error_history)
+        plt.plot(
+            [x for x in range(0, len(model.D_error_real_history))],
+            model.D_error_real_history,
+        )
+        plt.plot(
+            [x for x in range(0, len(model.D_error_fake_history))],
+            model.D_error_fake_history,
+        )
+        plt.plot(
+            [x for x in range(0, len(model.G_error_history))],
+            model.G_error_history,
+        )
         plt.xlabel('Iterations')
         plt.ylabel('Loss function value')
-        plt.legend([
-            'Discriminator: Loss on Real Data', 'Discriminator: Loss on Fake Data',
-            'Generator: Loss'
-        ])
+        plt.legend(
+            [
+                'Discriminator: Loss on Real Data',
+                'Discriminator: Loss on Fake Data',
+                'Generator: Loss',
+            ]
+        )
         plt.savefig('cost_report.png')
-
