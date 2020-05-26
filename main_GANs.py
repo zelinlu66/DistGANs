@@ -27,6 +27,8 @@ Options:
                               [default: MLP].
 """
 import sys
+import matplotlib.pyplot as plt
+
 from docopt import docopt
 from MLP_GANs_object import *
 from DCGANs_object import *
@@ -68,7 +70,7 @@ if __name__ == '__main__':
 
     if model_switch == 'MLP':
         print("Using MLP implementation of GANs: MLP_GANs_model")
-        model = MLP_GANs_model(mnist_data(rand_rotation=False, max_degree=90))
+        model = MLP_GANs_model(mnist_data(rand_rotation=True, max_degree=90))
     elif model_switch == 'CNN':
         print("Using CNN implementation of GANs: DCGANs_model")
         model = DCGANs_model(
