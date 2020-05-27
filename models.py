@@ -30,8 +30,8 @@ class Generator(torch.nn.Module):
     def __init__(self, noise_dimension, n_out):
         super(Generator, self).__init__()
         self.hidden0 = nn.Sequential(
-            nn.Linear(noise_dimension,
-                      1000), nn.ReLU())  #  ORIGINAL:   nn.LeakyReLU(0.2))
+            nn.Linear(noise_dimension, 1000), nn.ReLU()
+        )  #  ORIGINAL:   nn.LeakyReLU(0.2))
         self.hidden1 = nn.Sequential(nn.Linear(1000, 1000), nn.ReLU())
         self.hidden2 = nn.Sequential(nn.Linear(1000, 1000), nn.ReLU())
         self.out = nn.Sequential(nn.Linear(1000, n_out), nn.Tanh())
@@ -50,7 +50,8 @@ class GeneratorCNN(nn.Module):
 
         self.init_size = image_dimension // 4
         self.l1 = nn.Sequential(
-            nn.Linear(noise_dimension, 128 * self.init_size**2))
+            nn.Linear(noise_dimension, 128 * self.init_size ** 2)
+        )
 
         self.conv_blocks = nn.Sequential(
             nn.BatchNorm2d(128),
@@ -81,7 +82,7 @@ class DiscriminatorCNN(nn.Module):
             block = [
                 nn.Conv2d(in_filters, out_filters, 3, 2, 1),
                 nn.LeakyReLU(0.2, inplace=True),
-                nn.Dropout2d(0.25)
+                nn.Dropout2d(0.25),
             ]
             if bn:
                 block.append(nn.BatchNorm2d(out_filters, 0.8))
@@ -95,9 +96,10 @@ class DiscriminatorCNN(nn.Module):
         )
 
         # The height and width of downsampled image
-        ds_size = image_dimension // 2**4
-        self.adv_layer = nn.Sequential(nn.Linear(128 * ds_size**2, 1),
-                                       nn.Sigmoid())
+        ds_size = image_dimension // 2 ** 4
+        self.adv_layer = nn.Sequential(
+            nn.Linear(128 * ds_size ** 2, 1), nn.Sigmoid()
+        )
 
     def forward(self, img):
         out = self.model(img)

@@ -31,7 +31,7 @@ def ones_target_smooth(size):
     '''
     Tensor containing 0.9s, with shape = size
     '''
-    data = torch.full((size, ), 0.9)
+    data = torch.full((size,), 0.9)
     return data
 
 
@@ -47,7 +47,7 @@ def zeros_target_smooth(size):
     '''
     Tensor containing zeros, with shape = size
     '''
-    data = torch.full((size, ), 0.1)
+    data = torch.full((size,), 0.1)
 
     return data
 
@@ -66,8 +66,9 @@ def images_to_vectors(images):
 
 
 def vectors_to_images(vectors, array_dim):
-    return vectors.view(vectors.size(0), array_dim[0], array_dim[1],
-                        array_dim[2])
+    return vectors.view(
+        vectors.size(0), array_dim[0], array_dim[1], array_dim[2]
+    )
 
 
 def images_to_vectors_cifar10(images):
@@ -87,6 +88,7 @@ def zero_grad(params):
             p.grad.detach()
             p.grad.zero_()
 
+
 def weights_init_normal(m):
     classname = m.__class__.__name__
     if classname.find("Conv") != -1:
@@ -104,21 +106,22 @@ def Hvp_vec(grad_vec, params, vec, retain_graph=False):
         print('vec nan')
         raise ValueError('vec Nan')
     try:
-        grad_grad = autograd.grad(grad_vec,
-                                  params,
-                                  grad_outputs=vec,
-                                  retain_graph=retain_graph)
+        grad_grad = autograd.grad(
+            grad_vec, params, grad_outputs=vec, retain_graph=retain_graph
+        )
         hvp = torch.cat([g.contiguous().view(-1) for g in grad_grad])
         if torch.isnan(hvp).any():
             print('hvp nan')
             raise ValueError('hvp Nan')
     except:
         # print('filling zero for None')
-        grad_grad = autograd.grad(grad_vec,
-                                  params,
-                                  grad_outputs=vec,
-                                  retain_graph=retain_graph,
-                                  allow_unused=True)
+        grad_grad = autograd.grad(
+            grad_vec,
+            params,
+            grad_outputs=vec,
+            retain_graph=retain_graph,
+            allow_unused=True,
+        )
         grad_list = []
         for i, p in enumerate(params):
             if grad_grad[i] is None:
@@ -133,11 +136,13 @@ def Hvp_vec(grad_vec, params, vec, retain_graph=False):
 
 def hessian_vec(grad_vec, var, retain_graph=False):
     v = torch.ones_like(var)
-    vec, = autograd.grad(grad_vec,
-                         var,
-                         grad_outputs=v,
-                         allow_unused=True,
-                         retain_graph=retain_graph)
+    (vec,) = autograd.grad(
+        grad_vec,
+        var,
+        grad_outputs=v,
+        allow_unused=True,
+        retain_graph=retain_graph,
+    )
     return vec
 
 
@@ -180,7 +185,10 @@ class Richardson(object):
 
         solution = initial_guess
 
-        while relative_residual_norm > self.tol and self.iteration_count < self.maxiter:
+        while (
+            relative_residual_norm > self.tol
+            and self.iteration_count < self.maxiter
+        ):
             ## TODO: consider making all of these non-attributes and just return them
             solution = solution + self.relaxation * residual
 
@@ -188,27 +196,31 @@ class Richardson(object):
             residual_norm = residual.norm()
             relative_residual_norm = residual_norm / self.rhs_norm
             self.iteration_count += 1
-            self.print_verbose("Richardson converged in ",
-                               str(self.iteration_count),
-                               " iteration with relative residual norm: ",
-                               str(relative_residual_norm),
-                               end='...')
+            self.print_verbose(
+                "Richardson converged in ",
+                str(self.iteration_count),
+                " iteration with relative residual norm: ",
+                str(relative_residual_norm),
+                end='...',
+            )
 
         # Do not return because it's already an attribute
         return solution
 
 
-def general_conjugate_gradient(grad_x,
-                               grad_y,
-                               x_params,
-                               y_params,
-                               kk,
-                               lr_x,
-                               lr_y,
-                               x=None,
-                               nsteps=10,
-                               residual_tol=1e-16,
-                               device=torch.device('cpu')):
+def general_conjugate_gradient(
+    grad_x,
+    grad_y,
+    x_params,
+    y_params,
+    kk,
+    lr_x,
+    lr_y,
+    x=None,
+    nsteps=10,
+    residual_tol=1e-16,
+    device=torch.device('cpu'),
+):
     '''
 
     :param grad_x:
@@ -239,17 +251,15 @@ def general_conjugate_gradient(grad_x,
     for i in range(nsteps):
         # To compute Avp
         # h_1 = Hvp_vec(grad_vec=grad_x, params=y_params, vec=lr_x * p, retain_graph=True)
-        h_1 = Hvp_vec(grad_vec=grad_x,
-                      params=y_params,
-                      vec=lr_x * jj,
-                      retain_graph=True).mul_(lr_y)
+        h_1 = Hvp_vec(
+            grad_vec=grad_x, params=y_params, vec=lr_x * jj, retain_graph=True
+        ).mul_(lr_y)
         # h_1.mul_(lr_y)
         # lr_y * D_yx * b
         # h_2 = Hvp_vec(grad_vec=grad_y, params=x_params, vec=lr_y * h_1, retain_graph=True)
-        h_2 = Hvp_vec(grad_vec=grad_y,
-                      params=x_params,
-                      vec=h_1,
-                      retain_graph=True).mul_(lr_x)
+        h_2 = Hvp_vec(
+            grad_vec=grad_y, params=x_params, vec=h_1, retain_graph=True
+        ).mul_(lr_x)
         # h_2.mul_(lr_x)
         # lr_x * D_xy * lr_y * D_yx * b
         Avp_ = jj + h_2
@@ -267,13 +277,15 @@ def general_conjugate_gradient(grad_x,
 
 
 #######################################################################
-def general_conjugate_gradient_jacobi(grad_x,
-                                      x_params,
-                                      right_side,
-                                      x=None,
-                                      nsteps=10,
-                                      residual_tol=1e-16,
-                                      device=torch.device('cpu')):
+def general_conjugate_gradient_jacobi(
+    grad_x,
+    x_params,
+    right_side,
+    x=None,
+    nsteps=10,
+    residual_tol=1e-16,
+    device=torch.device('cpu'),
+):
     '''
 
     :param grad_x:
@@ -301,10 +313,9 @@ def general_conjugate_gradient_jacobi(grad_x,
     x_params = tuple(x_params)
 
     for i in range(nsteps):
-        h_1 = Hvp_vec(grad_vec=grad_x,
-                      params=x_params,
-                      vec=2 * x,
-                      retain_graph=True)
+        h_1 = Hvp_vec(
+            grad_vec=grad_x, params=x_params, vec=2 * x, retain_graph=True
+        )
         H = -h_1 + x
         Avp_ = right_side_clone2 + H
 

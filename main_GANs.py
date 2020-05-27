@@ -18,7 +18,7 @@ Options:
   -h, --help                  Show this screen.
   --version                   Show version.
   --display                   Use matplotlib to plot results.
-  --save                      Save a model.
+  --save                      Save the model.
   -e, --epochs=<n>            Number of epochs [default: 100].
   -o, --optimizer=<str>       Optimizer name [default: Jacobi].
   -l, --learning_rate=<f>     Learning rate [default: 0.01].
@@ -66,6 +66,7 @@ if __name__ == '__main__':
     epochs = int(arguments['--epochs'])
     optimizer_name = arguments['--optimizer']
     learning_rate = float(arguments['--learning_rate'])
+
     model_switch = arguments['--model']
 
     if model_switch == 'MLP':
