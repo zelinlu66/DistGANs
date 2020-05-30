@@ -69,7 +69,7 @@ class GANs_model(object):
         pass
 
     def optimizer_initialize(
-        self, loss, lr_x, lr_y, optimizer_name='SGD', label_smoothing=False
+        self, loss, lr_x, lr_y, optimizer_name, label_smoothing=False
     ):
         if optimizer_name == 'Jacobi':
             self.optimizer = Jacobi(
@@ -83,8 +83,10 @@ class GANs_model(object):
             self.optimizer = JacobiMultiCost(self.G, self.D, loss, lr_x, lr_y)
         elif optimizer_name == 'GaussSeidel':
             self.optimizer = GaussSeidel(self.G, self.D, loss, lr_x, lr_y)
-        else:
+        elif optimizer_name == 'SGD':
             self.optimizer = SGD(self.G, self.D, loss, lr_x)
+        else:
+            raise RuntimeError("Optimizer type is not valid")
 
     def save_images(self, epoch_number, n_batch, images):
         count = 0
