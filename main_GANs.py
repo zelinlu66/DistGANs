@@ -6,25 +6,18 @@
         : Simona Perotto (e-mail: simona.perotto@polimi.it)
 
 Usage:
-  main_GANs.py (-h | --help)
-  main_GANs.py --version
-  main_GANs.py [--epochs=100] [--optimizer='CGD'] [--learning_rate=0.0005]
-  main_GANs.py [-e 100] [-o 'CGD'] [-l 0.0005]
-  main_GANs.py [--model='MLP']
-  main_GANs.py [-m 'CNN'] [--display] [--save]
+  main_GANS.py (-h | --help)
+  main_GANS.py [-m MODEL] [-e EPOCHS] [-o OPTIMIZER] [-r LEARNING_RATE] [--display] [--save]
 
-  
 Options:
   -h, --help                  Show this screen.
   --version                   Show version.
   --display                   Use matplotlib to plot results.
   --save                      Save the model.
-  -e, --epochs=<n>            Number of epochs [default: 100].
+  -e, --epochs=<n>            Number of epochs [default: 100]
   -o, --optimizer=<str>       Optimizer name [default: Jacobi].
-  -l, --learning_rate=<f>     Learning rate [default: 0.01].
-  -m, --model=<str>           Implementation of GANs model. Multi-layer 
-                              perceptrons NN (MLP), convolutional NN (CNN) 
-                              [default: MLP].
+  -r, --learning_rate=<f>     Learning rate [default: 0.01].
+  -m, --model=<str>           Implementation of GANs model. Multi-layer perceptrons NN (MLP), convolutional NN (CNN) [default: MLP].
 """
 import sys
 import matplotlib.pyplot as plt
@@ -35,7 +28,7 @@ from DCGANs_object import *
 
 """
 ! READ ME !
-Multi-layer perceptrons neural networks (MLP), convolutional neural networks (CNN) 
+Multi-layer perceptrons neural networks (MLP), convolutional neural networks (CNN)
 X = Generator
 Y = Discriminaror
 
@@ -74,7 +67,9 @@ if __name__ == "__main__":
         model = MLP_GANs_model(mnist_data(rand_rotation=False, max_degree=90))
     elif model_switch == "CNN":
         print("Using CNN implementation of GANs: DCGANs_model")
-        model = DCGANs_model(mnist_data_dcgans(rand_rotation=False, max_degree=90))
+        model = DCGANs_model(
+            mnist_data_dcgans(rand_rotation=False, max_degree=90)
+        )
     else:
         sys.exit(
             "\n   *** Error. Specified model name: {} is not valid. Please choose MLP or CNN".format(
@@ -107,7 +102,8 @@ if __name__ == "__main__":
             model.D_error_fake_history,
         )
         plt.plot(
-            [x for x in range(0, len(model.G_error_history))], model.G_error_history,
+            [x for x in range(0, len(model.G_error_history))],
+            model.G_error_history,
         )
         plt.xlabel("Iterations")
         plt.ylabel("Loss function value")
