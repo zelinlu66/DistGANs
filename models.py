@@ -49,9 +49,7 @@ class GeneratorCNN(nn.Module):
         super(GeneratorCNN, self).__init__()
 
         self.init_size = image_dimension // 4
-        self.l1 = nn.Sequential(
-            nn.Linear(noise_dimension, 128 * self.init_size ** 2)
-        )
+        self.l1 = nn.Sequential(nn.Linear(noise_dimension, 128 * self.init_size ** 2))
 
         self.conv_blocks = nn.Sequential(
             nn.BatchNorm2d(128),
@@ -97,9 +95,7 @@ class DiscriminatorCNN(nn.Module):
 
         # The height and width of downsampled image
         ds_size = image_dimension // 2 ** 4
-        self.adv_layer = nn.Sequential(
-            nn.Linear(128 * ds_size ** 2, 1), nn.Sigmoid()
-        )
+        self.adv_layer = nn.Sequential(nn.Linear(128 * ds_size ** 2, 1), nn.Sigmoid())
 
     def forward(self, img):
         out = self.model(img)
