@@ -1,9 +1,9 @@
-"""
+'''
 @authors: Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it)
         : Massimiliano Lupo Pasini (e-mail: lupopasinim@ornl.gov)
         : Nouamane Laanait (e-mail: laanaitn@ornl.gov)
         : Simona Perotto (e-mail: simona.perotto@polimi.it)
-"""
+'''
 ##########################################
 import os
 import numpy as np
@@ -20,42 +20,42 @@ import math
 
 
 def ones_target(size):
-    """
+    '''
     Tensor containing ones, with shape = size
-    """
+    '''
     data = Variable(torch.ones(size, 1))
     return data
 
 
 def ones_target_smooth(size):
-    """
+    '''
     Tensor containing 0.9s, with shape = size
-    """
+    '''
     data = torch.full((size,), 0.9)
     return data
 
 
 def zeros_target(size):
-    """
+    '''
     Tensor containing zeros, with shape = size
-    """
+    '''
     data = Variable(torch.zeros(size, 1))
     return data
 
 
 def zeros_target_smooth(size):
-    """
+    '''
     Tensor containing zeros, with shape = size
-    """
+    '''
     data = torch.full((size,), 0.1)
 
     return data
 
 
 def noise(size, noise_size):
-    """
+    '''
     Generates a 1-d vector of gaussian sampled random values
-    """
+    '''
     n = Variable(torch.randn(size, noise_size))
     return n
 
@@ -66,7 +66,9 @@ def images_to_vectors(images):
 
 
 def vectors_to_images(vectors, array_dim):
-    return vectors.view(vectors.size(0), array_dim[0], array_dim[1], array_dim[2])
+    return vectors.view(
+        vectors.size(0), array_dim[0], array_dim[1], array_dim[2]
+    )
 
 
 def images_to_vectors_cifar10(images):
@@ -98,19 +100,19 @@ def weights_init_normal(m):
 
 def Hvp_vec(grad_vec, params, vec, retain_graph=False):
     if torch.isnan(grad_vec).any():
-        print("grad vec nan")
-        raise ValueError("grad Nan")
+        print('grad vec nan')
+        raise ValueError('grad Nan')
     if torch.isnan(vec).any():
-        print("vec nan")
-        raise ValueError("vec Nan")
+        print('vec nan')
+        raise ValueError('vec Nan')
     try:
         grad_grad = autograd.grad(
             grad_vec, params, grad_outputs=vec, retain_graph=retain_graph
         )
         hvp = torch.cat([g.contiguous().view(-1) for g in grad_grad])
         if torch.isnan(hvp).any():
-            print("hvp nan")
-            raise ValueError("hvp Nan")
+            print('hvp nan')
+            raise ValueError('hvp Nan')
     except:
         # print('filling zero for None')
         grad_grad = autograd.grad(
@@ -128,14 +130,18 @@ def Hvp_vec(grad_vec, params, vec, retain_graph=False):
                 grad_list.append(grad_grad[i].contiguous().view(-1))
         hvp = torch.cat(grad_list)
         if torch.isnan(hvp).any():
-            raise ValueError("hvp Nan")
+            raise ValueError('hvp Nan')
     return hvp
 
 
 def hessian_vec(grad_vec, var, retain_graph=False):
     v = torch.ones_like(var)
     (vec,) = autograd.grad(
-        grad_vec, var, grad_outputs=v, allow_unused=True, retain_graph=retain_graph,
+        grad_vec,
+        var,
+        grad_outputs=v,
+        allow_unused=True,
+        retain_graph=retain_graph,
     )
     return vec
 
@@ -179,7 +185,10 @@ class Richardson(object):
 
         solution = initial_guess
 
-        while relative_residual_norm > self.tol and self.iteration_count < self.maxiter:
+        while (
+            relative_residual_norm > self.tol
+            and self.iteration_count < self.maxiter
+        ):
             ## TODO: consider making all of these non-attributes and just return them
             solution = solution + self.relaxation * residual
 
@@ -192,7 +201,7 @@ class Richardson(object):
                 str(self.iteration_count),
                 " iteration with relative residual norm: ",
                 str(relative_residual_norm),
-                end="...",
+                end='...',
             )
 
         # Do not return because it's already an attribute
@@ -210,9 +219,9 @@ def general_conjugate_gradient(
     x=None,
     nsteps=10,
     residual_tol=1e-16,
-    device=torch.device("cpu"),
+    device=torch.device('cpu'),
 ):
-    """
+    '''
 
     :param grad_x:
     :param grad_y:
@@ -227,11 +236,11 @@ def general_conjugate_gradient(
     :param device:
     :return: (I + sqrt(lr_x) * D_xy * lr_y * D_yx * sqrt(lr_x)) ** -1 * b
 
-    """
+    '''
     if x is None:
         x = torch.zeros(kk.shape[0], device=device)
     if grad_x.shape != kk.shape:
-        raise RuntimeError("CG: hessian vector product shape mismatch")
+        raise RuntimeError('CG: hessian vector product shape mismatch')
     lr_x = lr_x.sqrt()
     mm = kk.clone().detach()
     jj = mm.clone().detach()
@@ -275,9 +284,9 @@ def general_conjugate_gradient_jacobi(
     x=None,
     nsteps=10,
     residual_tol=1e-16,
-    device=torch.device("cpu"),
+    device=torch.device('cpu'),
 ):
-    """
+    '''
 
     :param grad_x:
     :param grad_y:
@@ -292,7 +301,7 @@ def general_conjugate_gradient_jacobi(
     :param device:
     :return: (A) ** -1 * (right_side)
 
-    """
+    '''
     if x is None:
         x = torch.zeros(right_side.shape[0], device=device)
 
@@ -304,7 +313,9 @@ def general_conjugate_gradient_jacobi(
     x_params = tuple(x_params)
 
     for i in range(nsteps):
-        h_1 = Hvp_vec(grad_vec=grad_x, params=x_params, vec=2 * x, retain_graph=True)
+        h_1 = Hvp_vec(
+            grad_vec=grad_x, params=x_params, vec=2 * x, retain_graph=True
+        )
         H = -h_1 + x
         Avp_ = right_side_clone2 + H
 

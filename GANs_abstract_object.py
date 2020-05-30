@@ -32,9 +32,9 @@ class GANs_model(object):
         self.G_error_history = []
 
         if self.data_dimension[0] == 3:
-            self.imtype = "RGB"
+            self.imtype = 'RGB'
         else:
-            self.imtype = "gray"
+            self.imtype = 'gray'
 
     def print_verbose(self, *args, **kwargs):
         if self.verbose:
@@ -45,13 +45,13 @@ class GANs_model(object):
             if not os.path.exists(directory):
                 os.makedirs(directory)
         except OSError:
-            print("Error: Creating directory. " + directory)
+            print('Error: Creating directory. ' + directory)
 
     def save_models(self):
         # G_directory = self.createFolder("/G_model")
         # D_directory = self.createFolder("/D_model")
-        filename_D = "D_state_dict.pth"
-        filename_G = "G_state_dict.pth"
+        filename_D = 'D_state_dict.pth'
+        filename_G = 'G_state_dict.pth'
         torch.save(self.G.state_dict(), filename_G)
         torch.save(self.D.state_dict(), filename_D)
 
@@ -71,17 +71,19 @@ class GANs_model(object):
     def optimizer_initialize(
         self, loss, lr_x, lr_y, optimizer_name, label_smoothing=False
     ):
-        if optimizer_name == "Jacobi":
-            self.optimizer = Jacobi(self.G, self.D, loss, lr_x, lr_y, label_smoothing)
-        elif optimizer_name == "CGD":
+        if optimizer_name == 'Jacobi':
+            self.optimizer = Jacobi(
+                self.G, self.D, loss, lr_x, lr_y, label_smoothing
+            )
+        elif optimizer_name == 'CGD':
             self.optimizer = CGD(self.G, self.D, loss, lr_x)
-        elif optimizer_name == "Newton":
+        elif optimizer_name == 'Newton':
             self.optimizer = Newton(self.G, self.D, loss, lr_x, lr_y)
-        elif optimizer_name == "JacobiMultiCost":
+        elif optimizer_name == 'JacobiMultiCost':
             self.optimizer = JacobiMultiCost(self.G, self.D, loss, lr_x, lr_y)
-        elif optimizer_name == "GaussSeidel":
+        elif optimizer_name == 'GaussSeidel':
             self.optimizer = GaussSeidel(self.G, self.D, loss, lr_x, lr_y)
-        elif optimizer_name == "SGD":
+        elif optimizer_name == 'SGD':
             self.optimizer = SGD(self.G, self.D, loss, lr_x)
         else:
             raise RuntimeError("Optimizer type is not valid")
@@ -90,7 +92,7 @@ class GANs_model(object):
         count = 0
         for image_index in range(0, images.shape[0]):
             count = count + 1
-            if self.imtype == "RGB":
+            if self.imtype == 'RGB':
                 image = images[image_index]  # [0]
                 image = image.detach().numpy()
                 image = (image + 1) / 2
@@ -98,32 +100,32 @@ class GANs_model(object):
                 self.createFolder(self.save_path)
                 path = str(
                     self.save_path
-                    + "/fake_image"
-                    + "_Epoch_"
+                    + '/fake_image'
+                    + '_Epoch_'
                     + str(e + 1)
-                    + "_Batch_"
+                    + '_Batch_'
                     + str(n_batch)
-                    + "_N_image_"
+                    + '_N_image_'
                     + str(count)
-                    + ".png"
+                    + '.png'
                 )
                 plt.imsave(path, image)
             else:
                 image = images[image_index][0]
                 image = image.detach().numpy()
                 image = (image + 1) / 2
-                img = pil.fromarray(np.uint8(image * 255), "L")
+                img = pil.fromarray(np.uint8(image * 255), 'L')
                 self.createFolder(self.save_path)
                 path = str(
                     self.save_path
-                    + "/fake_image"
-                    + "_Epoch_"
+                    + '/fake_image'
+                    + '_Epoch_'
                     + str(epoch_number + 1)
-                    + "_Batch_"
+                    + '_Batch_'
                     + str(n_batch)
-                    + "_N_image_"
+                    + '_N_image_'
                     + str(count)
-                    + ".png"
+                    + '.png'
                 )
                 img.save(path)
 
@@ -133,11 +135,11 @@ class GANs_model(object):
         loss=torch.nn.BCEWithLogitsLoss(),
         lr_x=torch.tensor([0.001]),
         lr_y=torch.tensor([0.001]),
-        optimizer_name="Jacobi",
+        optimizer_name='Jacobi',
         num_epochs=1,
         batch_size=100,
         verbose=True,
-        save_path="./data_fake",
+        save_path='./data_fake',
         label_smoothing=False,
         single_number=None,
     ):
