@@ -26,7 +26,7 @@ from docopt import docopt
 from MLP_GANs_object import *
 from DCGANs_object import *
 
-"""
+'''
 ! READ ME !
 Multi-layer perceptrons neural networks (MLP), convolutional neural networks (CNN)
 X = Generator
@@ -47,32 +47,32 @@ inside your current directory
 
 TO TRY: Setting much lower learning rates to see if model collapse is avoided (ex. lr_x = 0.0001 , lr_y = 0.0004)
 
-"""
+'''
 
-if __name__ == "__main__":
-    arguments = docopt(__doc__, version="Competitive Gradient Descent 0.0")
+if __name__ == '__main__':
+    arguments = docopt(__doc__, version='Competitive Gradient Descent 0.0')
     print("Input parameters:")
     for arg in arguments:
         if arguments[arg]:
             print("  {}  {}".format(arg, arguments[arg]))
 
-    epochs = int(arguments["--epochs"])
-    optimizer_name = arguments["--optimizer"]
-    learning_rate = float(arguments["--learning_rate"])
+    epochs = int(arguments['--epochs'])
+    optimizer_name = arguments['--optimizer']
+    learning_rate = float(arguments['--learning_rate'])
 
-    model_switch = arguments["--model"]
+    model_switch = arguments['--model']
 
-    if model_switch == "MLP":
+    if model_switch == 'MLP':
         print("Using MLP implementation of GANs: MLP_GANs_model")
         model = MLP_GANs_model(mnist_data(rand_rotation=False, max_degree=90))
-    elif model_switch == "CNN":
+    elif model_switch == 'CNN':
         print("Using CNN implementation of GANs: DCGANs_model")
         model = DCGANs_model(
             mnist_data_dcgans(rand_rotation=False, max_degree=90)
         )
     else:
         sys.exit(
-            "\n   *** Error. Specified model name: {} is not valid. Please choose MLP or CNN".format(
+            '\n   *** Error. Specified model name: {} is not valid. Please choose MLP or CNN'.format(
                 model_switch
             )
         )
@@ -87,11 +87,11 @@ if __name__ == "__main__":
         single_number=4,
     )  # save_path = ''
 
-    if arguments["--save"]:
+    if arguments['--save']:
         print("Saving the model...")
         model.save_models()
 
-    if arguments["--display"]:
+    if arguments['--display']:
         plt.figure()
         plt.plot(
             [x for x in range(0, len(model.D_error_real_history))],
@@ -105,13 +105,13 @@ if __name__ == "__main__":
             [x for x in range(0, len(model.G_error_history))],
             model.G_error_history,
         )
-        plt.xlabel("Iterations")
-        plt.ylabel("Loss function value")
+        plt.xlabel('Iterations')
+        plt.ylabel('Loss function value')
         plt.legend(
             [
-                "Discriminator: Loss on Real Data",
-                "Discriminator: Loss on Fake Data",
-                "Generator: Loss",
+                'Discriminator: Loss on Real Data',
+                'Discriminator: Loss on Fake Data',
+                'Generator: Loss',
             ]
         )
-        plt.savefig("cost_report.png")
+        plt.savefig('cost_report.png')
