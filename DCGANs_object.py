@@ -2,10 +2,13 @@
 """
 Created on Sat Apr  4 17:34:40 2020
 
-@authors: Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it)
+@authors: Andrey Prokpenko (e-mail: prokopenkoav@ornl.gov)
+        : Debangshu Mukherjee (e-mail: mukherjeed@ornl.gov)
         : Massimiliano Lupo Pasini (e-mail: lupopasinim@ornl.gov)
         : Nouamane Laanait (e-mail: laanaitn@ornl.gov)
         : Simona Perotto (e-mail: simona.perotto@polimi.it)
+        : Vitaliy Starchenko  (e-mail: starchenkov@ornl.gov)
+        : Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it) 
 
 """
 import torch
@@ -88,12 +91,12 @@ class DCGANs_model(GANs_model):
                 real_data = Variable((real_batch))
                 N = real_batch.size(0)
                 self.optimizer.zero_grad()
-                if optimizer_name == 'GaussSeidel':
+                if optimizer_name == 'GaussSeidel' or optimizer_name == 'Adam':
                     error_real, error_fake, g_error = self.optimizer.step(
                         real_data, N
                     )
-                    self.D = optimizer.D
-                    self.G = optimizer.G
+                    self.D = self.optimizer.D
+                    self.G = self.optimizer.G
                 else:
                     (
                         error_real,

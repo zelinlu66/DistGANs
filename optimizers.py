@@ -1,8 +1,11 @@
 """
-@authors: Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it)
+@authors: Andrey Prokpenko (e-mail: prokopenkoav@ornl.gov)
+        : Debangshu Mukherjee (e-mail: mukherjeed@ornl.gov)
         : Massimiliano Lupo Pasini (e-mail: lupopasinim@ornl.gov)
         : Nouamane Laanait (e-mail: laanaitn@ornl.gov)
         : Simona Perotto (e-mail: simona.perotto@polimi.it)
+        : Vitaliy Starchenko  (e-mail: starchenkov@ornl.gov)
+        : Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it) 
 
 """
 '''
@@ -555,3 +558,44 @@ class JacobiMultiCost(Optimizer):
 
 
 #################################################################################
+class Adam(Optimizer):
+    def __init__(self, G, D, criterion, lr_x, lr_y, b1=0.5, b2=0.999):
+        super(Adam, self).__init__(G, D, criterion)
+        self.G = G
+        self.D = D
+        self.lr_x = lr_x.item()
+        self.lr_y = lr_y.item()
+        self.b1 = b1
+        self.b2 = b2
+        # Optimizers
+        self.optimizer_G = torch.optim.Adam(
+            self.G.parameters(), lr=self.lr_x, betas=(self.b1, self.b2)
+        )
+        self.optimizer_D = torch.optim.Adam(
+            self.D.parameters(), lr=self.lr_y, betas=(self.b1, self.b2)
+        )
+
+    def step(self, real_data, N):
+        # Generator step
+        self.optimizer_G.zero_grad()
+        fake_data = self.G(
+            noise(N, 100)
+        )  # Second argument of noise is the noise_dimension parameter of build_generator
+        d_pred_fake = self.D(fake_data)
+        g_error = self.criterion(d_pred_fake, ones_target(N))
+
+        g_error.backward()
+        self.optimizer_G.step()
+        # Discriminator step
+        self.optimizer_D.zero_grad()
+        # Measure discriminator's ability to classify real from generated samples
+        d_pred_real = self.D(real_data)
+        error_real = self.criterion(d_pred_real, ones_target(N))
+        d_pred_fake = self.D(fake_data.detach())
+        error_fake = self.criterion(d_pred_fake, zeros_target(N))
+
+        d_loss = (error_real + error_fake) / 2
+        d_loss.backward()
+        self.optimizer_D.step()
+
+        return error_real.item(), error_fake.item(), g_error.item()

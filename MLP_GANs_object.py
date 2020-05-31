@@ -2,10 +2,13 @@
 """
 Created on Sat Apr  4 17:34:40 2020
 
-@authors: Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it)
+@authors: Andrey Prokpenko (e-mail: prokopenkoav@ornl.gov)
+        : Debangshu Mukherjee (e-mail: mukherjeed@ornl.gov)
         : Massimiliano Lupo Pasini (e-mail: lupopasinim@ornl.gov)
         : Nouamane Laanait (e-mail: laanaitn@ornl.gov)
         : Simona Perotto (e-mail: simona.perotto@polimi.it)
+        : Vitaliy Starchenko  (e-mail: starchenkov@ornl.gov)
+        : Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it) 
 
 """
 import torch
@@ -40,6 +43,7 @@ class MLP_GANs_model(GANs_model):
 
     # loss = torch.nn.BCEWithLogitsLoss()
     # loss = binary_cross_entropy
+    # loss = torch.nn.BCELoss()
     def train(
         self,
         loss=torch.nn.BCEWithLogitsLoss(),
@@ -87,7 +91,7 @@ class MLP_GANs_model(GANs_model):
                 self.optimizer.D = self.D
                 self.optimizer.zero_grad()
 
-                if optimizer_name == 'GaussSeidel':
+                if optimizer_name == 'GaussSeidel' or optimizer_name == 'Adam':
                     error_real, error_fake, g_error = self.optimizer.step(
                         real_data, N
                     )

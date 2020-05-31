@@ -2,10 +2,13 @@
 """
 Created on Tue Mar 17 11:26:08 2020
 
-@authors: Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it)
+@authors: Andrey Prokpenko (e-mail: prokopenkoav@ornl.gov)
+        : Debangshu Mukherjee (e-mail: mukherjeed@ornl.gov)
         : Massimiliano Lupo Pasini (e-mail: lupopasinim@ornl.gov)
         : Nouamane Laanait (e-mail: laanaitn@ornl.gov)
         : Simona Perotto (e-mail: simona.perotto@polimi.it)
+        : Vitaliy Starchenko  (e-mail: starchenkov@ornl.gov)
+        : Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it) 
 
 """
 import torch
@@ -44,6 +47,17 @@ class Generator(torch.nn.Module):
         return z
 
 
+class Upsample(nn.Module):
+    def __init__(self, scale_factor):
+        super(Upsample, self).__init__()
+        self.scale_factor = scale_factor
+
+    def forward(self, x):
+        return torch.nn.functional.interpolate(
+            x, scale_factor=self.scale_factor
+        )
+
+
 class GeneratorCNN(nn.Module):
     def __init__(self, noise_dimension, n_channels, image_dimension):
         super(GeneratorCNN, self).__init__()
@@ -55,11 +69,11 @@ class GeneratorCNN(nn.Module):
 
         self.conv_blocks = nn.Sequential(
             nn.BatchNorm2d(128),
-            nn.Upsample(scale_factor=2),
+            Upsample(scale_factor=2),
             nn.Conv2d(128, 128, 3, stride=1, padding=1),
             nn.BatchNorm2d(128, 0.8),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Upsample(scale_factor=2),
+            Upsample(scale_factor=2),  # nn.Upsample
             nn.Conv2d(128, 64, 3, stride=1, padding=1),
             nn.BatchNorm2d(64, 0.8),
             nn.LeakyReLU(0.2, inplace=True),

@@ -85,6 +85,8 @@ class GANs_model(object):
             self.optimizer = GaussSeidel(self.G, self.D, loss, lr_x, lr_y)
         elif optimizer_name == 'SGD':
             self.optimizer = SGD(self.G, self.D, loss, lr_x)
+        elif optimizer_name == 'Adam':
+            self.optimizer = Adam(self.G, self.D, loss, lr_x, lr_y)
         else:
             raise RuntimeError("Optimizer type is not valid")
 
