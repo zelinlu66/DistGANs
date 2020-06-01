@@ -78,7 +78,6 @@ class DCGANs_model(GANs_model):
 
         self.verbose = verbose
         self.save_path = save_path
-        self.test_noise = noise(self.num_test_samples, self.noise_dimension)
         self.optimizer_initialize(
             loss, lr_x, lr_y, optimizer_name, label_smoothing
         )
@@ -88,6 +87,9 @@ class DCGANs_model(GANs_model):
                 "######################################################"
             )
             for n_batch, (real_batch, _) in enumerate(self.data_loader):
+                self.test_noise = noise(
+                    self.num_test_samples, self.noise_dimension
+                )
                 real_data = Variable((real_batch))
                 N = real_batch.size(0)
                 self.optimizer.zero_grad()
