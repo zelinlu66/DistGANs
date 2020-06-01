@@ -20,7 +20,8 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
         self.hidden0 = nn.Sequential(nn.Linear(n_features, 250), nn.ReLU())
         self.hidden1 = nn.Sequential(nn.Linear(250, 100), nn.ReLU())
-        self.out = nn.Sequential(nn.Linear(100, 1), nn.Sigmoid())
+        # self.out = nn.Sequential(nn.Linear(100, 1), nn.Sigmoid())
+        self.out = nn.Sequential(nn.Linear(100, 1))
 
     def forward(self, input):
         x = self.hidden0(input)
@@ -112,7 +113,8 @@ class DiscriminatorCNN(nn.Module):
         # The height and width of downsampled image
         ds_size = image_dimension // 2 ** 4
         self.adv_layer = nn.Sequential(
-            nn.Linear(128 * ds_size ** 2, 1), nn.Sigmoid()
+            # nn.Linear(128 * ds_size ** 2, 1), nn.Sigmoid()
+            nn.Linear(128 * ds_size ** 2, 1)
         )
 
     def forward(self, img):
