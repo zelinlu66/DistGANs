@@ -87,7 +87,7 @@ if __name__ == '__main__':
         optimizer_name=optimizer_name,
         verbose=True,
         label_smoothing=False,
-        single_number=4,
+        single_number=None,
     )  # save_path = ''
 
     if arguments['--save']:
