@@ -64,11 +64,11 @@ class GANs_model(object):
         #In peresence of GPUs available, map the models on the GPUs
         if len(self.list_gpuIDs)==1:
             get_gpu( self.list_gpuIDs[0] )
-            D.to( get_gpu(list_gpuIDs[0]) )
-            G.to( get_gpu(list_gpuIDs[0]) )
+            D.to( get_gpu(self.list_gpuIDs[0]) )
+            G.to( get_gpu(self.list_gpuIDs[0]) )
         elif len(self.list_gpuIDs)==2:
-            D.to( get_gpu(list_gpuIDs[0]) )
-            G.to( get_gpu(list_gpuIDs[1]) )            
+            D.to( get_gpu(self.list_gpuIDs[0]) )
+            G.to( get_gpu(self.list_gpuIDs[1]) )            
             
         return D, G
 
