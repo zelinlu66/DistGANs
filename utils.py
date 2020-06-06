@@ -23,6 +23,7 @@ if torch.cuda.is_available():
     import pycuda
     from pycuda import compiler
     import pycuda.driver as drv
+
     drv.init()
 
 ################################################################
@@ -99,13 +100,13 @@ def count_gpus():
 
 
 def get_gpus_list():
-    gpu_list = []   
+    gpu_list = []
     if torch.cuda.is_available():
-        #print("%d device(s) found." % drv.Device.count())
+        # print("%d device(s) found." % drv.Device.count())
         for ordinal in range(drv.Device.count()):
             dev = drv.Device(ordinal)
-            #print (ordinal, dev.name())
-            gpu_list.append(ordinal)  
+            # print (ordinal, dev.name())
+            gpu_list.append(ordinal)
     return gpu_list
 
 
@@ -113,11 +114,17 @@ def get_gpu(number):
     gpus_list = get_gpus_list()
     if torch.cuda.is_available():
         if number not in gpus_list:
-            raise ValueError('The GPU ID:'+str(number)+' is not inside the list of GPUs available')
+            raise ValueError(
+                'The GPU ID:'
+                + str(number)
+                + ' is not inside the list of GPUs available'
+            )
         else:
             torch.cuda.device_count()
-            device = torch.device("cuda:"+str(number))  # you can continue going on here, like cuda:1 cuda:2....etc. 
-            print("Running on the GPU with ID: "+str(number))
+            device = torch.device(
+                "cuda:" + str(number)
+            )  # you can continue going on here, like cuda:1 cuda:2....etc.
+            print("Running on the GPU with ID: " + str(number))
     else:
         device = torch.device("cpu")
         print("Running on the CPU - GPU is NOT available")
