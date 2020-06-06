@@ -51,7 +51,7 @@ class CGD(Optimizer):
         self.lr = lr
 
     def step(self, real_data, N):
-        fake_data = self.G(noise(N, 100))
+        fake_data = self.G(noise(N, 100),self.G.device)
         prediction_real = self.D(real_data)
         error_real = self.criterion(prediction_real, ones_target(N))
         prediction_fake = self.D(fake_data)

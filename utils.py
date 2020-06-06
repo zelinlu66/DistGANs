@@ -62,11 +62,11 @@ def zeros_target_smooth(size):
     return data
 
 
-def noise(size, noise_size):
+def noise(size, noise_size, device):
     '''
     Generates a 1-d vector of gaussian sampled random values
     '''
-    n = Variable(torch.randn(size, noise_size))
+    n = Variable(torch.randn(size, noise_size).to(device))
     return n
 
 
