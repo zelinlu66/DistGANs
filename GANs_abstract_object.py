@@ -24,6 +24,8 @@ from abc import ABCMeta, abstractmethod
 
 class GANs_model(object):
     def __init__(self, data):
+        self.num_gpus = count_gpus()
+        self.list_gpuIDs = get_gpus_list()
         self.data = data
         self.data_dimension = self.data[0][0].numpy().shape
         self.D, self.G = self.build_models()
@@ -58,6 +60,16 @@ class GANs_model(object):
     def build_models(self):
         D = self.build_discriminator()
         G = self.build_generator()
+        
+        #In peresence of GPUs available, map the models on the GPUs
+        if len(self.list_gpuIDs)==1:
+            get_gpu( self.list_gpuIDs[0] )
+            D.to( get_gpu(list_gpuIDs[0]) )
+            G.to( get_gpu(list_gpuIDs[0]) )
+        elif len(self.list_gpuIDs)==2:
+            D.to( get_gpu(list_gpuIDs[0]) )
+            G.to( get_gpu(list_gpuIDs[1]) )            
+            
         return D, G
 
     @abstractmethod
