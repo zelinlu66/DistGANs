@@ -88,7 +88,7 @@ class DCGANs_model(GANs_model):
             )
             for n_batch, (real_batch, _) in enumerate(self.data_loader):
                 self.test_noise = noise(
-                    self.num_test_samples, self.noise_dimension
+                    self.num_test_samples, self.noise_dimension, self.G.device
                 )
                 real_data = Variable((real_batch))
                 N = real_batch.size(0)
