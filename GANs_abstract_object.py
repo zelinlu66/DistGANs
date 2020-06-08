@@ -104,7 +104,7 @@ class GANs_model(object):
                     self.save_path
                     + '/fake_image'
                     + '_Epoch_'
-                    + str(e + 1)
+                    + str(epoch_number + 1)
                     + '_Batch_'
                     + str(n_batch)
                     + '_N_image_'
