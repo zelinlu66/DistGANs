@@ -272,7 +272,7 @@ def general_conjugate_gradient(
     nsteps=10,
     residual_tol=1e-16,
     device_x=torch.device('cpu'),
-    device_y=torch.device('cpu')
+    device_y=torch.device('cpu'),
 ):
     '''
 
@@ -308,13 +308,19 @@ def general_conjugate_gradient(
         # To compute Avp
         # h_1 = Hvp_vec(grad_vec=grad_x, params=y_params, vec=lr_x * p, retain_graph=True)
         h_1 = Hvp_vec(
-            grad_vec=grad_x.to(device_x), params=y_params, vec=lr_x * jj, retain_graph=True
+            grad_vec=grad_x.to(device_x),
+            params=y_params,
+            vec=lr_x * jj,
+            retain_graph=True,
         ).mul_(lr_y)
         # h_1.mul_(lr_y)
         # lr_y * D_yx * b
         # h_2 = Hvp_vec(grad_vec=grad_y, params=x_params, vec=lr_y * h_1, retain_graph=True)
         h_2 = Hvp_vec(
-            grad_vec=grad_y.to(device_x), params=x_params, vec=h_1.to(device_x), retain_graph=True
+            grad_vec=grad_y.to(device_x),
+            params=x_params,
+            vec=h_1.to(device_x),
+            retain_graph=True,
         ).mul_(lr_x)
         # h_2.mul_(lr_x)
         # lr_x * D_xy * lr_y * D_yx * b
@@ -371,7 +377,10 @@ def general_conjugate_gradient_jacobi(
 
     for i in range(nsteps):
         h_1 = Hvp_vec(
-            grad_vec=grad_x.to(device), params=x_params, vec=2 * x, retain_graph=True
+            grad_vec=grad_x.to(device),
+            params=x_params,
+            vec=2 * x,
+            retain_graph=True,
         )
         H = -h_1.to(device) + x
         Avp_ = right_side_clone2 + H

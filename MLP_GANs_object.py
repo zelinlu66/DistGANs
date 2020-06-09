@@ -141,7 +141,8 @@ class MLP_GANs_model(GANs_model):
 
                 if (n_batch) % self.display_progress == 0:
                     test_images = vectors_to_images(
-                        self.G(self.test_noise.to(self.G.device)), self.data_dimension
+                        self.G(self.test_noise.to(self.G.device)),
+                        self.data_dimension,
                     )  # data_dimension: dimension of output image ex: [1,28,28]
                     self.save_images(e, n_batch, test_images)
 

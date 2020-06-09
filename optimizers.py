@@ -53,11 +53,17 @@ class CGD(Optimizer):
     def step(self, real_data, N):
         fake_data = self.G(noise(N, 100).to(self.G.device))
         prediction_real = self.D(real_data.to(self.D.device))
-        error_real = self.criterion(prediction_real, ones_target(N).to(self.D.device))
+        error_real = self.criterion(
+            prediction_real, ones_target(N).to(self.D.device)
+        )
         prediction_fake = self.D(fake_data.to(self.D.device))
-        error_fake = self.criterion(prediction_fake, zeros_target(N).to(self.D.device))
+        error_fake = self.criterion(
+            prediction_fake, zeros_target(N).to(self.D.device)
+        )
         error_tot = error_fake + error_real
-        errorG = self.criterion(prediction_fake.to(self.G.device), ones_target(N).to(self.G.device))
+        errorG = self.criterion(
+            prediction_fake.to(self.G.device), ones_target(N).to(self.G.device)
+        )
         grad_x = autograd.grad(
             error_tot,
             self.G.parameters(),
@@ -100,12 +106,14 @@ class CGD(Optimizer):
             nsteps=p_x.shape[0],
             lr_x=self.lr,
             lr_y=self.lr,
-            device_x = self.G.device,
-            device_y = self.D.device,
+            device_x=self.G.device,
+            device_y=self.D.device,
         )
         # cg_x.detach_().mul_(p_x_norm)
         # cg_x.detach_().mul_(p_x_norm)
-        cg_x.detach_().mul_(self.lr.sqrt().to(self.G.device))  # delta x = lr_x.sqrt() * cg_x
+        cg_x.detach_().mul_(
+            self.lr.sqrt().to(self.G.device)
+        )  # delta x = lr_x.sqrt() * cg_x
         hcg = (
             Hvp_vec(grad_x_vec, self.D.parameters(), cg_x, retain_graph=True)
             .add_(grad_y_vec)
@@ -278,18 +286,28 @@ class Jacobi(Optimizer):
         d_pred_real = self.D(real_data.to(self.D.device))
         # d_pred_real_copy = self.D(real_data)
         if self.label_smoothing:
-            error_real = self.criterion(d_pred_real, ones_target_smooth(N).to(self.D.device))
+            error_real = self.criterion(
+                d_pred_real, ones_target_smooth(N).to(self.D.device)
+            )
         else:
-            error_real = self.criterion(d_pred_real, ones_target(N).to(self.D.device))
+            error_real = self.criterion(
+                d_pred_real, ones_target(N).to(self.D.device)
+            )
         #    error_real_copy = self.criterion(d_pred_real_copy, ones_target(N) )
         d_pred_fake = self.D(fake_data.to(self.D.device))
         # d_pred_fake_copy = self.D(fake_data_copy)
         if self.label_smoothing:
-            error_fake = self.criterion(d_pred_fake, zeros_target_smooth(N).to(self.D.device))
+            error_fake = self.criterion(
+                d_pred_fake, zeros_target_smooth(N).to(self.D.device)
+            )
         else:
-            error_fake = self.criterion(d_pred_fake, zeros_target(N).to(self.D.device))
+            error_fake = self.criterion(
+                d_pred_fake, zeros_target(N).to(self.D.device)
+            )
         #    error_fake_copy = self.criterion(d_pred_fake_copy, zeros_target(N))
-        g_error = self.criterion(d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device))
+        g_error = self.criterion(
+            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+        )
 
         loss = error_fake + error_real
         # loss_copy = error_fake_copy + error_real_copy
@@ -333,10 +351,16 @@ class GaussSeidel(Optimizer):
         # Second argument of noise is the noise_dimension parameter of build_generator
         fake_data = self.G(noise(N, 100).to(self.G.device))
         d_pred_real = self.D(real_data.to(self.D.device))
-        error_real = self.criterion(d_pred_real, ones_target(N).to(self.D.device))
+        error_real = self.criterion(
+            d_pred_real, ones_target(N).to(self.D.device)
+        )
         d_pred_fake = self.D(fake_data.to(self.D.device))
-        error_fake = self.criterion(d_pred_fake, zeros_target(N).to(self.D.device))
-        g_error = self.criterion(d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device))
+        error_fake = self.criterion(
+            d_pred_fake, zeros_target(N).to(self.D.device)
+        )
+        g_error = self.criterion(
+            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+        )
         loss = error_fake + error_real
 
         grad_x = autograd.grad(
@@ -367,10 +391,16 @@ class GaussSeidel(Optimizer):
         # Second argument of noise is the noise_dimension parameter of build_generator
         fake_data = self.G(noise(N, 100).to(self.G.device))
         d_pred_real = self.D(real_data.to(self.D.device))
-        error_real = self.criterion(d_pred_real, ones_target(N).to(self.D.device))
+        error_real = self.criterion(
+            d_pred_real, ones_target(N).to(self.D.device)
+        )
         d_pred_fake = self.D(fake_data.to(self.D.device))
-        error_fake = self.criterion(d_pred_fake, zeros_target(N).to(self.D.device))
-        g_error = self.criterion(d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device))
+        error_fake = self.criterion(
+            d_pred_fake, zeros_target(N).to(self.D.device)
+        )
+        g_error = self.criterion(
+            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+        )
         loss = error_fake + error_real
 
         grad_x = autograd.grad(
@@ -408,10 +438,16 @@ class SGD(Optimizer):
         # Second argument of noise is the noise_dimension parameter of build_generator
         fake_data = self.G(noise(N, 100).to(self.G.device))
         d_pred_real = self.D(real_data.to(self.D.device))
-        error_real = self.criterion(d_pred_real, ones_target(N).to(self.D.device))
+        error_real = self.criterion(
+            d_pred_real, ones_target(N).to(self.D.device)
+        )
         d_pred_fake = self.D(fake_data.to(self.D.device))
-        error_fake = self.criterion(d_pred_fake, zeros_target(N).to(self.D.device))
-        g_error = self.criterion(d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device))
+        error_fake = self.criterion(
+            d_pred_fake, zeros_target(N).to(self.D.device)
+        )
+        g_error = self.criterion(
+            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+        )
         loss = error_fake + error_real
         # loss = d_pred_real.mean() - d_pred_fake.mean()
         grad_x = autograd.grad(
@@ -442,10 +478,16 @@ class Newton(Optimizer):
         # Second argument of noise is the noise_dimension parameter of build_generator
         fake_data = self.G(noise(N, 100).to(self.G.device))
         d_pred_real = self.D(real_data.to(self.D.device))
-        error_real = self.criterion(d_pred_real, ones_target(N).to(self.D.device))
+        error_real = self.criterion(
+            d_pred_real, ones_target(N).to(self.D.device)
+        )
         d_pred_fake = self.D(fake_data.to(self.D.device))
-        error_fake = self.criterion(d_pred_fake, zeros_target(N).to(self.D.device))
-        g_error = self.criterion(d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device))
+        error_fake = self.criterion(
+            d_pred_fake, zeros_target(N).to(self.D.device)
+        )
+        g_error = self.criterion(
+            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+        )
         loss = error_fake + error_real
 
         grad_x = autograd.grad(
@@ -478,7 +520,7 @@ class Newton(Optimizer):
             x=None,
             nsteps=1000,
             residual_tol=1e-16,
-            device = self.G.device
+            device=self.G.device,
         )
         p_y = general_conjugate_gradient_jacobi(
             grad_y_vec,
@@ -487,7 +529,7 @@ class Newton(Optimizer):
             x=None,
             nsteps=1000,
             residual_tol=1e-16,
-            device = self.D.device
+            device=self.D.device,
         )
         p_x = p_x[0]
         p_y = p_y[0]
@@ -510,10 +552,16 @@ class JacobiMultiCost(Optimizer):
     def step(self, real_data, N):
         fake_data = self.G(noise(N, 100).to(self.G.device))
         d_pred_real = self.D(real_data.to(self.D.device))
-        error_real = self.criterion(d_pred_real, ones_target(N).to(self.D.device))
+        error_real = self.criterion(
+            d_pred_real, ones_target(N).to(self.D.device)
+        )
         d_pred_fake = self.D(fake_data.to(self.D.device))
-        error_fake = self.criterion(d_pred_fake, zeros_target(N).to(self.D.device))
-        g_error = self.criterion(d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device))
+        error_fake = self.criterion(
+            d_pred_fake, zeros_target(N).to(self.D.device)
+        )
+        g_error = self.criterion(
+            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+        )
 
         f = error_fake + error_real  # f cost relative to discriminator
         g = g_error  # g cost relative to generator
@@ -579,7 +627,9 @@ class Adam(Optimizer):
         # Second argument of noise is the noise_dimension parameter of build_generator
         fake_data = self.G(noise(N, 100).to(self.G.device))
         d_pred_fake = self.D(fake_data.to(self.D.device))
-        g_error = self.criterion(d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device))
+        g_error = self.criterion(
+            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+        )
 
         g_error.backward()
         self.optimizer_G.step()
@@ -587,9 +637,13 @@ class Adam(Optimizer):
         self.optimizer_D.zero_grad()
         # Measure discriminator's ability to classify real from generated samples
         d_pred_real = self.D(real_data.to(self.D.device))
-        error_real = self.criterion(d_pred_real, ones_target(N).to(self.D.device))
+        error_real = self.criterion(
+            d_pred_real, ones_target(N).to(self.D.device)
+        )
         d_pred_fake = self.D(fake_data.to(self.D.device).detach())
-        error_fake = self.criterion(d_pred_fake, zeros_target(N).to(self.D.device))
+        error_fake = self.criterion(
+            d_pred_fake, zeros_target(N).to(self.D.device)
+        )
 
         d_loss = (error_real + error_fake) / 2
         d_loss.backward()
