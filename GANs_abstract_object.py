@@ -64,12 +64,14 @@ class GANs_model(object):
         # In peresence of GPUs available, map the models on the GPUs
         if len(self.list_gpuIDs) == 1:
             get_gpu(self.list_gpuIDs[0])
-            D.to(get_gpu(self.list_gpuIDs[0]))
-            G.to(get_gpu(self.list_gpuIDs[0]))
+            self.discrininator_device = get_gpu(self.list_gpuIDs[0])
+            self.generator_device = get_gpu(self.list_gpuIDs[0])
         elif len(self.list_gpuIDs) == 2:
-            D.to(get_gpu(self.list_gpuIDs[0]))
-            G.to(get_gpu(self.list_gpuIDs[1]))
+            self.discrininator_device = get_gpu(self.list_gpuIDs[0])
+            self.generator_device = get_gpu(self.list_gpuIDs[1])
 
+        D.to(self.discrininator_device)
+        G.to(self.generator_device)
         return D, G
 
     @abstractmethod
@@ -126,7 +128,7 @@ class GANs_model(object):
                 plt.imsave(path, image)
             else:
                 image = images[image_index][0]
-                image = image.detach().numpy()
+                image = image.detach().to("cpu").numpy()
                 image = (image + 1) / 2
                 img = pil.fromarray(np.uint8(image * 255), 'L')
                 self.createFolder(self.save_path)

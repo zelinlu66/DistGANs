@@ -62,11 +62,11 @@ def zeros_target_smooth(size):
     return data
 
 
-def noise(size, noise_size, device):
+def noise(size, noise_size):
     '''
     Generates a 1-d vector of gaussian sampled random values
     '''
-    n = Variable(torch.randn(size, noise_size).to(device))
+    n = Variable(torch.randn(size, noise_size))
     return n
 
 
@@ -271,7 +271,8 @@ def general_conjugate_gradient(
     x=None,
     nsteps=10,
     residual_tol=1e-16,
-    device=torch.device('cpu'),
+    device_x=torch.device('cpu'),
+    device_y=torch.device('cpu')
 ):
     '''
 
@@ -290,12 +291,15 @@ def general_conjugate_gradient(
 
     '''
     if x is None:
-        x = torch.zeros(kk.shape[0], device=device)
+        x = torch.zeros(kk.shape[0], device=device_x)
     if grad_x.shape != kk.shape:
         raise RuntimeError('CG: hessian vector product shape mismatch')
-    lr_x = lr_x.sqrt()
+    lr_x = lr_x.sqrt().to(device_x)
+    lr_y = lr_y.to(device_y)
     mm = kk.clone().detach()
+    mm = mm.to(device_x)
     jj = mm.clone().detach()
+    jj = jj.to(device_x)
     rdotr = torch.dot(mm, mm)
     residual_tol = residual_tol * rdotr
     x_params = tuple(x_params)
@@ -304,13 +308,13 @@ def general_conjugate_gradient(
         # To compute Avp
         # h_1 = Hvp_vec(grad_vec=grad_x, params=y_params, vec=lr_x * p, retain_graph=True)
         h_1 = Hvp_vec(
-            grad_vec=grad_x, params=y_params, vec=lr_x * jj, retain_graph=True
+            grad_vec=grad_x.to(device_x), params=y_params, vec=lr_x * jj, retain_graph=True
         ).mul_(lr_y)
         # h_1.mul_(lr_y)
         # lr_y * D_yx * b
         # h_2 = Hvp_vec(grad_vec=grad_y, params=x_params, vec=lr_y * h_1, retain_graph=True)
         h_2 = Hvp_vec(
-            grad_vec=grad_y, params=x_params, vec=h_1, retain_graph=True
+            grad_vec=grad_y.to(device_x), params=x_params, vec=h_1.to(device_x), retain_graph=True
         ).mul_(lr_x)
         # h_2.mul_(lr_x)
         # lr_x * D_xy * lr_y * D_yx * b
@@ -341,12 +345,9 @@ def general_conjugate_gradient_jacobi(
     '''
 
     :param grad_x:
-    :param grad_y:
     :param x_params:
-    :param y_params:
     :param b:
     :param lr_x:
-    :param lr_y:
     :param x:
     :param nsteps:
     :param residual_tol:
@@ -356,9 +357,13 @@ def general_conjugate_gradient_jacobi(
     '''
     if x is None:
         x = torch.zeros(right_side.shape[0], device=device)
+    else:
+        x = x.to(device)
 
     right_side_clone1 = right_side.clone().detach()
-    right_side_clone2 = right_side_clone1.clone().detach()
+    right_side_clone2 = right_side.clone().detach()
+    right_side_clone1 = right_side_clone1.to(device)
+    right_side_clone2 = right_side_clone2.to(device)
 
     rdotr = torch.dot(right_side_clone1, right_side_clone1)
     residual_tol = residual_tol * rdotr
@@ -366,15 +371,15 @@ def general_conjugate_gradient_jacobi(
 
     for i in range(nsteps):
         h_1 = Hvp_vec(
-            grad_vec=grad_x, params=x_params, vec=2 * x, retain_graph=True
+            grad_vec=grad_x.to(device), params=x_params, vec=2 * x, retain_graph=True
         )
-        H = -h_1 + x
+        H = -h_1.to(device) + x
         Avp_ = right_side_clone2 + H
 
         alpha = rdotr / torch.dot(right_side_clone2, Avp_)
         x.data.add_(alpha * right_side_clone2)
         right_side_clone1.data.add_(-alpha * Avp_)
-        new_rdotr = torch.dot(right_side_clone1, right_side_clone1)
+        new_rdotr = torch.dot(right_side_clone1, right_side_clone1.to(device))
         beta = new_rdotr / rdotr
         right_side_clone2 = right_side_clone1 + beta * right_side_clone2
         rdotr = new_rdotr

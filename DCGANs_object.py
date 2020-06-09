@@ -88,7 +88,7 @@ class DCGANs_model(GANs_model):
             )
             for n_batch, (real_batch, _) in enumerate(self.data_loader):
                 self.test_noise = noise(
-                    self.num_test_samples, self.noise_dimension, self.G.device
+                    self.num_test_samples, self.noise_dimension
                 )
                 real_data = Variable((real_batch))
                 N = real_batch.size(0)
@@ -141,7 +141,7 @@ class DCGANs_model(GANs_model):
                 )
 
                 if (n_batch) % self.display_progress == 0:
-                    test_images = self.optimizer.G(self.test_noise)
+                    test_images = self.optimizer.G(self.test_noise.to(self.G.device))
                     self.save_images(e, n_batch, test_images)
 
             self.print_verbose(
