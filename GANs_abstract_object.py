@@ -113,7 +113,7 @@ class GANs_model(object):
             count = count + 1
             if self.imtype == 'RGB':
                 image = images[image_index]  # [0]
-                image = image.detach().numpy()
+                image = image.detach().to("cpu").numpy()
                 image = (image + 1) / 2
                 image = image.transpose([1, 2, 0])
                 self.createFolder(self.save_path)
