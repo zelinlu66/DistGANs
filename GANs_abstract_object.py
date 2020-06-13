@@ -57,10 +57,10 @@ class GANs_model(object):
         torch.save(self.G.state_dict(), filename_G)
         torch.save(self.D.state_dict(), filename_D)
 
-    def build_models(self):       
-        self.discriminator_device="cpu"
-        self.generator_device="cpu"        
-        
+    def build_models(self):
+        self.discriminator_device = "cpu"
+        self.generator_device = "cpu"
+
         D = self.build_discriminator()
         G = self.build_generator()
 
