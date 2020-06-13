@@ -57,20 +57,23 @@ class GANs_model(object):
         torch.save(self.G.state_dict(), filename_G)
         torch.save(self.D.state_dict(), filename_D)
 
-    def build_models(self):
+    def build_models(self):       
+        self.discriminator_device="cpu"
+        self.generator_device="cpu"        
+        
         D = self.build_discriminator()
         G = self.build_generator()
 
         # In peresence of GPUs available, map the models on the GPUs
         if len(self.list_gpuIDs) == 1:
             get_gpu(self.list_gpuIDs[0])
-            self.discrininator_device = get_gpu(self.list_gpuIDs[0])
+            self.discriminator_device = get_gpu(self.list_gpuIDs[0])
             self.generator_device = get_gpu(self.list_gpuIDs[0])
         elif len(self.list_gpuIDs) == 2:
-            self.discrininator_device = get_gpu(self.list_gpuIDs[0])
+            self.discriminator_device = get_gpu(self.list_gpuIDs[0])
             self.generator_device = get_gpu(self.list_gpuIDs[1])
 
-        D.to(self.discrininator_device)
+        D.to(self.discriminator_device)
         G.to(self.generator_device)
         return D, G
 
