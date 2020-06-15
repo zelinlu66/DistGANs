@@ -101,8 +101,7 @@ class CGD(Optimizer):
             lr_x=self.lr,
             lr_y=self.lr,
         )
-        # cg_x.detach_().mul_(p_x_norm)
-        # cg_x.detach_().mul_(p_x_norm)
+
         cg_x.detach_().mul_(self.lr.sqrt())  # delta x = lr_x.sqrt() * cg_x
         hcg = (
             Hvp_vec(grad_x_vec, self.D.parameters(), cg_x, retain_graph=True)
@@ -291,8 +290,6 @@ class Jacobi(Optimizer):
         g_error = self.criterion(d_pred_fake, ones_target(N))
 
         loss = error_fake + error_real
-        # loss_copy = error_fake_copy + error_real_copy
-        # loss = d_pred_real.mean() - d_pred_fake.mean()
         grad_x = autograd.grad(
             loss, self.G.parameters(), create_graph=True, retain_graph=True
         )

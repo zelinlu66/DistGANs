@@ -35,20 +35,15 @@ Multi-layer perceptrons neural networks (MLP), convolutional neural networks (CN
 X = Generator
 Y = Discriminaror
 
-BCEWithLogitsLoss is the default cost function, to change it to standard BCE the code needs to be changed
-in line 68 of GANs_object or line 67 of DCGANs_object
-
 Different learning rates for X and Y can only be used with 'Jacobi' and 'JacobiMultiCost'
 for the other optimizers the learning rate will be set to the value of lr_x
 
 Label smoothing variation is implemented only for optimizer 'Jacobi' and only for GANs_object
 
-To swich from MLP_GANs (DCGANs) to DCGANs (MLP_GANs) comment lines 38,39,40 (43,44,45) and uncomment 43,44,45 (38,39,40)
-
 Attribute save_models of both training object saves the state dicts of the networks into 2 different folders
 inside your current directory
 
-TO TRY: Setting much lower learning rates to see if model collapse is avoided (ex. lr_x = 0.0001 , lr_y = 0.0004)
+
 
 '''
 
@@ -67,12 +62,10 @@ if __name__ == '__main__':
 
     if model_switch == 'MLP':
         print("Using MLP implementation of GANs: MLP_GANs_model")
-        model = MLP_GANs_model(mnist_data(rand_rotation=False, max_degree=90))
+        model = MLP_GANs_model(cifar10_data())
     elif model_switch == 'CNN':
         print("Using CNN implementation of GANs: DCGANs_model")
-        model = DCGANs_model(
-            mnist_data_dcgans(rand_rotation=False, max_degree=90)
-        )
+        model = DCGANs_model(cifar10_data_dcgans())
     else:
         sys.exit(
             '\n   *** Error. Specified model name: {} is not valid. Please choose MLP or CNN'.format(
@@ -88,6 +81,7 @@ if __name__ == '__main__':
         verbose=True,
         label_smoothing=False,
         single_number=None,
+        repeat_iterations=1,
     )  # save_path = ''
 
     if arguments['--save']:

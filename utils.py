@@ -242,8 +242,8 @@ def general_conjugate_gradient(
     '''
     if x is None:
         x = torch.zeros(kk.shape[0], device=device)
-    if grad_x.shape != kk.shape:
-        raise RuntimeError('CG: hessian vector product shape mismatch')
+    # if grad_x.shape != kk.shape:
+    #    raise RuntimeError('CG: hessian vector product shape mismatch')
     lr_x = lr_x.sqrt()
     mm = kk.clone().detach()
     jj = mm.clone().detach()

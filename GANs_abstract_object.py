@@ -2,10 +2,13 @@
 """
 Created on Sat Apr  4 17:34:40 2020
 
-@authors: Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it)
+@authors: Andrey Prokpenko (e-mail: prokopenkoav@ornl.gov)
+        : Debangshu Mukherjee (e-mail: mukherjeed@ornl.gov)
         : Massimiliano Lupo Pasini (e-mail: lupopasinim@ornl.gov)
         : Nouamane Laanait (e-mail: laanaitn@ornl.gov)
         : Simona Perotto (e-mail: simona.perotto@polimi.it)
+        : Vitaliy Starchenko  (e-mail: starchenkov@ornl.gov)
+        : Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it) 
 
 """
 import torch
@@ -87,6 +90,8 @@ class GANs_model(object):
             self.optimizer = SGD(self.G, self.D, loss, lr_x)
         elif optimizer_name == 'Adam':
             self.optimizer = Adam(self.G, self.D, loss, lr_x, lr_y)
+        elif optimizer_name == 'CGD_multi':
+            self.optimizer = CGD_multi(self.G, self.D, loss, lr_x)
         else:
             raise RuntimeError("Optimizer type is not valid")
 
@@ -144,5 +149,6 @@ class GANs_model(object):
         save_path='./data_fake',
         label_smoothing=False,
         single_number=None,
+        repeat_iterations=1,
     ):
         pass

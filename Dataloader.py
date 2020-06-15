@@ -80,7 +80,7 @@ def mnist_data_dcgans(rand_rotation=False, max_degree=90):
     )
 
 
-def cifar_data_dcgans():
+def cifar10_data_dcgans():
     compose = transforms.Compose(
         [
             transforms.Resize(64),
