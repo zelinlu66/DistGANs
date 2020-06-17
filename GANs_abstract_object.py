@@ -24,6 +24,8 @@ from abc import ABCMeta, abstractmethod
 
 class GANs_model(object):
     def __init__(self, data):
+        self.num_gpus = count_gpus()
+        self.list_gpuIDs = get_gpus_list()
         self.data = data
         self.data_dimension = self.data[0][0].numpy().shape
         self.D, self.G = self.build_models()
@@ -56,8 +58,23 @@ class GANs_model(object):
         torch.save(self.D.state_dict(), filename_D)
 
     def build_models(self):
+        self.discriminator_device = "cpu"
+        self.generator_device = "cpu"
+
         D = self.build_discriminator()
         G = self.build_generator()
+
+        # In peresence of GPUs available, map the models on the GPUs
+        if len(self.list_gpuIDs) == 1:
+            get_gpu(self.list_gpuIDs[0])
+            self.discriminator_device = get_gpu(self.list_gpuIDs[0])
+            self.generator_device = get_gpu(self.list_gpuIDs[0])
+        elif len(self.list_gpuIDs) == 2:
+            self.discriminator_device = get_gpu(self.list_gpuIDs[0])
+            self.generator_device = get_gpu(self.list_gpuIDs[1])
+
+        D.to(self.discriminator_device)
+        G.to(self.generator_device)
         return D, G
 
     @abstractmethod
@@ -96,7 +113,7 @@ class GANs_model(object):
             count = count + 1
             if self.imtype == 'RGB':
                 image = images[image_index]  # [0]
-                image = image.detach().numpy()
+                image = image.detach().to("cpu").numpy()
                 image = (image + 1) / 2
                 image = image.transpose([1, 2, 0])
                 self.createFolder(self.save_path)
@@ -114,7 +131,7 @@ class GANs_model(object):
                 plt.imsave(path, image)
             else:
                 image = images[image_index][0]
-                image = image.detach().numpy()
+                image = image.detach().to("cpu").numpy()
                 image = (image + 1) / 2
                 img = pil.fromarray(np.uint8(image * 255), 'L')
                 self.createFolder(self.save_path)

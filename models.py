@@ -29,6 +29,10 @@ class Discriminator(nn.Module):
         z = self.out(y)
         return z
 
+    def to(self, device):
+        super(Discriminator, self).to(device)
+        self.device = device
+
 
 class Generator(torch.nn.Module):
     def __init__(self, noise_dimension, n_out):
@@ -46,6 +50,10 @@ class Generator(torch.nn.Module):
         w = self.hidden2(y)
         z = self.out(w)
         return z
+
+    def to(self, device):
+        super(Generator, self).to(device)
+        self.device = device
 
 
 class Upsample(nn.Module):
@@ -88,6 +96,10 @@ class GeneratorCNN(nn.Module):
         img = self.conv_blocks(out)
         return img
 
+    def to(self, device):
+        super(GeneratorCNN, self).to(device)
+        self.device = device
+
 
 class DiscriminatorCNN(nn.Module):
     def __init__(self, n_channels, image_dimension):
@@ -123,3 +135,7 @@ class DiscriminatorCNN(nn.Module):
         validity = self.adv_layer(out)
 
         return validity
+
+    def to(self, device):
+        super(DiscriminatorCNN, self).to(device)
+        self.device = device

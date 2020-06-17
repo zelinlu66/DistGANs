@@ -51,13 +51,19 @@ class CGD(Optimizer):
         self.lr = lr
 
     def step(self, real_data, N):
-        fake_data = self.G(noise(N, 100))
-        prediction_real = self.D(real_data)
-        error_real = self.criterion(prediction_real, ones_target(N))
-        prediction_fake = self.D(fake_data)
-        error_fake = self.criterion(prediction_fake, zeros_target(N))
+        fake_data = self.G(noise(N, 100).to(self.G.device))
+        prediction_real = self.D(real_data.to(self.D.device))
+        error_real = self.criterion(
+            prediction_real, ones_target(N).to(self.D.device)
+        )
+        prediction_fake = self.D(fake_data.to(self.D.device))
+        error_fake = self.criterion(
+            prediction_fake, zeros_target(N).to(self.D.device)
+        )
         error_tot = error_fake + error_real
-        errorG = self.criterion(prediction_fake, ones_target(N))
+        errorG = self.criterion(
+            prediction_fake.to(self.G.device), ones_target(N).to(self.G.device)
+        )
         grad_x = autograd.grad(
             error_tot,
             self.G.parameters(),
@@ -73,8 +79,8 @@ class CGD(Optimizer):
             retain_graph=True,
         )
         grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
-        scaled_grad_x = torch.mul(self.lr, grad_x_vec)
-        scaled_grad_y = torch.mul(self.lr, grad_y_vec)
+        scaled_grad_x = torch.mul(self.lr.to(self.G.device), grad_x_vec)
+        scaled_grad_y = torch.mul(self.lr.to(self.D.device), grad_y_vec)
         # l = autograd.grad(grad_x_vec, discriminator.parameters(), grad_outputs = torch.ones_like(grad_x_vec))
 
         hvp_x_vec = Hvp_vec(
@@ -89,10 +95,10 @@ class CGD(Optimizer):
         p_y = torch.add(
             grad_y_vec, hvp_y_vec
         ).detach_()  # grad_y + D_yx * lr_x * grad_x
-        p_x.mul_(self.lr.sqrt())
+        p_x.mul_(self.lr.sqrt().to(self.G.device))
         cg_x, iter_num = general_conjugate_gradient(
             grad_x=grad_x_vec,
-            grad_y=grad_y_vec,
+            grad_y=grad_y_vec.to(self.G.device),
             x_params=self.G.parameters(),
             y_params=self.D.parameters(),
             kk=p_x,
@@ -100,17 +106,21 @@ class CGD(Optimizer):
             nsteps=p_x.shape[0],
             lr_x=self.lr,
             lr_y=self.lr,
+            device_x=self.G.device,
+            device_y=self.D.device,
         )
         # cg_x.detach_().mul_(p_x_norm)
         # cg_x.detach_().mul_(p_x_norm)
-        cg_x.detach_().mul_(self.lr.sqrt())  # delta x = lr_x.sqrt() * cg_x
+        cg_x.detach_().mul_(
+            self.lr.sqrt().to(self.G.device)
+        )  # delta x = lr_x.sqrt() * cg_x
         hcg = (
             Hvp_vec(grad_x_vec, self.D.parameters(), cg_x, retain_graph=True)
             .add_(grad_y_vec)
             .detach_()
         )
         # grad_y + D_yx * delta x
-        cg_y = hcg.mul(-self.lr)
+        cg_y = hcg.mul(-self.lr.to(self.D.device))
 
         return error_real.item(), error_fake.item(), errorG.item(), cg_x, cg_y
 
@@ -136,8 +146,9 @@ class CGD_shafer(Optimizer):
 
     def step(self, real_data, N):
         self.count += 1
+        generator_noise = noise(N, 100).to(self.G.device)
         fake_data = self.G(
-            noise(N, 100)
+            generator_noise
         )  # Second argument of noise is the noise_dimension parameter of build_generator
         d_pred_real = self.D(real_data)
         error_real = self.criterion(d_pred_real, ones_target(N))
@@ -269,26 +280,34 @@ class Jacobi(Optimizer):
         self.label_smoothing = label_smoothing
 
     def step(self, real_data, N):
-        self.count += 1
-        fake_data = self.G(
-            noise(N, 100)
-        )  # Second argument of noise is the noise_dimension parameter of build_generator
+        # Second argument of noise is the noise_dimension parameter of build_generator
+        fake_data = self.G(noise(N, 100).to(self.G.device))
         # fake_data_copy = self.G(noise(N, 100))
-        d_pred_real = self.D(real_data)
+        d_pred_real = self.D(real_data.to(self.D.device))
         # d_pred_real_copy = self.D(real_data)
         if self.label_smoothing:
-            error_real = self.criterion(d_pred_real, ones_target_smooth(N))
+            error_real = self.criterion(
+                d_pred_real, ones_target_smooth(N).to(self.D.device)
+            )
         else:
-            error_real = self.criterion(d_pred_real, ones_target(N))
+            error_real = self.criterion(
+                d_pred_real, ones_target(N).to(self.D.device)
+            )
         #    error_real_copy = self.criterion(d_pred_real_copy, ones_target(N) )
-        d_pred_fake = self.D(fake_data)
+        d_pred_fake = self.D(fake_data.to(self.D.device))
         # d_pred_fake_copy = self.D(fake_data_copy)
         if self.label_smoothing:
-            error_fake = self.criterion(d_pred_fake, zeros_target_smooth(N))
+            error_fake = self.criterion(
+                d_pred_fake, zeros_target_smooth(N).to(self.D.device)
+            )
         else:
-            error_fake = self.criterion(d_pred_fake, zeros_target(N))
+            error_fake = self.criterion(
+                d_pred_fake, zeros_target(N).to(self.D.device)
+            )
         #    error_fake_copy = self.criterion(d_pred_fake_copy, zeros_target(N))
-        g_error = self.criterion(d_pred_fake, ones_target(N))
+        g_error = self.criterion(
+            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+        )
 
         loss = error_fake + error_real
         # loss_copy = error_fake_copy + error_real_copy
@@ -315,8 +334,8 @@ class Jacobi(Optimizer):
         p_y = torch.add(
             -grad_y_vec, -2 * hvp_y_vec
         ).detach_()  # grad_y +2 * D_yx * grad_x
-        p_x = p_x.mul_(self.lr_x)  # p_x.mul_(self.lr.sqrt())
-        p_y = p_y.mul_(self.lr_y)  # p_y.mul_(self.lr.sqrt())
+        p_x = p_x.mul_(self.lr_x.sqrt().to(self.G.device))
+        p_y = p_y.mul_(self.lr_y.sqrt().to(self.D.device))
 
         return error_real.item(), error_fake.item(), g_error.item(), p_x, p_y
 
@@ -329,16 +348,21 @@ class GaussSeidel(Optimizer):
         self.lr_y = lr_y
 
     def step(self, real_data, N):
-        fake_data = self.G(
-            noise(N, 100)
-        )  # Second argument of noise is the noise_dimension parameter of build_generator
-        d_pred_real = self.D(real_data)
-        error_real = self.criterion(d_pred_real, ones_target(N))
-        d_pred_fake = self.D(fake_data)
-        error_fake = self.criterion(d_pred_fake, zeros_target(N))
-        g_error = self.criterion(d_pred_fake, ones_target(N))
+        # Second argument of noise is the noise_dimension parameter of build_generator
+        fake_data = self.G(noise(N, 100).to(self.G.device))
+        d_pred_real = self.D(real_data.to(self.D.device))
+        error_real = self.criterion(
+            d_pred_real, ones_target(N).to(self.D.device)
+        )
+        d_pred_fake = self.D(fake_data.to(self.D.device))
+        error_fake = self.criterion(
+            d_pred_fake, zeros_target(N).to(self.D.device)
+        )
+        g_error = self.criterion(
+            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+        )
         loss = error_fake + error_real
-        # loss = d_pred_real.mean() - d_pred_fake.mean()
+
         grad_x = autograd.grad(
             loss, self.G.parameters(), create_graph=True, retain_graph=True
         )
@@ -355,7 +379,7 @@ class GaussSeidel(Optimizer):
             grad_x_vec, 2 * hvp_x_vec
         ).detach_()  # grad_x + 2 * D_xy *  grad_y
 
-        p_x.mul_(self.lr_x)
+        p_x = p_x.mul_(self.lr_x.sqrt().to(self.G.device))
 
         index = 0
         for p in self.G.parameters():
@@ -364,13 +388,19 @@ class GaussSeidel(Optimizer):
         if index != p_x.numel():
             raise RuntimeError('CG size mismatch')
 
-        fake_data = self.G(
-            noise(N, 100)
-        )  # Second argument of noise is the noise_dimension parameter of build_generator
-        d_pred_fake = self.D(fake_data)
-        error_fake = self.criterion(d_pred_fake, zeros_target(N))
-        g_error = self.criterion(d_pred_fake, ones_target(N))
-
+        # Second argument of noise is the noise_dimension parameter of build_generator
+        fake_data = self.G(noise(N, 100).to(self.G.device))
+        d_pred_real = self.D(real_data.to(self.D.device))
+        error_real = self.criterion(
+            d_pred_real, ones_target(N).to(self.D.device)
+        )
+        d_pred_fake = self.D(fake_data.to(self.D.device))
+        error_fake = self.criterion(
+            d_pred_fake, zeros_target(N).to(self.D.device)
+        )
+        g_error = self.criterion(
+            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+        )
         loss = error_fake + error_real
 
         grad_x = autograd.grad(
@@ -385,7 +415,7 @@ class GaussSeidel(Optimizer):
             -grad_y_vec, -2 * hvp_y_vec
         ).detach_()  # grad_y +2 * D_yx * x
         # p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x +2 * D_xy * y
-        p_y.mul_(self.lr_y)
+        p_y = p_y.mul_(self.lr_y.sqrt().to(self.D.device))
 
         index = 0
         for p in self.D.parameters():
@@ -405,14 +435,19 @@ class SGD(Optimizer):
         self.lr = lr
 
     def step(self, real_data, N):
-        fake_data = self.G(
-            noise(N, 100)
-        )  # Second argument of noise is the noise_dimension parameter of build_generator
-        d_pred_real = self.D(real_data)
-        error_real = self.criterion(d_pred_real, ones_target(N))
-        d_pred_fake = self.D(fake_data)
-        error_fake = self.criterion(d_pred_fake, zeros_target(N))
-        g_error = self.criterion(d_pred_fake, ones_target(N))
+        # Second argument of noise is the noise_dimension parameter of build_generator
+        fake_data = self.G(noise(N, 100).to(self.G.device))
+        d_pred_real = self.D(real_data.to(self.D.device))
+        error_real = self.criterion(
+            d_pred_real, ones_target(N).to(self.D.device)
+        )
+        d_pred_fake = self.D(fake_data.to(self.D.device))
+        error_fake = self.criterion(
+            d_pred_fake, zeros_target(N).to(self.D.device)
+        )
+        g_error = self.criterion(
+            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+        )
         loss = error_fake + error_real
         # loss = d_pred_real.mean() - d_pred_fake.mean()
         grad_x = autograd.grad(
@@ -423,8 +458,8 @@ class SGD(Optimizer):
             loss, self.D.parameters(), create_graph=True, retain_graph=True
         )
         grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
-        scaled_grad_x = torch.mul(self.lr, grad_x_vec)
-        scaled_grad_y = torch.mul(self.lr, grad_y_vec)
+        scaled_grad_x = torch.mul(self.lr.to(self.G.device), grad_x_vec)
+        scaled_grad_y = torch.mul(self.lr.to(self.D.device), grad_y_vec)
 
         p_x = scaled_grad_x
         p_y = scaled_grad_y
@@ -440,16 +475,21 @@ class Newton(Optimizer):
         self.lr_y = lr_y
 
     def step(self, real_data, N):
-        fake_data = self.G(
-            noise(N, 100)
-        )  # Second argument of noise is the noise_dimension parameter of build_generator
-        d_pred_real = self.D(real_data)
-        error_real = self.criterion(d_pred_real, ones_target(N))
-        d_pred_fake = self.D(fake_data)
-        error_fake = self.criterion(d_pred_fake, zeros_target(N))
-        g_error = self.criterion(d_pred_fake, ones_target(N))
+        # Second argument of noise is the noise_dimension parameter of build_generator
+        fake_data = self.G(noise(N, 100).to(self.G.device))
+        d_pred_real = self.D(real_data.to(self.D.device))
+        error_real = self.criterion(
+            d_pred_real, ones_target(N).to(self.D.device)
+        )
+        d_pred_fake = self.D(fake_data.to(self.D.device))
+        error_fake = self.criterion(
+            d_pred_fake, zeros_target(N).to(self.D.device)
+        )
+        g_error = self.criterion(
+            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+        )
         loss = error_fake + error_real
-        # loss = d_pred_real.mean() - d_pred_fake.mean()
+
         grad_x = autograd.grad(
             loss, self.G.parameters(), create_graph=True, retain_graph=True
         )
@@ -480,6 +520,7 @@ class Newton(Optimizer):
             x=None,
             nsteps=1000,
             residual_tol=1e-16,
+            device=self.G.device,
         )
         p_y = general_conjugate_gradient_jacobi(
             grad_y_vec,
@@ -488,12 +529,13 @@ class Newton(Optimizer):
             x=None,
             nsteps=1000,
             residual_tol=1e-16,
+            device=self.D.device,
         )
         p_x = p_x[0]
         p_y = p_y[0]
 
-        p_x.mul_(self.lr_x)
-        p_y.mul_(self.lr_y)
+        p_x = p_x.mul_(self.lr_x.sqrt().to(self.G.device))
+        p_y = p_y.mul_(self.lr_y.sqrt().to(self.D.device))
 
         return error_real.item(), error_fake.item(), g_error.item(), p_x, p_y
 
@@ -508,14 +550,18 @@ class JacobiMultiCost(Optimizer):
         self.lr_y = lr_y
 
     def step(self, real_data, N):
-        fake_data = self.G(
-            noise(N, 100)
-        )  # Second argument of noise is the noise_dimension parameter of build_generator
-        d_pred_real = self.D(real_data)
-        error_real = self.criterion(d_pred_real, ones_target(N))
-        d_pred_fake = self.D(fake_data)
-        error_fake = self.criterion(d_pred_fake, zeros_target(N))
-        g_error = self.criterion(d_pred_fake, ones_target(N))
+        fake_data = self.G(noise(N, 100).to(self.G.device))
+        d_pred_real = self.D(real_data.to(self.D.device))
+        error_real = self.criterion(
+            d_pred_real, ones_target(N).to(self.D.device)
+        )
+        d_pred_fake = self.D(fake_data.to(self.D.device))
+        error_fake = self.criterion(
+            d_pred_fake, zeros_target(N).to(self.D.device)
+        )
+        g_error = self.criterion(
+            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+        )
 
         f = error_fake + error_real  # f cost relative to discriminator
         g = g_error  # g cost relative to generator
@@ -551,8 +597,8 @@ class JacobiMultiCost(Optimizer):
         p_y = torch.add(
             grad_g_y_vec, 2 * D_g_yx
         ).detach_()  # grad_y + 2*D_yx * grad_x
-        p_x.mul_(self.lr_x)
-        p_y.mul_(self.lr_y)
+        p_x = p_x.mul_(self.lr_x.sqrt().to(self.G.device))
+        p_y = p_y.mul_(self.lr_y.sqrt().to(self.D.device))
 
         return error_real.item(), error_fake.item(), g_error.item(), p_x, p_y
 
@@ -578,21 +624,26 @@ class Adam(Optimizer):
     def step(self, real_data, N):
         # Generator step
         self.optimizer_G.zero_grad()
-        fake_data = self.G(
-            noise(N, 100)
-        )  # Second argument of noise is the noise_dimension parameter of build_generator
-        d_pred_fake = self.D(fake_data)
-        g_error = self.criterion(d_pred_fake, ones_target(N))
+        # Second argument of noise is the noise_dimension parameter of build_generator
+        fake_data = self.G(noise(N, 100).to(self.G.device))
+        d_pred_fake = self.D(fake_data.to(self.D.device))
+        g_error = self.criterion(
+            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+        )
 
         g_error.backward()
         self.optimizer_G.step()
         # Discriminator step
         self.optimizer_D.zero_grad()
         # Measure discriminator's ability to classify real from generated samples
-        d_pred_real = self.D(real_data)
-        error_real = self.criterion(d_pred_real, ones_target(N))
-        d_pred_fake = self.D(fake_data.detach())
-        error_fake = self.criterion(d_pred_fake, zeros_target(N))
+        d_pred_real = self.D(real_data.to(self.D.device))
+        error_real = self.criterion(
+            d_pred_real, ones_target(N).to(self.D.device)
+        )
+        d_pred_fake = self.D(fake_data.to(self.D.device).detach())
+        error_fake = self.criterion(
+            d_pred_fake, zeros_target(N).to(self.D.device)
+        )
 
         d_loss = (error_real + error_fake) / 2
         d_loss.backward()
