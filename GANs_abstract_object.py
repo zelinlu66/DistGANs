@@ -86,7 +86,7 @@ class GANs_model(object):
                     - gpus_per_mpi_rank * self.mpi_comm_size
                 )
 
-            if self.mpi_comm_rank < extra_gpus:
+            if self.mpi_rank < extra_gpus:
                 self.discriminator_device = get_gpu(
                     self.list_gpuIDs[self.mpi_rank + 0]
                 )
