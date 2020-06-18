@@ -60,13 +60,13 @@ class DCGANs_model(GANs_model):
         self.data_loader = torch.utils.data.DataLoader(
             self.data, batch_size=100, shuffle=True
         )
-            
-        if single_number is not None or self.mpi_comm_size > 1:  
+
+        if single_number is not None or self.mpi_comm_size > 1:
             self.num_test_samples = 5
 
             if single_number is None and self.mpi_comm_size > 1:
                 single_number = torch.tensor(self.mpi_rank)
-            
+
             self.data = [
                 i for i in self.data if i[1] == torch.tensor(single_number)
             ]
