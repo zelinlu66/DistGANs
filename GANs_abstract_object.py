@@ -101,6 +101,14 @@ class GANs_model(object):
                         self.list_gpuIDs[self.mpi_rank + 0]
                     )
 
+            else:
+                self.discriminator_device = get_gpu(
+                    self.list_gpuIDs[self.mpi_rank % len(self.list_gpuIDs)]
+                )
+                self.generator_device = get_gpu(
+                    self.list_gpuIDs[self.mpi_rank % len(self.list_gpuIDs)]
+                )
+
         D.to(self.discriminator_device)
         G.to(self.generator_device)
         return D, G
