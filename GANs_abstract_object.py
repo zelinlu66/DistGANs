@@ -88,17 +88,17 @@ class GANs_model(object):
 
             if self.mpi_comm_rank < extra_gpus:
                 self.discriminator_device = get_gpu(
-                    self.list_gpuIDs[self.mpi_comm_rank + 0]
+                    self.list_gpuIDs[self.mpi_rank + 0]
                 )
                 self.generator_device = get_gpu(
-                    self.list_gpuIDs[self.mpi_comm_rank + 1]
+                    self.list_gpuIDs[self.mpi_rank + 1]
                 )
             else:
                 self.discriminator_device = get_gpu(
-                    self.list_gpuIDs[self.mpi_comm_rank + 0]
+                    self.list_gpuIDs[self.mpi_rank + 0]
                 )
                 self.generator_device = get_gpu(
-                    self.list_gpuIDs[self.mpi_comm_rank + 0]
+                    self.list_gpuIDs[self.mpi_rank + 0]
                 )
 
         D.to(self.discriminator_device)
