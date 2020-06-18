@@ -23,6 +23,12 @@ Options:
   -m, --model=<str>           Implementation of GANs model. Multi-layer perceptrons NN (MLP), convolutional NN (CNN) [default: MLP].
 """
 import sys
+
+import mpi4py
+
+mpi4py.rc.initialize = False
+mpi4py.rc.finalize = False
+
 import matplotlib.pyplot as plt
 
 from docopt import docopt
@@ -52,6 +58,9 @@ TO TRY: Setting much lower learning rates to see if model collapse is avoided (e
 
 '''
 
+
+MPI.Init()
+
 if __name__ == '__main__':
     arguments = docopt(__doc__, version='Competitive Gradient Descent 0.0')
     print("Input parameters:")
@@ -67,12 +76,10 @@ if __name__ == '__main__':
 
     if model_switch == 'MLP':
         print("Using MLP implementation of GANs: MLP_GANs_model")
-        model = MLP_GANs_model(mnist_data(rand_rotation=False, max_degree=90))
+        model = MLP_GANs_model(mnist_data())
     elif model_switch == 'CNN':
         print("Using CNN implementation of GANs: DCGANs_model")
-        model = DCGANs_model(
-            mnist_data_dcgans(rand_rotation=False, max_degree=90)
-        )
+        model = DCGANs_model(mnist_data_dcgans())
     else:
         sys.exit(
             '\n   *** Error. Specified model name: {} is not valid. Please choose MLP or CNN'.format(
@@ -85,7 +92,7 @@ if __name__ == '__main__':
         lr_x=torch.tensor([learning_rate]),
         lr_y=torch.tensor([learning_rate]),
         optimizer_name=optimizer_name,
-        verbose=True,
+        verbose=False,
         label_smoothing=False,
         single_number=None,
     )  # save_path = ''
@@ -118,3 +125,5 @@ if __name__ == '__main__':
             ]
         )
         plt.savefig('cost_report.png')
+
+MPI.Finalize()

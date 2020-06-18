@@ -20,10 +20,13 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from abc import ABCMeta, abstractmethod
+from mpi4py import MPI
 
 
 class GANs_model(object):
     def __init__(self, data):
+        self.mpi_comm_size = MPI.COMM_WORLD.Get_size()
+        self.mpi_rank = MPI.COMM_WORLD.Get_rank()
         self.num_gpus = count_gpus()
         self.list_gpuIDs = get_gpus_list()
         self.data = data
@@ -66,7 +69,6 @@ class GANs_model(object):
 
         # In peresence of GPUs available, map the models on the GPUs
         if len(self.list_gpuIDs) == 1:
-            get_gpu(self.list_gpuIDs[0])
             self.discriminator_device = get_gpu(self.list_gpuIDs[0])
             self.generator_device = get_gpu(self.list_gpuIDs[0])
         elif len(self.list_gpuIDs) == 2:
@@ -120,6 +122,8 @@ class GANs_model(object):
                 path = str(
                     self.save_path
                     + '/fake_image'
+                    + '_MPI_rank_'
+                    + str(self.mpi_rank)
                     + '_Epoch_'
                     + str(epoch_number + 1)
                     + '_Batch_'
@@ -138,6 +142,8 @@ class GANs_model(object):
                 path = str(
                     self.save_path
                     + '/fake_image'
+                    + '_MPI_rank_'
+                    + str(self.mpi_rank)
                     + '_Epoch_'
                     + str(epoch_number + 1)
                     + '_Batch_'
