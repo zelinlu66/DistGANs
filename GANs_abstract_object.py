@@ -42,7 +42,7 @@ class GANs_model(object):
             self.imtype = 'gray'
 
     def print_verbose(self, *args, **kwargs):
-        if self.verbose:
+        if self.verbose and self.mpi_rank == 0:
             print(*args, **kwargs)
 
     def createFolder(self, directory):
