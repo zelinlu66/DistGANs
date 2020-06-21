@@ -649,3 +649,52 @@ class Adam(Optimizer):
         self.optimizer_D.step()
 
         return error_real.item(), error_fake.item(), g_error.item()
+
+class AdamCon(Optimizer):
+    def __init__(self, G, D, criterion, lr_x, lr_y, b1=0.5, b2=0.999):
+        super(AdamCon, self).__init__(G, D, criterion)
+        self.G = G
+        self.D = D
+        self.lr_x = lr_x.item()
+        self.lr_y = lr_y.item()
+        self.b1 = b1
+        self.b2 = b2
+        # Optimizers
+        self.optimizer_G = torch.optim.Adam(
+            self.G.parameters(), lr=self.lr_x, betas=(self.b1, self.b2)
+        )
+        self.optimizer_D = torch.optim.Adam(
+            self.D.parameters(), lr=self.lr_y, betas=(self.b1, self.b2)
+        )
+
+    def step(self, real_data, labels, N):
+        # Generator step
+        self.optimizer_G.zero_grad()
+        # Second argument of noise is the noise_dimension parameter of build_generator
+        
+        fake_labels = Variable(torch.LongTensor(np.random.randint(0, 10, 100))) #one random label among 10 possible, 100 is batch dimension
+        fake_data = self.G(noise(N, 100).to(self.G.device), fake_labels)
+        d_pred_fake = self.D(fake_data.to(self.D.device), fake_labels)
+        g_error = self.criterion(
+            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+        )
+
+        g_error.backward()
+        self.optimizer_G.step()
+        # Discriminator step
+        self.optimizer_D.zero_grad()
+        # Measure discriminator's ability to classify real from generated samples
+        d_pred_real = self.D(real_data.to(self.D.device), labels)
+        error_real = self.criterion(
+            d_pred_real, ones_target(N).to(self.D.device)
+        )
+        d_pred_fake = self.D(fake_data.to(self.D.device).detach(), fake_labels)
+        error_fake = self.criterion(
+            d_pred_fake, zeros_target(N).to(self.D.device)
+        )
+
+        d_loss = (error_real + error_fake) / 2
+        d_loss.backward()
+        self.optimizer_D.step()
+
+        return error_real.item(), error_fake.item(), g_error.item()

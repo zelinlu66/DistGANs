@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 from docopt import docopt
 from MLP_GANs_object import *
 from DCGANs_object import *
-
+from CGANs import *
 '''
 ! READ ME !
 Multi-layer perceptrons neural networks (MLP), convolutional neural networks (CNN)
@@ -66,6 +66,9 @@ if __name__ == '__main__':
     elif model_switch == 'CNN':
         print("Using CNN implementation of GANs: DCGANs_model")
         model = DCGANs_model(cifar10_data_dcgans())
+    elif model_switch == 'C-GANs':
+        print("Using conditional GANs implementation with MLP")
+        model = CGANs_MLP(mnist_data())
     else:
         sys.exit(
             '\n   *** Error. Specified model name: {} is not valid. Please choose MLP or CNN'.format(

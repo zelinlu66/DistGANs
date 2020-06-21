@@ -26,7 +26,7 @@ from abc import ABCMeta, abstractmethod
 
 
 class GANs_model(object):
-    def __init__(self, data):
+    def __init__(self, data, n_classes = 10):
         self.num_gpus = count_gpus()
         self.list_gpuIDs = get_gpus_list()
         self.data = data
@@ -35,6 +35,7 @@ class GANs_model(object):
         self.D_error_real_history = []
         self.D_error_fake_history = []
         self.G_error_history = []
+        self.n_classes = n_classes
 
         if self.data_dimension[0] == 3:
             self.imtype = 'RGB'
@@ -109,6 +110,8 @@ class GANs_model(object):
             self.optimizer = Adam(self.G, self.D, loss, lr_x, lr_y)
         elif optimizer_name == 'CGD_multi':
             self.optimizer = CGD_multi(self.G, self.D, loss, lr_x)
+        elif optimizer_name == 'AdamCon':
+            self.optimizer = AdamCon(self.G, self.D, loss, lr_x, lr_y)
         else:
             raise RuntimeError("Optimizer type is not valid")
 
