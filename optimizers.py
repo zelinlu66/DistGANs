@@ -698,9 +698,7 @@ class AdamCon(Optimizer):
         error_real = self.criterion(
             d_pred_real, ones_target(N).to(self.D.device)
         )
-        d_pred_fake = self.D(
-            fake_data.to(self.D.device).detach(), fake_labels
-        )
+        d_pred_fake = self.D(fake_data.to(self.D.device).detach(), fake_labels)
         error_fake = self.criterion(
             d_pred_fake, zeros_target(N).to(self.D.device)
         )
