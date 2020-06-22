@@ -62,7 +62,8 @@ class CGD(Optimizer):
         )
         error_tot = error_fake + error_real
         errorG = self.criterion(
-            prediction_fake.to(self.G.device), ones_target(N).to(self.G.device)
+            prediction_fake.to(self.G.device),
+            ones_target(N).to(self.G.device),
         )
         grad_x = autograd.grad(
             error_tot,
@@ -265,7 +266,13 @@ class CGD_shafer(Optimizer):
             cg_y = hcg.mul(-lr_y)
             self.old_y = hcg.mul(lr_y.sqrt())
 
-        return error_real.item(), error_fake.item(), g_error.item(), cg_x, cg_y
+        return (
+            error_real.item(),
+            error_fake.item(),
+            g_error.item(),
+            cg_x,
+            cg_y,
+        )
 
 
 ######################################
@@ -650,6 +657,7 @@ class Adam(Optimizer):
 
         return error_real.item(), error_fake.item(), g_error.item()
 
+
 class AdamCon(Optimizer):
     def __init__(self, G, D, criterion, lr_x, lr_y, b1=0.5, b2=0.999):
         super(AdamCon, self).__init__(G, D, criterion)
@@ -671,8 +679,10 @@ class AdamCon(Optimizer):
         # Generator step
         self.optimizer_G.zero_grad()
         # Second argument of noise is the noise_dimension parameter of build_generator
-        
-        fake_labels = Variable(torch.LongTensor(np.random.randint(0, 10, 100))) #one random label among 10 possible, 100 is batch dimension
+
+        fake_labels = Variable(
+            torch.LongTensor(np.random.randint(0, 10, 100))
+        )  # one random label among 10 possible, 100 is batch dimension
         fake_data = self.G(noise(N, 100).to(self.G.device), fake_labels)
         d_pred_fake = self.D(fake_data.to(self.D.device), fake_labels)
         g_error = self.criterion(
@@ -688,7 +698,9 @@ class AdamCon(Optimizer):
         error_real = self.criterion(
             d_pred_real, ones_target(N).to(self.D.device)
         )
-        d_pred_fake = self.D(fake_data.to(self.D.device).detach(), fake_labels)
+        d_pred_fake = self.D(
+            fake_data.to(self.D.device).detach(), fake_labels
+        )
         error_fake = self.criterion(
             d_pred_fake, zeros_target(N).to(self.D.device)
         )

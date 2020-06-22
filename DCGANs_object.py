@@ -99,7 +99,10 @@ class DCGANs_model(GANs_model):
                 real_data = Variable((real_batch))
                 N = real_batch.size(0)
                 self.optimizer.zero_grad()
-                if optimizer_name == 'GaussSeidel' or optimizer_name == 'Adam':
+                if (
+                    optimizer_name == 'GaussSeidel'
+                    or optimizer_name == 'Adam'
+                ):
                     error_real, error_fake, g_error = self.optimizer.step(
                         real_data, N
                     )
@@ -118,7 +121,9 @@ class DCGANs_model(GANs_model):
                         index = 0
                         for p in self.G.parameters():
                             p.data.add_(
-                                p_x[index : index + p.numel()].reshape(p.shape)
+                                p_x[index : index + p.numel()].reshape(
+                                    p.shape
+                                )
                             )
                             index += p.numel()
                         if index != p_x.numel():
@@ -126,7 +131,9 @@ class DCGANs_model(GANs_model):
                         index = 0
                         for p in self.D.parameters():
                             p.data.add_(
-                                p_y[index : index + p.numel()].reshape(p.shape)
+                                p_y[index : index + p.numel()].reshape(
+                                    p.shape
+                                )
                             )
                             index += p.numel()
                         if index != p_y.numel():
@@ -136,7 +143,9 @@ class DCGANs_model(GANs_model):
                 self.D_error_fake_history.append(error_fake)
                 self.G_error_history.append(g_error)
 
-                self.print_verbose('Epoch: ', str(e + 1), '/', str(num_epochs))
+                self.print_verbose(
+                    'Epoch: ', str(e + 1), '/', str(num_epochs)
+                )
                 self.print_verbose('Batch Number: ', str(n_batch + 1))
                 self.print_verbose(
                     'Error_discriminator__real: ',

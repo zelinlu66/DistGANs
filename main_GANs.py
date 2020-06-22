@@ -35,6 +35,7 @@ from docopt import docopt
 from MLP_GANs_object import *
 from DCGANs_object import *
 from CGANs import *
+
 '''
 ! READ ME !
 Multi-layer perceptrons neural networks (MLP), convolutional neural networks (CNN)

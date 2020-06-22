@@ -141,10 +141,12 @@ class DiscriminatorCNN(nn.Module):
         super(DiscriminatorCNN, self).to(device)
         self.device = device
 
+
 ##########################
 
+
 class ConditionalGenerator(nn.Module):
-    def __init__(self, img_shape, latent_dim = 100, n_classes = 10):
+    def __init__(self, img_shape, latent_dim=100, n_classes=10):
         super(ConditionalGenerator, self).__init__()
 
         self.label_emb = nn.Embedding(n_classes, n_classes)
@@ -163,7 +165,7 @@ class ConditionalGenerator(nn.Module):
             *block(256, 512),
             *block(512, 1024),
             nn.Linear(1024, int(numpy.prod(img_shape))),
-            nn.Tanh()
+            nn.Tanh(),
         )
 
     def forward(self, noise, labels):
@@ -172,15 +174,14 @@ class ConditionalGenerator(nn.Module):
         img = self.model(gen_input)
         img = img.view(img.size(0), *self.img_shape)
         return img
-    
+
     def to(self, device):
         super(ConditionalGenerator, self).to(device)
         self.device = device
 
 
-
 class ConditionalDiscriminator(nn.Module):
-    def __init__(self, img_shape, n_classes = 10):
+    def __init__(self, img_shape, n_classes=10):
         super(ConditionalDiscriminator, self).__init__()
 
         self.label_embedding = nn.Embedding(n_classes, n_classes)
@@ -199,10 +200,12 @@ class ConditionalDiscriminator(nn.Module):
 
     def forward(self, img, labels):
         # Concatenate label embedding and image to produce input
-        d_in = torch.cat((img.view(img.size(0), -1), self.label_embedding(labels)), -1)
+        d_in = torch.cat(
+            (img.view(img.size(0), -1), self.label_embedding(labels)), -1
+        )
         validity = self.model(d_in)
         return validity
-    
+
     def to(self, device):
         super(ConditionalDiscriminator, self).to(device)
         self.device = device
