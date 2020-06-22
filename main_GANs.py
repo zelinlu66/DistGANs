@@ -23,6 +23,12 @@ Options:
   -m, --model=<str>           Implementation of GANs model. Multi-layer perceptrons NN (MLP), convolutional NN (CNN) [default: MLP].
 """
 import sys
+
+import mpi4py
+
+mpi4py.rc.initialize = False
+mpi4py.rc.finalize = False
+
 import matplotlib.pyplot as plt
 
 from docopt import docopt
@@ -46,6 +52,9 @@ inside your current directory
 
 
 '''
+
+
+MPI.Init()
 
 if __name__ == '__main__':
     arguments = docopt(__doc__, version='Competitive Gradient Descent 0.0')
@@ -81,7 +90,7 @@ if __name__ == '__main__':
         lr_x=torch.tensor([learning_rate]),
         lr_y=torch.tensor([learning_rate]),
         optimizer_name=optimizer_name,
-        verbose=True,
+        verbose=False,
         label_smoothing=False,
         single_number=None,
         repeat_iterations=1,
@@ -115,3 +124,5 @@ if __name__ == '__main__':
             ]
         )
         plt.savefig('cost_report.png')
+
+MPI.Finalize()

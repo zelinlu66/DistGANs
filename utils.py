@@ -124,10 +124,19 @@ def get_gpu(number):
             device = torch.device(
                 "cuda:" + str(number)
             )  # you can continue going on here, like cuda:1 cuda:2....etc.
-            print("Running on the GPU with ID: " + str(number))
+            print(
+                "MPI rank "
+                + str(MPI.COMM_WORLD.Get_rank())
+                + " running on the GPU with ID: "
+                + str(number)
+            )
     else:
         device = torch.device("cpu")
-        print("Running on the CPU - GPU is NOT available")
+        print(
+            "MPI rank "
+            + str(MPI.COMM_WORLD.Get_rank())
+            + " running on the CPU - GPU is NOT available"
+        )
     return device
 
 

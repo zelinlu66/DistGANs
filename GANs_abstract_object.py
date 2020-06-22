@@ -23,10 +23,14 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from abc import ABCMeta, abstractmethod
+from mpi4py import MPI
 
 
 class GANs_model(object):
+  
     def __init__(self, data, n_classes = 10):
+        self.mpi_comm_size = MPI.COMM_WORLD.Get_size()
+        self.mpi_rank = MPI.COMM_WORLD.Get_rank()
         self.num_gpus = count_gpus()
         self.list_gpuIDs = get_gpus_list()
         self.data = data
@@ -43,7 +47,7 @@ class GANs_model(object):
             self.imtype = 'gray'
 
     def print_verbose(self, *args, **kwargs):
-        if self.verbose:
+        if self.verbose and self.mpi_rank == 0:
             print(*args, **kwargs)
 
     def createFolder(self, directory):
@@ -70,12 +74,45 @@ class GANs_model(object):
 
         # In peresence of GPUs available, map the models on the GPUs
         if len(self.list_gpuIDs) == 1:
-            get_gpu(self.list_gpuIDs[0])
+
             self.discriminator_device = get_gpu(self.list_gpuIDs[0])
             self.generator_device = get_gpu(self.list_gpuIDs[0])
-        elif len(self.list_gpuIDs) == 2:
-            self.discriminator_device = get_gpu(self.list_gpuIDs[0])
-            self.generator_device = get_gpu(self.list_gpuIDs[1])
+
+        elif len(self.list_gpuIDs) > 1:
+
+            if len(self.list_gpuIDs) > self.mpi_comm_size:
+
+                # mesure number of gpus available per mpi rank
+                gpus_per_mpi_rank = floor(
+                    len(self.list_gpuIDs) / self.mpi_comm_size
+                )
+                extra_gpus = (
+                    len(self.list_gpuIDs)
+                    - gpus_per_mpi_rank * self.mpi_comm_size
+                )
+
+                if self.mpi_rank < extra_gpus:
+                    self.discriminator_device = get_gpu(
+                        self.list_gpuIDs[self.mpi_rank + 0]
+                    )
+                    self.generator_device = get_gpu(
+                        self.list_gpuIDs[self.mpi_rank + 1]
+                    )
+                else:
+                    self.discriminator_device = get_gpu(
+                        self.list_gpuIDs[self.mpi_rank + 0]
+                    )
+                    self.generator_device = get_gpu(
+                        self.list_gpuIDs[self.mpi_rank + 0]
+                    )
+
+            else:
+                self.discriminator_device = get_gpu(
+                    self.list_gpuIDs[self.mpi_rank % len(self.list_gpuIDs)]
+                )
+                self.generator_device = get_gpu(
+                    self.list_gpuIDs[self.mpi_rank % len(self.list_gpuIDs)]
+                )
 
         D.to(self.discriminator_device)
         G.to(self.generator_device)
@@ -128,6 +165,8 @@ class GANs_model(object):
                 path = str(
                     self.save_path
                     + '/fake_image'
+                    + '_MPI_rank_'
+                    + str(self.mpi_rank)
                     + '_Epoch_'
                     + str(epoch_number + 1)
                     + '_Batch_'
@@ -146,6 +185,8 @@ class GANs_model(object):
                 path = str(
                     self.save_path
                     + '/fake_image'
+                    + '_MPI_rank_'
+                    + str(self.mpi_rank)
                     + '_Epoch_'
                     + str(epoch_number + 1)
                     + '_Batch_'
