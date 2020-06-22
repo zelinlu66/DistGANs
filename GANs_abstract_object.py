@@ -2,10 +2,13 @@
 """
 Created on Sat Apr  4 17:34:40 2020
 
-@authors: Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it)
+@authors: Andrey Prokpenko (e-mail: prokopenkoav@ornl.gov)
+        : Debangshu Mukherjee (e-mail: mukherjeed@ornl.gov)
         : Massimiliano Lupo Pasini (e-mail: lupopasinim@ornl.gov)
         : Nouamane Laanait (e-mail: laanaitn@ornl.gov)
         : Simona Perotto (e-mail: simona.perotto@polimi.it)
+        : Vitaliy Starchenko  (e-mail: starchenkov@ornl.gov)
+        : Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it) 
 
 """
 import torch
@@ -24,7 +27,8 @@ from mpi4py import MPI
 
 
 class GANs_model(object):
-    def __init__(self, data):
+  
+    def __init__(self, data, n_classes = 10):
         self.mpi_comm_size = MPI.COMM_WORLD.Get_size()
         self.mpi_rank = MPI.COMM_WORLD.Get_rank()
         self.num_gpus = count_gpus()
@@ -35,6 +39,7 @@ class GANs_model(object):
         self.D_error_real_history = []
         self.D_error_fake_history = []
         self.G_error_history = []
+        self.n_classes = n_classes
 
         if self.data_dimension[0] == 3:
             self.imtype = 'RGB'
@@ -140,6 +145,10 @@ class GANs_model(object):
             self.optimizer = SGD(self.G, self.D, loss, lr_x)
         elif optimizer_name == 'Adam':
             self.optimizer = Adam(self.G, self.D, loss, lr_x, lr_y)
+        elif optimizer_name == 'CGD_multi':
+            self.optimizer = CGD_multi(self.G, self.D, loss, lr_x)
+        elif optimizer_name == 'AdamCon':
+            self.optimizer = AdamCon(self.G, self.D, loss, lr_x, lr_y)
         else:
             raise RuntimeError("Optimizer type is not valid")
 
@@ -201,5 +210,6 @@ class GANs_model(object):
         save_path='./data_fake',
         label_smoothing=False,
         single_number=None,
+        repeat_iterations=1,
     ):
         pass

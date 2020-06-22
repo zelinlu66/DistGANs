@@ -305,6 +305,7 @@ def general_conjugate_gradient(
         raise RuntimeError('CG: hessian vector product shape mismatch')
     lr_x = lr_x.sqrt().to(device_x)
     lr_y = lr_y.to(device_y)
+
     mm = kk.clone().detach()
     mm = mm.to(device_x)
     jj = mm.clone().detach()
