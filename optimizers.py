@@ -290,9 +290,9 @@ class Jacobi(Optimizer):
     def step(self, real_data, N):
         # Second argument of noise is the noise_dimension parameter of build_generator
         fake_data = self.G(noise(N, 100).to(self.G.device))
-        # fake_data_copy = self.G(noise(N, 100))
+
         d_pred_real = self.D(real_data.to(self.D.device))
-        # d_pred_real_copy = self.D(real_data)
+
         if self.label_smoothing:
             error_real = self.criterion(
                 d_pred_real, ones_target_smooth(N).to(self.D.device)
@@ -301,9 +301,9 @@ class Jacobi(Optimizer):
             error_real = self.criterion(
                 d_pred_real, ones_target(N).to(self.D.device)
             )
-        #    error_real_copy = self.criterion(d_pred_real_copy, ones_target(N) )
+
         d_pred_fake = self.D(fake_data.to(self.D.device))
-        # d_pred_fake_copy = self.D(fake_data_copy)
+
         if self.label_smoothing:
             error_fake = self.criterion(
                 d_pred_fake, zeros_target_smooth(N).to(self.D.device)
@@ -312,7 +312,7 @@ class Jacobi(Optimizer):
             error_fake = self.criterion(
                 d_pred_fake, zeros_target(N).to(self.D.device)
             )
-        #    error_fake_copy = self.criterion(d_pred_fake_copy, zeros_target(N))
+
         g_error = self.criterion(
             d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
         )

@@ -97,38 +97,14 @@ class CGANs_MLP(GANs_model):
                 self.optimizer.D = self.D
                 self.optimizer.zero_grad()
 
-                if optimizer_name == 'GaussSeidel' or optimizer_name == 'Adam':
+                if optimizer_name == 'AdamCon':
                     error_real, error_fake, g_error = self.optimizer.step(
                         real_data, labels, N
                     )
                     self.D = self.optimizer.D
                     self.G = self.optimizer.G
                 else:
-                    for i in np.arange(repeat_iterations):
-
-                        (
-                            error_real,
-                            error_fake,
-                            g_error,
-                            p_x,
-                            p_y,
-                        ) = self.optimizer.step(real_data, N)
-                        index = 0
-                        for p in self.G.parameters():
-                            p.data.add_(
-                                p_x[index : index + p.numel()].reshape(p.shape)
-                            )
-                            index += p.numel()
-                        if index != p_x.numel():
-                            raise RuntimeError('CG size mismatch')
-                        index = 0
-                        for p in self.D.parameters():
-                            p.data.add_(
-                                p_y[index : index + p.numel()].reshape(p.shape)
-                            )
-                            index += p.numel()
-                        if index != p_y.numel():
-                            raise RuntimeError('CG size mismatch')
+                    raise RuntimeError('optimizer not supported, use AdamCon')
 
                 self.D_error_real_history.append(error_real)
                 self.D_error_fake_history.append(error_fake)
