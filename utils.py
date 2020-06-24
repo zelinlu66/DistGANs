@@ -18,6 +18,7 @@ import torch
 from torch import autograd
 from torch.autograd.variable import Variable
 import math
+from mpi4py import MPI
 
 if torch.cuda.is_available():
     import pycuda
