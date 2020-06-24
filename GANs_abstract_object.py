@@ -72,49 +72,33 @@ class GANs_model(object):
         G = self.build_generator()
 
         # In peresence of GPUs available, map the models on the GPUs
-        if len(self.list_gpuIDs) == 1:
+        num_gpus = len(self.list_gpuIDs)
+        if num_gpus > 0:
+            rank = self.mpi_rank
+            comm_size = self.mpi_comm_size
 
-            self.discriminator_device = get_gpu(self.list_gpuIDs[0])
-            self.generator_device = get_gpu(self.list_gpuIDs[0])
-
-        elif len(self.list_gpuIDs) > 1:
-
-            if len(self.list_gpuIDs) > self.mpi_comm_size:
-
-                # mesure number of gpus available per mpi rank
-                gpus_per_mpi_rank = floor(
-                    len(self.list_gpuIDs) / self.mpi_comm_size
-                )
-                extra_gpus = (
-                    len(self.list_gpuIDs)
-                    - gpus_per_mpi_rank * self.mpi_comm_size
-                )
-
-                if self.mpi_rank < extra_gpus:
-                    self.discriminator_device = get_gpu(
-                        self.list_gpuIDs[self.mpi_rank + 0]
-                    )
-                    self.generator_device = get_gpu(
-                        self.list_gpuIDs[self.mpi_rank + 1]
-                    )
-                else:
-                    self.discriminator_device = get_gpu(
-                        self.list_gpuIDs[self.mpi_rank + 0]
-                    )
-                    self.generator_device = get_gpu(
-                        self.list_gpuIDs[self.mpi_rank + 0]
-                    )
-
+            num_ranks_with_2_gpus = max(
+                min(num_gpus - comm_size, comm_size), 0
+            )
+            if rank < num_ranks_with_2_gpus:
+                discriminator_gpu_index = 2 * rank + 0
+                generator_gpu_index = discriminator_gpu_index + 1
             else:
-                self.discriminator_device = get_gpu(
-                    self.list_gpuIDs[self.mpi_rank % len(self.list_gpuIDs)]
+                discriminator_gpu_index = (
+                    rank % num_gpus + num_ranks_with_2_gpus
                 )
-                self.generator_device = get_gpu(
-                    self.list_gpuIDs[self.mpi_rank % len(self.list_gpuIDs)]
-                )
+                generator_gpu_index = discriminator_gpu_index
+
+            self.discriminator_device = get_gpu(
+                self.list_gpuIDs[discriminator_gpu_index]
+            )
+            self.generator_device = get_gpu(
+                self.list_gpuIDs[generator_gpu_index]
+            )
 
         D.to(self.discriminator_device)
         G.to(self.generator_device)
+
         return D, G
 
     @abstractmethod
