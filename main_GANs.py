@@ -35,7 +35,8 @@ import matplotlib.pyplot as plt
 from docopt import docopt
 from MLP_GANs_object import *
 from DCGANs_object import *
-from CGANs import *
+from CGANs_object import *
+
 
 '''
 ! READ ME !
@@ -79,7 +80,7 @@ if __name__ == '__main__':
         model = DCGANs_model(cifar10_data_dcgans())
     elif model_switch == 'C-GANs':
         print("Using conditional GANs implementation with MLP")
-        model = CGANs_MLP(mnist_data())
+        model = CGANs_MLP_model(mnist_data())
     else:
         sys.exit(
             '\n   *** Error. Specified model name: {} is not valid. Please choose MLP or CNN'.format(
@@ -92,7 +93,7 @@ if __name__ == '__main__':
         lr_x=torch.tensor([learning_rate]),
         lr_y=torch.tensor([learning_rate]),
         optimizer_name=optimizer_name,
-        verbose=False,
+        verbose=True,
         label_smoothing=False,
         single_number=None,
         repeat_iterations=1,

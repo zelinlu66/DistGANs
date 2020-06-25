@@ -2,9 +2,17 @@
 """
 Created on Sat Jun 20 12:38:15 2020
 
-@author: claud
+@authors: Andrey Prokpenko (e-mail: prokopenkoav@ornl.gov)
+        : Debangshu Mukherjee (e-mail: mukherjeed@ornl.gov)
+        : Massimiliano Lupo Pasini (e-mail: lupopasinim@ornl.gov)
+        : Nouamane Laanait (e-mail: laanaitn@ornl.gov)
+        : Simona Perotto (e-mail: simona.perotto@polimi.it)
+        : Vitaliy Starchenko  (e-mail: starchenkov@ornl.gov)
+        : Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it) 
 
 """
+
+
 import torch
 import numpy
 from models import *
@@ -20,9 +28,9 @@ from torch.autograd import Variable
 from GANs_abstract_object import *
 
 
-class CGANs_MLP(GANs_model):
+class CGANs_MLP_model(GANs_model):
     def __init__(self, data):
-        super(CGANs_MLP, self).__init__(data)
+        super(CGANs_MLP_model, self).__init__(data)
 
     def build_discriminator(self):
         D = ConditionalDiscriminator(self.data_dimension, n_classes=10)
