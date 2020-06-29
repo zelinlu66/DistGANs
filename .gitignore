@@ -2,8 +2,14 @@
 .*.swo
 
 __pycache__
+.DS_Store
 
 # data directories
-data_fake
+data_fake*
 dataset
 data_mnist/*
+
+# result files
+cost_report.png
+
+
