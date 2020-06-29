@@ -26,7 +26,8 @@ from abc import ABCMeta, abstractmethod
 from mpi4py import MPI
 
 
-class GANs_model(object):
+class GANs_model(metaclass=ABCMeta):
+
     def __init__(self, data, n_classes=10):
         self.mpi_comm_size = MPI.COMM_WORLD.Get_size()
         self.mpi_rank = MPI.COMM_WORLD.Get_rank()
@@ -44,6 +45,11 @@ class GANs_model(object):
             self.imtype = 'RGB'
         else:
             self.imtype = 'gray'
+
+    @property
+    @abstractmethod
+    def model_name(self):
+        pass
 
     def print_verbose(self, *args, **kwargs):
         if self.verbose and self.mpi_rank == 0:

@@ -26,6 +26,8 @@ from GANs_abstract_object import *
 
 
 class DCGANs_model(GANs_model):
+    model_name = 'CNN'
+
     def __init__(self, data):
         super(DCGANs_model, self).__init__(data)
 
