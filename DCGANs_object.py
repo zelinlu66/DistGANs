@@ -56,12 +56,18 @@ class DCGANs_model(GANs_model):
         save_path='./data_fake_DCGANS',
         label_smoothing=False,
         single_number=None,
+        repeat_iterations=1,
     ):
         self.data_loader = torch.utils.data.DataLoader(
             self.data, batch_size=100, shuffle=True
         )
-        if single_number is not None:
+
+        if single_number is not None or self.mpi_comm_size > 1:
             self.num_test_samples = 5
+
+            if single_number is None and self.mpi_comm_size > 1:
+                single_number = torch.tensor(self.mpi_rank)
+
             self.data = [
                 i for i in self.data if i[1] == torch.tensor(single_number)
             ]
@@ -100,30 +106,31 @@ class DCGANs_model(GANs_model):
                     self.D = self.optimizer.D
                     self.G = self.optimizer.G
                 else:
-                    (
-                        error_real,
-                        error_fake,
-                        g_error,
-                        p_x,
-                        p_y,
-                    ) = self.optimizer.step(real_data, N)
+                    for i in np.arange(repeat_iterations):
+                        (
+                            error_real,
+                            error_fake,
+                            g_error,
+                            p_x,
+                            p_y,
+                        ) = self.optimizer.step(real_data, N)
 
-                    index = 0
-                    for p in self.G.parameters():
-                        p.data.add_(
-                            p_x[index : index + p.numel()].reshape(p.shape)
-                        )
-                        index += p.numel()
-                    if index != p_x.numel():
-                        raise RuntimeError('CG size mismatch')
-                    index = 0
-                    for p in self.D.parameters():
-                        p.data.add_(
-                            p_y[index : index + p.numel()].reshape(p.shape)
-                        )
-                        index += p.numel()
-                    if index != p_y.numel():
-                        raise RuntimeError('CG size mismatch')
+                        index = 0
+                        for p in self.G.parameters():
+                            p.data.add_(
+                                p_x[index : index + p.numel()].reshape(p.shape)
+                            )
+                            index += p.numel()
+                        if index != p_x.numel():
+                            raise RuntimeError('CG size mismatch')
+                        index = 0
+                        for p in self.D.parameters():
+                            p.data.add_(
+                                p_y[index : index + p.numel()].reshape(p.shape)
+                            )
+                            index += p.numel()
+                        if index != p_y.numel():
+                            raise RuntimeError('CG size mismatch')
 
                 self.D_error_real_history.append(error_real)
                 self.D_error_fake_history.append(error_fake)
@@ -141,7 +148,9 @@ class DCGANs_model(GANs_model):
                 )
 
                 if (n_batch) % self.display_progress == 0:
-                    test_images = self.optimizer.G(self.test_noise)
+                    test_images = self.optimizer.G(
+                        self.test_noise.to(self.G.device)
+                    )
                     self.save_images(e, n_batch, test_images)
 
             self.print_verbose(

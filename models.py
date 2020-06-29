@@ -13,6 +13,7 @@ Created on Tue Mar 17 11:26:08 2020
 """
 import torch
 import torch.nn as nn
+import numpy
 
 
 class Discriminator(nn.Module):
@@ -28,6 +29,10 @@ class Discriminator(nn.Module):
         y = self.hidden1(x)
         z = self.out(y)
         return z
+
+    def to(self, device):
+        super(Discriminator, self).to(device)
+        self.device = device
 
 
 class Generator(torch.nn.Module):
@@ -46,6 +51,10 @@ class Generator(torch.nn.Module):
         w = self.hidden2(y)
         z = self.out(w)
         return z
+
+    def to(self, device):
+        super(Generator, self).to(device)
+        self.device = device
 
 
 class Upsample(nn.Module):
@@ -88,6 +97,10 @@ class GeneratorCNN(nn.Module):
         img = self.conv_blocks(out)
         return img
 
+    def to(self, device):
+        super(GeneratorCNN, self).to(device)
+        self.device = device
+
 
 class DiscriminatorCNN(nn.Module):
     def __init__(self, n_channels, image_dimension):
@@ -123,3 +136,76 @@ class DiscriminatorCNN(nn.Module):
         validity = self.adv_layer(out)
 
         return validity
+
+    def to(self, device):
+        super(DiscriminatorCNN, self).to(device)
+        self.device = device
+
+
+##########################
+
+
+class ConditionalGenerator(nn.Module):
+    def __init__(self, img_shape, latent_dim=100, n_classes=10):
+        super(ConditionalGenerator, self).__init__()
+
+        self.label_emb = nn.Embedding(n_classes, n_classes)
+        self.img_shape = img_shape
+
+        def block(in_feat, out_feat, normalize=True):
+            layers = [nn.Linear(in_feat, out_feat)]
+            if normalize:
+                layers.append(nn.BatchNorm1d(out_feat, 0.8))
+            layers.append(nn.LeakyReLU(0.2, inplace=True))
+            return layers
+
+        self.model = nn.Sequential(
+            *block(latent_dim + n_classes, 128, normalize=False),
+            *block(128, 256),
+            *block(256, 512),
+            *block(512, 1024),
+            nn.Linear(1024, int(numpy.prod(img_shape))),
+            nn.Tanh(),
+        )
+
+    def forward(self, noise, labels):
+        # Concatenate label embedding and image to produce input
+        gen_input = torch.cat((self.label_emb(labels), noise), -1)
+        img = self.model(gen_input)
+        img = img.view(img.size(0), *self.img_shape)
+        return img
+
+    def to(self, device):
+        super(ConditionalGenerator, self).to(device)
+        self.device = device
+
+
+class ConditionalDiscriminator(nn.Module):
+    def __init__(self, img_shape, n_classes=10):
+        super(ConditionalDiscriminator, self).__init__()
+
+        self.label_embedding = nn.Embedding(n_classes, n_classes)
+
+        self.model = nn.Sequential(
+            nn.Linear(n_classes + int(numpy.prod(img_shape)), 512),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Linear(512, 512),
+            nn.Dropout(0.4),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Linear(512, 512),
+            nn.Dropout(0.4),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Linear(512, 1),
+        )
+
+    def forward(self, img, labels):
+        # Concatenate label embedding and image to produce input
+        d_in = torch.cat(
+            (img.view(img.size(0), -1), self.label_embedding(labels)), -1
+        )
+        validity = self.model(d_in)
+        return validity
+
+    def to(self, device):
+        super(ConditionalDiscriminator, self).to(device)
+        self.device = device
