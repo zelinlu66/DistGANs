@@ -27,6 +27,8 @@ from GANs_abstract_object import *
 
 
 class MLP_GANs_model(GANs_model):
+    model_name = 'MLP'
+
     def __init__(self, data):
         super(MLP_GANs_model, self).__init__(data)
 
