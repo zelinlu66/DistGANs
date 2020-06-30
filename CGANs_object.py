@@ -29,7 +29,7 @@ from GANs_abstract_object import *
 
 
 class CGANs_MLP_model(GANs_model):
-    model_name = "C-GANs"
+    model_name = 'C-GANs'
 
     def __init__(self, data):
         super(CGANs_MLP_model, self).__init__(data)
@@ -54,11 +54,11 @@ class CGANs_MLP_model(GANs_model):
         loss=torch.nn.MSELoss(),
         lr_x=torch.tensor([0.001]),
         lr_y=torch.tensor([0.001]),
-        optimizer_name="SGD",
+        optimizer_name='SGD',
         num_epochs=1,
         batch_size=100,
         verbose=True,
-        save_path="./data_fake",
+        save_path='./data_fake',
         label_smoothing=False,
         single_number=None,
         repeat_iterations=1,
@@ -107,27 +107,27 @@ class CGANs_MLP_model(GANs_model):
                 self.optimizer.D = self.D
                 self.optimizer.zero_grad()
 
-                if optimizer_name == "AdamCon":
+                if optimizer_name == 'AdamCon':
                     error_real, error_fake, g_error = self.optimizer.step(
                         real_data, labels, N
                     )
                     self.D = self.optimizer.D
                     self.G = self.optimizer.G
                 else:
-                    raise RuntimeError("optimizer not supported, use AdamCon")
+                    raise RuntimeError('optimizer not supported, use AdamCon')
 
                 self.D_error_real_history.append(error_real)
                 self.D_error_fake_history.append(error_fake)
                 self.G_error_history.append(g_error)
 
-                self.print_verbose("Epoch: ", str(e + 1), "/", str(num_epochs))
-                self.print_verbose("Batch Number: ", str(n_batch + 1))
+                self.print_verbose('Epoch: ', str(e + 1), '/', str(num_epochs))
+                self.print_verbose('Batch Number: ', str(n_batch + 1))
                 self.print_verbose(
-                    "Error_discriminator__real: ",
+                    'Error_discriminator__real: ',
                     "{:.5e}".format(error_real),
-                    "Error_discriminator__fake: ",
+                    'Error_discriminator__fake: ',
                     "{:.5e}".format(error_fake),
-                    "Error_generator: ",
+                    'Error_generator: ',
                     "{:.5e}".format(g_error),
                 )
 
@@ -145,4 +145,4 @@ class CGANs_MLP_model(GANs_model):
                 "######################################################"
             )
         end = time.time()
-        self.print_verbose("Total Time[s]: ", str(end - start))
+        self.print_verbose('Total Time[s]: ', str(end - start))
