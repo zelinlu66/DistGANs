@@ -22,6 +22,7 @@ from GANs_abstract_object import *
 
 class CNN_CGANs_model(GANs_model):
     model_name = 'CNN-CGANs'
+
     def __init__(self, data):
         super(CNN_CGANs_model, self).__init__(data)
 

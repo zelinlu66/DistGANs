@@ -86,7 +86,7 @@ if __name__ == '__main__':
     elif model_switch == 'CNN-CGANs':
         print("Using conditional GANs implementation with CNN ")
         model = CNN_CGANs_model(cifar10_data_dcgans())
-    
+
     else:
         sys.exit(
             '\n   *** Error. Specified model name: {} is not valid. Please choose MLP or CNN'.format(
