@@ -81,7 +81,7 @@ if __name__ == '__main__':
     elif model_switch == 'CGANs':
         print("Using conditional GANs implementation with MLP")
         model = CGANs_model(cifar10_data_dcgans())
-    elif model_switch == 'DC-CGANs':
+    elif model_switch == 'CNN-CGANs':
         print("Using conditional GANs implementation with CNN layers")
         model = CNN_CGANs_model(mnist_data_dcgans())
     else:
