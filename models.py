@@ -214,45 +214,6 @@ class ConditionalDiscriminator(nn.Module):
         self.device = device
 
 
-class Gen(nn.Module):
-    def __init__(self, img_shape, latent_dim=100, n_classes=10):
-        super(Gen, self).__init__()
-        self.label_emb = nn.Embedding(n_classes, n_classes)
-        self.img_shape = img_shape
-        self.main = nn.Sequential(
-            # input is Z, going into a convolution
-            nn.ConvTranspose2d(
-                latent_dim + n_classes, 128 * 8, 4, 1, 0, bias=False
-            ),
-            nn.BatchNorm2d(128 * 8),
-            nn.ReLU(True),
-            # state size. (ngf*8) x 4 x 4
-            nn.ConvTranspose2d(128 * 8, 128 * 4, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(128 * 4),
-            nn.ReLU(True),
-            # state size. (ngf*4) x 8 x 8
-            nn.ConvTranspose2d(128 * 4, 128 * 2, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(128 * 2),
-            nn.ReLU(True),
-            # state size. (ngf*2) x 16 x 16
-            nn.ConvTranspose2d(128 * 2, 128, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(128),
-            nn.ReLU(True),
-            # state size. (ngf) x 32 x 32
-            nn.ConvTranspose2d(128, img_shape[0], 4, 2, 1, bias=False),
-            nn.Tanh()
-            # state size. (nc) x 64 x 64
-        )
-
-    def forward(self, noise, labels):
-        gen_input = torch.cat((self.label_emb(labels), noise), -1)
-        return self.main(gen_input)
-
-    def to(self, device):
-        super(Gen, self).to(device)
-        self.device = device
-
-
 class Generator_DCC(nn.Module):
     def __init__(self, img_shape, latent_dim=100, n_classes=10):
         super(Generator_DCC, self).__init__()
