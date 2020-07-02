@@ -58,7 +58,7 @@ class CGANs_MLP_model(GANs_model):
         num_epochs=1,
         batch_size=100,
         verbose=True,
-        save_path='./data_fake_CGANs',
+        save_path='./data_fake',
         label_smoothing=False,
         single_number=None,
         repeat_iterations=1,

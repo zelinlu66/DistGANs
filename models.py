@@ -14,9 +14,6 @@ Created on Tue Mar 17 11:26:08 2020
 import torch
 import torch.nn as nn
 import numpy
-import torchlib
-from utils import *
-import torch.nn.functional as F
 
 
 class Discriminator(nn.Module):
@@ -212,90 +209,3 @@ class ConditionalDiscriminator(nn.Module):
     def to(self, device):
         super(ConditionalDiscriminator, self).to(device)
         self.device = device
-
-
-class Generator_DCC(nn.Module):
-    def __init__(self, img_shape, latent_dim=100, n_classes=10):
-        super(Generator_DCC, self).__init__()
-        self.label_emb = nn.Embedding(n_classes, n_classes)
-        self.img_shape = img_shape
-        self.init_size = self.img_shape[1] // 4
-        self.l1 = nn.Sequential(
-            nn.Linear(latent_dim + n_classes, 128 * self.init_size ** 2)
-        )
-
-        self.conv_blocks = nn.Sequential(
-            nn.BatchNorm2d(128),
-            Upsample(scale_factor=2),
-            nn.Conv2d(128, 128, 3, stride=1, padding=1),
-            nn.BatchNorm2d(128, 0.8),
-            nn.LeakyReLU(0.2, inplace=True),
-            Upsample(scale_factor=2),  # nn.Upsample
-            nn.Conv2d(128, 64, 3, stride=1, padding=1),
-            nn.BatchNorm2d(64, 0.8),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(64, self.img_shape[0], 3, stride=1, padding=1),
-            nn.Tanh(),
-        )
-
-    def forward(self, z, labels):
-        gen_input = torch.cat((self.label_emb(labels), z), -1)
-        out = self.l1(gen_input)
-        out = out.view(out.shape[0], 128, self.init_size, self.init_size)
-        img = self.conv_blocks(out)
-        return img
-
-    def to(self, device):
-        super(Generator_DCC, self).to(device)
-        self.device = device
-
-
-class Discriminator_DCC(nn.Module):
-    def __init__(self, img_shape, n_classes=10):
-        super(Discriminator_DCC, self).__init__()
-        self.label_embedding = nn.Embedding(n_classes, n_classes)
-        self.img_shape = img_shape
-        self.main = nn.Sequential(
-            # input is (nc) x 64 x 64
-            nn.Conv2d(img_shape[0], 128, 4, 2, 1, bias=False),
-            nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf) x 32 x 32
-            nn.Conv2d(128, 128 * 2, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(128 * 2),
-            nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf*2) x 16 x 16
-            nn.Conv2d(128 * 2, 128 * 4, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(128 * 4),
-            nn.LeakyReLU(0.2, inplace=True),
-        )
-        # state size. (ndf*4) x 8 x 8
-        # nn.Conv2d(128 * 4, 128 * 8, 4, 2, 1, bias=False),
-        # nn.BatchNorm2d(128 * 8),
-        # nn.LeakyReLU(0.2, inplace=True),
-        # state size. (ndf*8) x 4 x 4
-        # nn.Conv2d(128 * 8, 1, 4, 1, 0, bias=False),
-        # nn.Sigmoid()
-        self.second = nn.Sequential(
-            nn.Linear(10, 1000), nn.LeakyReLU(0.2, inplace=True)
-        )
-        self.third = nn.Sequential(
-            nn.Linear(1000 + 128 * 4 * 8 * 8, 1000),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(1000, 1),
-            nn.Sigmoid(),
-        )
-
-    def forward(self, img, labels):
-        x = self.main(img)
-        y = self.second(self.label_embedding(labels))
-        x = x.view(img.size(0), 128 * 4 * 8 * 8)  # 128*np.prod(self.img_shape)
-        x = torch.cat([x, y], 1)
-        out = self.third(x)
-
-        return out
-
-    def to(self, device):
-        super(Discriminator_DCC, self).to(device)
-        self.device = device
-
-

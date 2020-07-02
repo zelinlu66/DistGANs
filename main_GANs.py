@@ -37,7 +37,7 @@ from docopt import docopt
 from MLP_GANs_object import *
 from DCGANs_object import *
 from CGANs_object import *
-from CNN_CGANs_object import *
+
 
 '''
 ! READ ME !
@@ -79,12 +79,9 @@ if __name__ == '__main__':
     elif model_switch == 'CNN':
         print("Using CNN implementation of GANs: DCGANs_model")
         model = DCGANs_model(cifar10_data_dcgans())
-    elif model_switch == 'CGANs':
+    elif model_switch == 'C-GANs':
         print("Using conditional GANs implementation with MLP")
-        model = CGANs_model(cifar10_data_dcgans())
-    elif model_switch == 'CNN-CGANs':
-        print("Using conditional GANs implementation with CNN layers")
-        model = CNN_CGANs_model(mnist_data_dcgans())
+        model = CGANs_MLP_model(mnist_data())
     else:
         sys.exit(
             '\n   *** Error. Specified model name: {} is not valid. Please choose MLP or CNN'.format(
