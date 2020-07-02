@@ -1,15 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Jun 20 12:38:15 2020
+Created on Mon Jun 29 19:51:03 2020
 
-@authors: Andrey Prokpenko (e-mail: prokopenkoav@ornl.gov)
-        : Debangshu Mukherjee (e-mail: mukherjeed@ornl.gov)
-        : Massimiliano Lupo Pasini (e-mail: lupopasinim@ornl.gov)
-        : Nouamane Laanait (e-mail: laanaitn@ornl.gov)
-        : Simona Perotto (e-mail: simona.perotto@polimi.it)
-        : Vitaliy Starchenko  (e-mail: starchenkov@ornl.gov)
-        : Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it) 
-
+@author: claud
 """
 
 
@@ -28,20 +21,18 @@ from torch.autograd import Variable
 from GANs_abstract_object import *
 
 
-class CGANs_MLP_model(GANs_model):
-    model_name = 'C-GANs'
-
+class CNN_CGANs_model(GANs_model):
     def __init__(self, data):
-        super(CGANs_MLP_model, self).__init__(data)
+        super(CNN_CGANs_model, self).__init__(data)
 
     def build_discriminator(self):
-        D = ConditionalDiscriminator(self.data_dimension, n_classes=10)
+        D = Discriminator_DCC(self.data_dimension)
         return D
 
     def build_generator(self, noise_dimension=100):
         self.noise_dimension = noise_dimension
         # n_out = numpy.prod(self.data_dimension)
-        G = ConditionalGenerator(
+        G = Generator_DCC(
             self.data_dimension, self.noise_dimension, n_classes=10
         )
         return G
@@ -58,7 +49,7 @@ class CGANs_MLP_model(GANs_model):
         num_epochs=1,
         batch_size=100,
         verbose=True,
-        save_path='./data_fake_CGANs',
+        save_path='./data_fake_DCCGANs',
         label_smoothing=False,
         single_number=None,
         repeat_iterations=1,
@@ -101,7 +92,7 @@ class CGANs_MLP_model(GANs_model):
                 )
                 # self.test_labels = Variable(torch.LongTensor(np.random.randint(0, self.n_classes, batch_size)))
                 N = real_batch.size(0)
-                real_data = Variable(images_to_vectors(real_batch))
+                real_data = Variable((real_batch))
                 labels = Variable(labels.type(torch.LongTensor))
                 self.optimizer.G = self.G
                 self.optimizer.D = self.D

@@ -409,3 +409,24 @@ def general_conjugate_gradient_jacobi(
 
 
 ###########################################
+
+def _get_norm_fn_2d(norm):  # 2d
+    if norm == 'batch_norm':
+        return nn.BatchNorm2d
+    elif norm == 'instance_norm':
+        return nn.InstanceNorm2d
+    elif norm == 'none':
+        return torchlib.NoOp
+    else:
+        raise NotImplementedError
+
+
+def _get_weight_norm_fn(weight_norm):
+    if weight_norm == 'spectral_norm':
+        return torch.nn.utils.spectral_norm
+    elif weight_norm == 'weight_norm':
+        return torch.nn.utils.weight_norm
+    elif weight_norm == 'none':
+        return torchlib.identity
+    else:
+        return NotImplementedError
