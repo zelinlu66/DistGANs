@@ -297,5 +297,3 @@ class Discriminator_DCC(nn.Module):
     def to(self, device):
         super(Discriminator_DCC, self).to(device)
         self.device = device
-
-
