@@ -29,6 +29,8 @@ from GANs_abstract_object import *
 
 
 class CGANs_MLP_model(GANs_model):
+    model_name = 'C-GANs'
+
     def __init__(self, data):
         super(CGANs_MLP_model, self).__init__(data)
 

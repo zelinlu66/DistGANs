@@ -18,7 +18,8 @@ Options:
   --version                   Show version.
   --display                   Use matplotlib to plot results.
   --save                      Save the model.
-  -e, --epochs=<n>            Number of epochs [default: 100]
+  --list                      List available models.
+  -e, --epochs=<n>            Number of epochs [default: 100].
   -o, --optimizer=<str>       Optimizer name [default: Jacobi].
   -r, --learning_rate=<f>     Learning rate [default: 0.01].
   -m, --model=<str>           Implementation of GANs model. Multi-layer perceptrons NN (MLP), convolutional NN (CNN) [default: MLP].

@@ -683,8 +683,12 @@ class AdamCon(Optimizer):
         fake_labels = Variable(
             torch.LongTensor(np.random.randint(0, 10, 100))
         )  # one random label among 10 possible, 100 is batch dimension
-        fake_data = self.G(noise(N, 100).to(self.G.device), fake_labels)
-        d_pred_fake = self.D(fake_data.to(self.D.device), fake_labels)
+        fake_data = self.G(
+            noise(N, 100).to(self.G.device), fake_labels.to(self.G.device)
+        )
+        d_pred_fake = self.D(
+            fake_data.to(self.D.device), fake_labels.to(self.D.device)
+        )
         g_error = self.criterion(
             d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
         )
@@ -694,11 +698,15 @@ class AdamCon(Optimizer):
         # Discriminator step
         self.optimizer_D.zero_grad()
         # Measure discriminator's ability to classify real from generated samples
-        d_pred_real = self.D(real_data.to(self.D.device), labels)
+        d_pred_real = self.D(
+            real_data.to(self.D.device), labels.to(self.D.device)
+        )
         error_real = self.criterion(
             d_pred_real, ones_target(N).to(self.D.device)
         )
-        d_pred_fake = self.D(fake_data.to(self.D.device).detach(), fake_labels)
+        d_pred_fake = self.D(
+            fake_data.to(self.D.device).detach(), fake_labels.to(self.D.device)
+        )
         error_fake = self.criterion(
             d_pred_fake, zeros_target(N).to(self.D.device)
         )
