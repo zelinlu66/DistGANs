@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jun 29 19:51:03 2020
+Created on Thu Jul  2 23:00:14 2020
 
-@author: claud
 """
 
 
@@ -22,6 +21,7 @@ from GANs_abstract_object import *
 
 
 class CNN_CGANs_model(GANs_model):
+    model_name = 'CNN-CGANs'
     def __init__(self, data):
         super(CNN_CGANs_model, self).__init__(data)
 

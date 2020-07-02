@@ -14,9 +14,6 @@ Created on Tue Mar 17 11:26:08 2020
 import torch
 import torch.nn as nn
 import numpy
-import torchlib
-from utils import *
-import torch.nn.functional as F
 
 
 class Discriminator(nn.Module):
@@ -297,3 +294,4 @@ class Discriminator_DCC(nn.Module):
     def to(self, device):
         super(Discriminator_DCC, self).to(device)
         self.device = device
+
