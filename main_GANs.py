@@ -41,7 +41,7 @@ from mpi4py import MPI
 from CGANs_object import *
 from DCGANs_object import *
 from MLP_GANs_object import *
-
+from CNN_CGANs_object import *
 
 '''
 ! READ ME !
@@ -128,6 +128,10 @@ if __name__ == '__main__':
     elif model_switch == 'C-GANs':
         print("Using conditional GANs implementation with MLP")
         model = CGANs_MLP_model(mnist_data())
+    elif model_switch == 'CNN-CGANs':
+        print("Using conditional GANs implementation with CNN ")
+        model = CNN_CGANs_model(cifar10_data_dcgans())
+
     else:
         sys.exit(
             '\n   *** Error. Specified model name: {} is not valid. Please choose MLP or CNN'.format(

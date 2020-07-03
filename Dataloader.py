@@ -69,7 +69,7 @@ def mnist_data_dcgans(rand_rotation=False, max_degree=90):
     else:
         compose = transforms.Compose(
             [
-                transforms.Resize(32),
+                transforms.Resize(64),
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,), (0.5,)),
             ]
