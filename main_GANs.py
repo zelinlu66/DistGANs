@@ -11,7 +11,7 @@
 
 Usage:
   main_GANS.py (-h | --help)
-  main_GANS.py [-m MODEL] [-e EPOCHS] [-o OPTIMIZER] [-r LEARNING_RATE] [--display] [--save]
+  main_GANS.py [-c CONFIG_FILE] [-m MODEL] [-e EPOCHS] [-o OPTIMIZER] [-r LEARNING_RATE] [--display] [--save]
 
 Options:
   -h, --help                  Show this screen.
@@ -19,60 +19,105 @@ Options:
   --display                   Use matplotlib to plot results.
   --save                      Save the model.
   --list                      List available models.
+  -c, --config=<str>          Filename containing configuration parameters
   -e, --epochs=<n>            Number of epochs [default: 100].
+  -m, --model=<str>           Implementation of GANs model. Multi-layer perceptrons NN (MLP), convolutional NN (CNN) [default: MLP].
   -o, --optimizer=<str>       Optimizer name [default: Jacobi].
   -r, --learning_rate=<f>     Learning rate [default: 0.01].
-  -m, --model=<str>           Implementation of GANs model. Multi-layer perceptrons NN (MLP), convolutional NN (CNN) [default: MLP].
 """
+
+from docopt import docopt
+import matplotlib.pyplot as plt
 import sys
+import yaml
 
 import mpi4py
 
 mpi4py.rc.initialize = False
 mpi4py.rc.finalize = False
+from mpi4py import MPI
 
-import matplotlib.pyplot as plt
 
-from docopt import docopt
-from MLP_GANs_object import *
-from DCGANs_object import *
 from CGANs_object import *
+from DCGANs_object import *
+from MLP_GANs_object import *
 from CNN_CGANs_object import *
-
 
 '''
 ! READ ME !
-Multi-layer perceptrons neural networks (MLP), convolutional neural networks (CNN)
+Multi-layer perceptrons neural networks (MLP)
+Convolutional neural networks (CNN)
+
 X = Generator
 Y = Discriminaror
 
-Different learning rates for X and Y can only be used with 'Jacobi' and 'JacobiMultiCost'
-for the other optimizers the learning rate will be set to the value of lr_x
+Different learning rates for X and Y can only be used with 'Jacobi' and
+'JacobiMultiCost' for the other optimizers the learning rate will be set to the
+value of lr_x
 
-Label smoothing variation is implemented only for optimizer 'Jacobi' and only for GANs_object
+Label smoothing variation is implemented only for optimizer 'Jacobi' and only
+for GANs_object
 
-Attribute save_models of both training object saves the state dicts of the networks into 2 different folders
-inside your current directory
-
-
-
+Attribute save_models of both training object saves the state dicts of the
+networks into 2 different folders inside your current directory
 '''
 
 
 MPI.Init()
 
+
+def merge_args(cmdline_args, config_args):
+    for key in config_args.keys():
+        if key not in cmdline_args:
+            sys.exit(
+                'Error: unknown key in the configuration file \"{}\"'.format(
+                    key
+                )
+            )
+
+    args = {}
+    args.update(cmdline_args)
+    args.update(config_args)
+
+    return args
+
+
+def get_options():
+    args = docopt(__doc__, version='Competitive Gradient Descent 0.0')
+
+    # strip -- from names
+    args = {key[2:]: value for key, value in args.items()}
+
+    config_args = {}
+    if args['config']:
+        with open(args['config']) as f:
+            config_args = yaml.load(f, Loader=yaml.FullLoader)
+
+    # strip certain options
+    # this serves 2 purposes:
+    # - This option have already been parsed, and have no meaning as input
+    #   parameters
+    # - The config file options would be unallowed to contain them
+    for skip_option in {'config', 'help'}:
+        del args[skip_option]
+
+    return merge_args(args, config_args)
+
+
 if __name__ == '__main__':
-    arguments = docopt(__doc__, version='Competitive Gradient Descent 0.0')
-    print("Input parameters:")
-    for arg in arguments:
-        if arguments[arg]:
-            print("  {}  {}".format(arg, arguments[arg]))
+    config = get_options()
 
-    epochs = int(arguments['--epochs'])
-    optimizer_name = arguments['--optimizer']
-    learning_rate = float(arguments['--learning_rate'])
+    if MPI.COMM_WORLD.Get_rank() == 0:
+        print('-----------------')
+        print('Input parameters:')
+        print(yaml.dump(config))
+        print('-----------------')
 
-    model_switch = arguments['--model']
+    epochs = int(config['epochs'])
+    optimizer_name = config['optimizer']
+    learning_rate = float(config['learning_rate'])
+
+    model_switch = config['model']
 
     if model_switch == 'MLP':
         print("Using MLP implementation of GANs: MLP_GANs_model")
@@ -105,11 +150,11 @@ if __name__ == '__main__':
         repeat_iterations=1,
     )  # save_path = ''
 
-    if arguments['--save']:
+    if config['save']:
         print("Saving the model...")
         model.save_models()
 
-    if arguments['--display']:
+    if config['display']:
         plt.figure()
         plt.plot(
             [x for x in range(0, len(model.D_error_real_history))],
