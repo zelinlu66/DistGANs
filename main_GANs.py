@@ -62,7 +62,6 @@ Attribute save_models of both training object saves the state dicts of the
 networks into 2 different folders inside your current directory
 '''
 
-
 MPI.Init()
 
 
