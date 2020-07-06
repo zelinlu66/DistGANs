@@ -27,18 +27,18 @@ from mpi4py import MPI
 
 
 class GANs_model(metaclass=ABCMeta):
-    def __init__(self, data, n_classes=10):
+    def __init__(self, data, n_classes):
         self.mpi_comm_size = MPI.COMM_WORLD.Get_size()
         self.mpi_rank = MPI.COMM_WORLD.Get_rank()
         self.num_gpus = count_gpus()
         self.list_gpuIDs = get_gpus_list()
         self.data = data
+        self.n_classes = n_classes
         self.data_dimension = self.data[0][0].numpy().shape
         self.D, self.G = self.build_models()
         self.D_error_real_history = []
         self.D_error_fake_history = []
         self.G_error_history = []
-        self.n_classes = n_classes
 
         if self.data_dimension[0] == 3:
             self.imtype = "RGB"
@@ -115,7 +115,13 @@ class GANs_model(metaclass=ABCMeta):
         pass
 
     def optimizer_initialize(
-        self, loss, lr_x, lr_y, optimizer_name, label_smoothing=False
+        self,
+        loss,
+        lr_x,
+        lr_y,
+        optimizer_name,
+        label_smoothing=False,
+        n_classes=10,
     ):
         if optimizer_name == "Jacobi":
             self.optimizer = Jacobi(
@@ -136,7 +142,9 @@ class GANs_model(metaclass=ABCMeta):
         elif optimizer_name == "CGD_multi":
             self.optimizer = CGD_multi(self.G, self.D, loss, lr_x)
         elif optimizer_name == "AdamCon":
-            self.optimizer = AdamCon(self.G, self.D, loss, lr_x, lr_y)
+            self.optimizer = AdamCon(
+                self.G, self.D, loss, lr_x, lr_y, n_classes=10
+            )
         else:
             raise RuntimeError("Optimizer type is not valid")
 

@@ -92,3 +92,17 @@ def cifar10_data_dcgans():
     return datasets.CIFAR10(
         root=out_dir, train=True, transform=compose, download=True
     )
+
+
+def cifar100_data():
+    compose = transforms.Compose(
+        [
+            transforms.Resize(64),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        ]
+    )
+    out_dir = '{}/dataset'.format(os.getcwd())
+    return datasets.CIFAR100(
+        root=out_dir, train=True, transform=compose, download=True
+    )

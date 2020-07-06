@@ -146,7 +146,7 @@ class DiscriminatorCNN(nn.Module):
 
 
 class ConditionalGenerator(nn.Module):
-    def __init__(self, img_shape, latent_dim=100, n_classes=10):
+    def __init__(self, img_shape, n_classes, latent_dim=100):
         super(ConditionalGenerator, self).__init__()
 
         self.label_emb = nn.Embedding(n_classes, n_classes)
@@ -181,7 +181,7 @@ class ConditionalGenerator(nn.Module):
 
 
 class ConditionalDiscriminator(nn.Module):
-    def __init__(self, img_shape, n_classes=10):
+    def __init__(self, img_shape, n_classes):
         super(ConditionalDiscriminator, self).__init__()
 
         self.label_embedding = nn.Embedding(n_classes, n_classes)
@@ -212,7 +212,7 @@ class ConditionalDiscriminator(nn.Module):
 
 
 class Generator_DCC(nn.Module):
-    def __init__(self, img_shape, latent_dim=100, n_classes=10):
+    def __init__(self, img_shape, n_classes, latent_dim=100):
         super(Generator_DCC, self).__init__()
         self.label_emb = nn.Embedding(n_classes, n_classes)
         self.img_shape = img_shape
@@ -248,7 +248,7 @@ class Generator_DCC(nn.Module):
 
 
 class Discriminator_DCC(nn.Module):
-    def __init__(self, img_shape, n_classes=10):
+    def __init__(self, img_shape, n_classes):
         super(Discriminator_DCC, self).__init__()
         self.label_embedding = nn.Embedding(n_classes, n_classes)
         self.img_shape = img_shape
@@ -273,7 +273,7 @@ class Discriminator_DCC(nn.Module):
         # nn.Conv2d(128 * 8, 1, 4, 1, 0, bias=False),
         # nn.Sigmoid()
         self.second = nn.Sequential(
-            nn.Linear(10, 1000), nn.LeakyReLU(0.2, inplace=True)
+            nn.Linear(n_classes, 1000), nn.LeakyReLU(0.2, inplace=True)
         )
         self.third = nn.Sequential(
             nn.Linear(1000 + 128 * 4 * 8 * 8, 1000),
