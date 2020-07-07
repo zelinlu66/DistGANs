@@ -126,10 +126,14 @@ if __name__ == '__main__':
         model = DCGANs_model(cifar10_data_dcgans())
     elif model_switch == 'C-GANs':
         print("Using conditional GANs implementation with MLP")
-        model = CGANs_MLP_model(cifar100_data(), 100) #Second argument is n_classes
+        model = CGANs_MLP_model(
+            cifar100_data(), 100
+        )  # Second argument is n_classes
     elif model_switch == 'CNN-CGANs':
         print("Using conditional GANs implementation with CNN ")
-        model = CNN_CGANs_model(cifar100_data(), 100) #Second argument is n_classes
+        model = CNN_CGANs_model(
+            mnist_data_dcgans(), 10
+        )  # Second argument is n_classes
 
     else:
         sys.exit(
