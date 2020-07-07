@@ -62,7 +62,6 @@ Attribute save_models of both training object saves the state dicts of the
 networks into 2 different folders inside your current directory
 '''
 
-
 MPI.Init()
 
 
@@ -121,16 +120,20 @@ if __name__ == '__main__':
 
     if model_switch == 'MLP':
         print("Using MLP implementation of GANs: MLP_GANs_model")
-        model = MLP_GANs_model(cifar10_data())
+        model = MLP_GANs_model(cifar100_data())
     elif model_switch == 'CNN':
         print("Using CNN implementation of GANs: DCGANs_model")
         model = DCGANs_model(cifar10_data_dcgans())
     elif model_switch == 'C-GANs':
         print("Using conditional GANs implementation with MLP")
-        model = CGANs_MLP_model(mnist_data())
+        model = CGANs_MLP_model(
+            cifar100_data(), 100
+        )  # Second argument is n_classes
     elif model_switch == 'CNN-CGANs':
         print("Using conditional GANs implementation with CNN ")
-        model = CNN_CGANs_model(cifar10_data_dcgans())
+        model = CNN_CGANs_model(
+            mnist_data_dcgans(), 10
+        )  # Second argument is n_classes
 
     else:
         sys.exit(

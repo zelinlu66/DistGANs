@@ -23,18 +23,19 @@ from GANs_abstract_object import *
 class CNN_CGANs_model(GANs_model):
     model_name = 'CNN-CGANs'
 
-    def __init__(self, data):
-        super(CNN_CGANs_model, self).__init__(data)
+    def __init__(self, data, n_classes):
+        super(CNN_CGANs_model, self).__init__(data, n_classes)
+        self.n_classes = n_classes
 
     def build_discriminator(self):
-        D = Discriminator_DCC(self.data_dimension)
+        D = Discriminator_DCC(self.data_dimension, self.n_classes)
         return D
 
     def build_generator(self, noise_dimension=100):
         self.noise_dimension = noise_dimension
         # n_out = numpy.prod(self.data_dimension)
         G = Generator_DCC(
-            self.data_dimension, self.noise_dimension, n_classes=10
+            self.data_dimension, self.n_classes, self.noise_dimension
         )
         return G
 
@@ -74,7 +75,12 @@ class CNN_CGANs_model(GANs_model):
         self.verbose = verbose
         self.save_path = save_path
         self.optimizer_initialize(
-            loss, lr_x, lr_y, optimizer_name, label_smoothing
+            loss,
+            lr_x,
+            lr_y,
+            optimizer_name,
+            label_smoothing,
+            n_classes=self.n_classes,
         )
         start = time.time()
         for e in range(num_epochs):
@@ -88,7 +94,9 @@ class CNN_CGANs_model(GANs_model):
                 # numpy.random.randint(0,10,self.num_test_samples)
                 self.test_labels = Variable(
                     torch.LongTensor(
-                        numpy.random.randint(0, 10, self.num_test_samples)
+                        numpy.random.randint(
+                            0, self.n_classes, self.num_test_samples
+                        )
                     )
                 )
                 # self.test_labels = Variable(torch.LongTensor(np.random.randint(0, self.n_classes, batch_size)))
@@ -124,13 +132,11 @@ class CNN_CGANs_model(GANs_model):
                 )
 
                 if (n_batch) % self.display_progress == 0:
-                    test_images = vectors_to_images(
-                        self.G(
-                            self.test_noise.to(self.G.device),
-                            self.test_labels.to(self.G.device),
-                        ),
-                        self.data_dimension,
-                    )  # data_dimension: dimension of output image ex: [1,28,28]
+                    test_images = self.G(
+                        self.test_noise.to(self.G.device),
+                        self.test_labels.to(self.G.device),
+                    )
+                    # data_dimension: dimension of output image ex: [1,28,28]
                     self.save_images(e, n_batch, test_images)
 
             self.print_verbose(

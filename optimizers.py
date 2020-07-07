@@ -659,7 +659,9 @@ class Adam(Optimizer):
 
 
 class AdamCon(Optimizer):
-    def __init__(self, G, D, criterion, lr_x, lr_y, b1=0.5, b2=0.999):
+    def __init__(
+        self, G, D, criterion, lr_x, lr_y, b1=0.5, b2=0.999, n_classes=10
+    ):
         super(AdamCon, self).__init__(G, D, criterion)
         self.G = G
         self.D = D
@@ -667,6 +669,7 @@ class AdamCon(Optimizer):
         self.lr_y = lr_y.item()
         self.b1 = b1
         self.b2 = b2
+        self.n_classes = n_classes
         # Optimizers
         self.optimizer_G = torch.optim.Adam(
             self.G.parameters(), lr=self.lr_x, betas=(self.b1, self.b2)
@@ -681,7 +684,7 @@ class AdamCon(Optimizer):
         # Second argument of noise is the noise_dimension parameter of build_generator
 
         fake_labels = Variable(
-            torch.LongTensor(np.random.randint(0, 10, 100))
+            torch.LongTensor(np.random.randint(0, self.n_classes, 100))
         )  # one random label among 10 possible, 100 is batch dimension
         fake_data = self.G(
             noise(N, 100).to(self.G.device), fake_labels.to(self.G.device)
