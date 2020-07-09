@@ -25,7 +25,6 @@ class CNN_CGANs_model(GANs_model):
 
     def __init__(self, data, n_classes):
         super(CNN_CGANs_model, self).__init__(data, n_classes)
-        self.n_classes = n_classes
 
     def build_discriminator(self):
         D = Discriminator_DCC(self.data_dimension, self.n_classes)

@@ -29,8 +29,8 @@ from GANs_abstract_object import *
 class MLP_GANs_model(GANs_model):
     model_name = 'MLP'
 
-    def __init__(self, data):
-        super(MLP_GANs_model, self).__init__(data)
+    def __init__(self, data, n_classes):
+        super(MLP_GANs_model, self).__init__(data, n_classes)
 
     def build_discriminator(self):
         n_features = numpy.prod(self.data_dimension)

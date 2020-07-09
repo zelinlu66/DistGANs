@@ -120,10 +120,14 @@ if __name__ == '__main__':
 
     if model_switch == 'MLP':
         print("Using MLP implementation of GANs: MLP_GANs_model")
+<<<<<<< HEAD
         model = MLP_GANs_model(mnist_data())
+=======
+        model = MLP_GANs_model(cifar100_data(), 100)
+>>>>>>> 24d17ec32966c781828911df03133800718b543c
     elif model_switch == 'CNN':
         print("Using CNN implementation of GANs: DCGANs_model")
-        model = DCGANs_model(cifar10_data_dcgans())
+        model = DCGANs_model(cifar10_data_dcgans(), 10)
     elif model_switch == 'C-GANs':
         print("Using conditional GANs implementation with MLP")
         model = CGANs_MLP_model(
