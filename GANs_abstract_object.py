@@ -27,7 +27,7 @@ from mpi4py import MPI
 
 
 class GANs_model(metaclass=ABCMeta):
-    def __init__(self, data, n_classes):
+    def __init__(self, data, n_classes = 10):
         self.mpi_comm_size = MPI.COMM_WORLD.Get_size()
         self.mpi_rank = MPI.COMM_WORLD.Get_rank()
         self.num_gpus = count_gpus()
