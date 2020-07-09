@@ -33,7 +33,6 @@ class CGANs_MLP_model(GANs_model):
 
     def __init__(self, data, n_classes):
         super(CGANs_MLP_model, self).__init__(data, n_classes)
-        self.n_classes = n_classes
 
     def build_discriminator(self):
         D = ConditionalDiscriminator(self.data_dimension, self.n_classes)
