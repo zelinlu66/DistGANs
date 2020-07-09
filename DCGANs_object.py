@@ -28,8 +28,8 @@ from GANs_abstract_object import *
 class DCGANs_model(GANs_model):
     model_name = 'CNN'
 
-    def __init__(self, data):
-        super(DCGANs_model, self).__init__(data)
+    def __init__(self, data, n_classes):
+        super(DCGANs_model, self).__init__(data, n_classes)
 
     def build_discriminator(self):
         D = DiscriminatorCNN(self.data_dimension[0], self.data_dimension[1])
