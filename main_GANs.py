@@ -120,7 +120,7 @@ if __name__ == '__main__':
 
     if model_switch == 'MLP':
         print("Using MLP implementation of GANs: MLP_GANs_model")
-        model = MLP_GANs_model(cifar100_data())
+        model = MLP_GANs_model(mnist_data())
     elif model_switch == 'CNN':
         print("Using CNN implementation of GANs: DCGANs_model")
         model = DCGANs_model(cifar10_data_dcgans())

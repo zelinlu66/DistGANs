@@ -340,8 +340,8 @@ class Jacobi(Optimizer):
         p_y = torch.add(
             -grad_y_vec, -2 * hvp_y_vec
         ).detach_()  # grad_y +2 * D_yx * grad_x
-        p_x = p_x.mul_(self.lr_x.sqrt().to(self.G.device))
-        p_y = p_y.mul_(self.lr_y.sqrt().to(self.D.device))
+        p_x = p_x.mul_(self.lr_x.to(self.G.device))
+        p_y = p_y.mul_(self.lr_y.to(self.D.device))
 
         return error_real.item(), error_fake.item(), g_error.item(), p_x, p_y
 
@@ -603,8 +603,8 @@ class JacobiMultiCost(Optimizer):
         p_y = torch.add(
             grad_g_y_vec, 2 * D_g_yx
         ).detach_()  # grad_y + 2*D_yx * grad_x
-        p_x = p_x.mul_(-self.lr_x.sqrt().to(self.G.device))
-        p_y = p_y.mul_(-self.lr_y.sqrt().to(self.D.device))
+        p_x = p_x.mul_(-self.lr_x.to(self.G.device))
+        p_y = p_y.mul_(-self.lr_y.to(self.D.device))
 
         return error_real.item(), error_fake.item(), g_error.item(), p_x, p_y
 
