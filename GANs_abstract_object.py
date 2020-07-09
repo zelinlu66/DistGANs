@@ -120,8 +120,8 @@ class GANs_model(metaclass=ABCMeta):
         lr_x,
         lr_y,
         optimizer_name,
+        n_classes,
         label_smoothing=False,
-        n_classes=10,
     ):
         if optimizer_name == "Jacobi":
             self.optimizer = Jacobi(
@@ -143,7 +143,7 @@ class GANs_model(metaclass=ABCMeta):
             self.optimizer = CGD_multi(self.G, self.D, loss, lr_x)
         elif optimizer_name == "AdamCon":
             self.optimizer = AdamCon(
-                self.G, self.D, loss, lr_x, lr_y, n_classes=10
+                self.G, self.D, loss, lr_x, lr_y, n_classes
             )
         else:
             raise RuntimeError("Optimizer type is not valid")
