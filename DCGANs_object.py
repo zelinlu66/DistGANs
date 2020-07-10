@@ -87,7 +87,7 @@ class DCGANs_model(GANs_model):
         self.verbose = verbose
         self.save_path = save_path
         self.optimizer_initialize(
-            loss, lr_x, lr_y, optimizer_name, label_smoothing
+            loss, lr_x, lr_y, optimizer_name, self.n_classes, label_smoothing
         )
         start = time.time()
         for e in range(num_epochs):
