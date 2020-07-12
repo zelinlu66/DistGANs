@@ -27,8 +27,10 @@ from GANs_abstract_object import *
 
 
 class MLP_GANs_model(GANs_model):
-    def __init__(self, data):
-        super(MLP_GANs_model, self).__init__(data)
+    model_name = 'MLP'
+
+    def __init__(self, data, n_classes):
+        super(MLP_GANs_model, self).__init__(data, n_classes)
 
     def build_discriminator(self):
         n_features = numpy.prod(self.data_dimension)
@@ -81,7 +83,7 @@ class MLP_GANs_model(GANs_model):
         self.verbose = verbose
         self.save_path = save_path
         self.optimizer_initialize(
-            loss, lr_x, lr_y, optimizer_name, label_smoothing
+            loss, lr_x, lr_y, optimizer_name, self.n_classes, label_smoothing
         )
         start = time.time()
         for e in range(num_epochs):

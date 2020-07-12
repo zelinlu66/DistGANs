@@ -26,8 +26,10 @@ from GANs_abstract_object import *
 
 
 class DCGANs_model(GANs_model):
-    def __init__(self, data):
-        super(DCGANs_model, self).__init__(data)
+    model_name = 'CNN'
+
+    def __init__(self, data, n_classes):
+        super(DCGANs_model, self).__init__(data, n_classes)
 
     def build_discriminator(self):
         D = DiscriminatorCNN(self.data_dimension[0], self.data_dimension[1])
@@ -85,7 +87,7 @@ class DCGANs_model(GANs_model):
         self.verbose = verbose
         self.save_path = save_path
         self.optimizer_initialize(
-            loss, lr_x, lr_y, optimizer_name, label_smoothing
+            loss, lr_x, lr_y, optimizer_name, self.n_classes, label_smoothing
         )
         start = time.time()
         for e in range(num_epochs):

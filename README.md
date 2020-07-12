@@ -8,4 +8,10 @@ This is a code implemented in collaboration with:
 - Junqi Yin at Oak Ridge National Laboratory (yinj@ornl.gov)
 - Andrey Prokpenko at Oak Ridge National Laboratory (prokopenkoav@ornl.gov)
 
+## Code style
 
+To keep similar code style, it should be formatted using [black](https://github.com/psf/black):
+
+```
+black -S -l 79 {source_file_or_directory}
+```
