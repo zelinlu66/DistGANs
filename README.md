@@ -15,3 +15,12 @@ To keep similar code style, it should be formatted using [black](https://github.
 ```
 black -S -l 79 {source_file_or_directory}
 ```
+
+## Quick start conda setup
+```
+conda create --name {env_name} python
+conda install -n {env_name} matplotlib docopt ipython mpi4py
+conda install -n {env_name} -c anaconda pyyaml
+conda install -n {env_name} pytorch torchvision -c pytorch
+conda install -n {env_name} tensorboardx -c conda-forge
+```

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Jun 20 12:38:15 2020
+Created on Sat Apr  4 17:34:40 2020
 
 @authors: Andrey Prokpenko (e-mail: prokopenkoav@ornl.gov)
         : Debangshu Mukherjee (e-mail: mukherjeed@ornl.gov)
@@ -12,38 +12,31 @@ Created on Sat Jun 20 12:38:15 2020
 
 """
 
-
+import os
+import time
 import torch
-import numpy
+import numpy as np
+import matplotlib.pyplot as plt
+import PIL.Image as pil
+
+import GANs_abstract_object
 from models import *
 from optimizers import *
-from Dataloader import *
 from utils import *
-import time
-import PIL.Image as pil
-import numpy as np
-import os
-import matplotlib.pyplot as plt
-from torch.autograd import Variable
-from GANs_abstract_object import *
 
 
-class CGANs_MLP_model(GANs_model):
-    model_name = 'C-GANs'
-
-    def __init__(self, data, n_classes):
-        super(CGANs_MLP_model, self).__init__(data, n_classes)
+class MLP_GANs_model(GANs_abstract_object.GANs_model):
+    model_name = 'MLP'
 
     def build_discriminator(self):
-        D = ConditionalDiscriminator(self.data_dimension, self.n_classes)
+        n_features = np.prod(self.data_dimension)
+        D = Discriminator(n_features)
         return D
 
     def build_generator(self, noise_dimension=100):
         self.noise_dimension = noise_dimension
-        # n_out = numpy.prod(self.data_dimension)
-        G = ConditionalGenerator(
-            self.data_dimension, self.n_classes, self.noise_dimension
-        )
+        n_out = np.prod(self.data_dimension)
+        G = Generator(noise_dimension, n_out)
         return G
 
     # loss = torch.nn.BCEWithLogitsLoss()
@@ -51,7 +44,7 @@ class CGANs_MLP_model(GANs_model):
     # loss = torch.nn.BCELoss()
     def train(
         self,
-        loss=torch.nn.MSELoss(),
+        loss=torch.nn.BCEWithLogitsLoss(),
         lr_x=torch.tensor([0.001]),
         lr_y=torch.tensor([0.001]),
         optimizer_name='SGD',
@@ -63,7 +56,11 @@ class CGANs_MLP_model(GANs_model):
         single_number=None,
         repeat_iterations=1,
     ):
-        if single_number is not None:
+        if single_number is not None or self.mpi_comm_size > 1:
+
+            if single_number is None and self.mpi_comm_size > 1:
+                single_number = torch.tensor(self.mpi_rank)
+
             self.data = [
                 i for i in self.data if i[1] == torch.tensor(single_number)
             ]
@@ -82,41 +79,55 @@ class CGANs_MLP_model(GANs_model):
         self.verbose = verbose
         self.save_path = save_path
         self.optimizer_initialize(
-            loss, lr_x, lr_y, optimizer_name, self.n_classes
+            loss, lr_x, lr_y, optimizer_name, self.n_classes, label_smoothing
         )
         start = time.time()
         for e in range(num_epochs):
             self.print_verbose(
                 "######################################################"
             )
-            for n_batch, (real_batch, labels) in enumerate(self.data_loader):
+            for n_batch, (real_batch, _) in enumerate(self.data_loader):
                 self.test_noise = noise(
                     self.num_test_samples, self.noise_dimension
                 )
-                # numpy.random.randint(0,10,self.num_test_samples)
-                self.test_labels = Variable(
-                    torch.LongTensor(
-                        numpy.random.randint(
-                            0, self.n_classes, self.num_test_samples
-                        )
-                    )
-                )
-                # self.test_labels = Variable(torch.LongTensor(np.random.randint(0, self.n_classes, batch_size)))
                 N = real_batch.size(0)
                 real_data = Variable(images_to_vectors(real_batch))
-                labels = Variable(labels.type(torch.LongTensor))
                 self.optimizer.G = self.G
                 self.optimizer.D = self.D
                 self.optimizer.zero_grad()
 
-                if optimizer_name == 'AdamCon':
+                if optimizer_name == 'GaussSeidel' or optimizer_name == 'Adam':
                     error_real, error_fake, g_error = self.optimizer.step(
-                        real_data, labels, N
+                        real_data, N
                     )
                     self.D = self.optimizer.D
                     self.G = self.optimizer.G
                 else:
-                    raise RuntimeError('optimizer not supported, use AdamCon')
+                    for i in np.arange(repeat_iterations):
+
+                        (
+                            error_real,
+                            error_fake,
+                            g_error,
+                            p_x,
+                            p_y,
+                        ) = self.optimizer.step(real_data, N)
+                        index = 0
+                        for p in self.G.parameters():
+                            p.data.add_(
+                                p_x[index : index + p.numel()].reshape(p.shape)
+                            )
+                            index += p.numel()
+                        if index != p_x.numel():
+                            raise RuntimeError('CG size mismatch')
+                        index = 0
+                        for p in self.D.parameters():
+                            p.data.add_(
+                                p_y[index : index + p.numel()].reshape(p.shape)
+                            )
+                            index += p.numel()
+                        if index != p_y.numel():
+                            raise RuntimeError('CG size mismatch')
 
                 self.D_error_real_history.append(error_real)
                 self.D_error_fake_history.append(error_fake)
@@ -135,10 +146,7 @@ class CGANs_MLP_model(GANs_model):
 
                 if (n_batch) % self.display_progress == 0:
                     test_images = vectors_to_images(
-                        self.G(
-                            self.test_noise.to(self.G.device),
-                            self.test_labels.to(self.G.device),
-                        ),
+                        self.G(self.test_noise.to(self.G.device)),
                         self.data_dimension,
                     )  # data_dimension: dimension of output image ex: [1,28,28]
                     self.save_images(e, n_batch, test_images)
