@@ -18,7 +18,7 @@ black -S -l 79 {source_file_or_directory}
 
 ## Quick start conda setup
 ```
-conda create --name {env_name} python
+conda create --name {env_name} python=3.7
 conda install -n {env_name} matplotlib docopt ipython mpi4py
 conda install -n {env_name} -c anaconda pyyaml
 conda install -n {env_name} pytorch torchvision -c pytorch
