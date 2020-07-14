@@ -42,6 +42,7 @@ from Dataloader import *
 list_GANs = {}
 
 models_dir = 'models'
+# model classes must have identic name with python file in models directory
 package_path = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), package_dir
 )
@@ -49,7 +50,7 @@ package_path = os.path.join(
 # import GANs classes
 for filename in os.listdir(package_path):
     modulename, ext = os.path.splitext(filename)
-    if modulename[0] != '_' and ext == '.py':
+    if modulename[0] != '__pycache__' and ext == '.py':
         subpackage = '{0}.{1}'.format(package_dir, modulename)
         obj = getattr(
             __import__(subpackage, globals(), locals(), [modulename]),
