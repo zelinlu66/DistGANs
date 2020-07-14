@@ -4,23 +4,21 @@ Created on Thu Jul  2 23:00:14 2020
 
 """
 
-
+import os
+import time
 import torch
-import numpy
+import numpy as np
+import matplotlib.pyplot as plt
+import PIL.Image as pil
+from torch.autograd import Variable
+
+import GANs_abstract_object
 from models import *
 from optimizers import *
-from Dataloader import *
 from utils import *
-import time
-import PIL.Image as pil
-import numpy as np
-import os
-import matplotlib.pyplot as plt
-from torch.autograd import Variable
-from GANs_abstract_object import *
 
 
-class CNN_CGANs_model(GANs_model):
+class CNN_CGANs_model(GANs_abstract_object.GANs_model):
     model_name = 'CNN-CGANs'
 
     def __init__(self, data, n_classes):
