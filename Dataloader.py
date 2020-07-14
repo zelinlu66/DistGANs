@@ -106,3 +106,6 @@ def cifar100_data():
     return datasets.CIFAR100(
         root=out_dir, train=True, transform=compose, download=True
     )
+
+
+0

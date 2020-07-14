@@ -569,8 +569,8 @@ class JacobiMultiCost(Optimizer):
             d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
         )
 
-        f = error_fake + error_real  # f cost relative to discriminator
-        g = g_error  # g cost relative to generator
+        g = error_fake + error_real  # f cost relative to discriminator
+        f = g_error  # g cost relative to generator
         # loss = d_pred_real.mean() - d_pred_fake.mean()
         grad_f_x = autograd.grad(
             f, self.G.parameters(), create_graph=True, retain_graph=True

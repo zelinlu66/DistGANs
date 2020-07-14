@@ -38,10 +38,10 @@ mpi4py.rc.finalize = False
 from mpi4py import MPI
 
 
-from CGANs_object import *
+from CGANs_MLP_object import *
 from DCGANs_object import *
 from MLP_GANs_object import *
-from CNN_CGANs_object import *
+from CGANs_CNN_object import *
 
 '''
 ! READ ME !
@@ -120,7 +120,7 @@ if __name__ == '__main__':
 
     if model_switch == 'MLP':
         print("Using MLP implementation of GANs: MLP_GANs_model")
-        model = MLP_GANs_model(cifar100_data(), 100)
+        model = MLP_GANs_model(mnist_data(), 10)
     elif model_switch == 'CNN':
         print("Using CNN implementation of GANs: DCGANs_model")
         model = DCGANs_model(cifar10_data_dcgans(), 10)
@@ -131,7 +131,7 @@ if __name__ == '__main__':
         )  # Second argument is n_classes
     elif model_switch == 'CNN-CGANs':
         print("Using conditional GANs implementation with CNN ")
-        model = CNN_CGANs_model(
+        model = CGANs_CNN_model(
             mnist_data_dcgans(), 10
         )  # Second argument is n_classes
 

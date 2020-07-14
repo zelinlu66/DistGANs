@@ -1,6 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jul  2 23:00:14 2020
+Created on Sat Jun 20 12:38:15 2020
+
+@authors: Andrey Prokpenko (e-mail: prokopenkoav@ornl.gov)
+        : Debangshu Mukherjee (e-mail: mukherjeed@ornl.gov)
+        : Massimiliano Lupo Pasini (e-mail: lupopasinim@ornl.gov)
+        : Nouamane Laanait (e-mail: laanaitn@ornl.gov)
+        : Simona Perotto (e-mail: simona.perotto@polimi.it)
+        : Vitaliy Starchenko  (e-mail: starchenkov@ornl.gov)
+        : Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it) 
 
 """
 
@@ -20,20 +28,20 @@ from torch.autograd import Variable
 from GANs_abstract_object import *
 
 
-class CNN_CGANs_model(GANs_model):
-    model_name = 'CNN-CGANs'
+class CGANs_MLP_model(GANs_model):
+    model_name = 'C-GANs'
 
     def __init__(self, data, n_classes):
-        super(CNN_CGANs_model, self).__init__(data, n_classes)
+        super(CGANs_MLP_model, self).__init__(data, n_classes)
 
     def build_discriminator(self):
-        D = Discriminator_DCC(self.data_dimension, self.n_classes)
+        D = ConditionalDiscriminator_MLP(self.data_dimension, self.n_classes)
         return D
 
     def build_generator(self, noise_dimension=100):
         self.noise_dimension = noise_dimension
         # n_out = numpy.prod(self.data_dimension)
-        G = Generator_DCC(
+        G = ConditionalGenerator_MLP(
             self.data_dimension, self.n_classes, self.noise_dimension
         )
         return G
@@ -50,7 +58,7 @@ class CNN_CGANs_model(GANs_model):
         num_epochs=1,
         batch_size=100,
         verbose=True,
-        save_path='./data_fake_DCCGANs',
+        save_path='./data_fake',
         label_smoothing=False,
         single_number=None,
         repeat_iterations=1,
@@ -95,7 +103,7 @@ class CNN_CGANs_model(GANs_model):
                 )
                 # self.test_labels = Variable(torch.LongTensor(np.random.randint(0, self.n_classes, batch_size)))
                 N = real_batch.size(0)
-                real_data = Variable((real_batch))
+                real_data = Variable(images_to_vectors(real_batch))
                 labels = Variable(labels.type(torch.LongTensor))
                 self.optimizer.G = self.G
                 self.optimizer.D = self.D
@@ -126,11 +134,13 @@ class CNN_CGANs_model(GANs_model):
                 )
 
                 if (n_batch) % self.display_progress == 0:
-                    test_images = self.G(
-                        self.test_noise.to(self.G.device),
-                        self.test_labels.to(self.G.device),
-                    )
-                    # data_dimension: dimension of output image ex: [1,28,28]
+                    test_images = vectors_to_images(
+                        self.G(
+                            self.test_noise.to(self.G.device),
+                            self.test_labels.to(self.G.device),
+                        ),
+                        self.data_dimension,
+                    )  # data_dimension: dimension of output image ex: [1,28,28]
                     self.save_images(e, n_batch, test_images)
 
             self.print_verbose(
