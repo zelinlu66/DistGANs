@@ -41,7 +41,7 @@ from Dataloader import *
 
 list_GANs = {}
 
-package_dir = 'GANs_dir'
+models_dir = 'models'
 package_path = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), package_dir
 )
