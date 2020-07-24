@@ -591,10 +591,10 @@ class JacobiMultiCost(Optimizer):
         grad_g_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_g_y])
 
         D_f_xy = Hvp_vec(
-            grad_f_y_vec, self.G.parameters(), grad_f_y_vec, retain_graph=True
+            grad_f_y_vec, self.G.parameters(), grad_g_y_vec, retain_graph=True
         )
         D_g_yx = Hvp_vec(
-            grad_g_x_vec, self.D.parameters(), grad_g_x_vec, retain_graph=True
+            grad_g_x_vec, self.D.parameters(), grad_f_x_vec, retain_graph=True
         )
 
         p_x = torch.add(
@@ -719,3 +719,101 @@ class AdamCon(Optimizer):
         self.optimizer_D.step()
 
         return error_real.item(), error_fake.item(), g_error.item()
+
+
+####################################################################
+class CGDMultiCost(Optimizer):
+    def __init__(self, G, D, criterion, lr_x=1e-3, lr_y=1e-3):
+        super(CGDMultiCost, self).__init__(G, D, criterion)
+        self.lr_x = lr_x
+        self.lr_y = lr_y
+
+    def step(self, real_data, N):
+        fake_data = self.G(noise(N, 100).to(self.G.device))
+        d_pred_real = self.D(real_data.to(self.D.device))
+        error_real = self.criterion(
+            d_pred_real, ones_target(N).to(self.D.device)
+        )
+        d_pred_fake = self.D(fake_data.to(self.D.device))
+        error_fake = self.criterion(
+            d_pred_fake, zeros_target(N).to(self.D.device)
+        )
+        g_error = self.criterion(
+            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+        )
+
+        g = error_fake + error_real  # g cost relative to discriminator
+        f = g_error  # f cost relative to generator
+        grad_f_x = autograd.grad(
+            f, self.G.parameters(), create_graph=True, retain_graph=True
+        )
+        grad_g_x = autograd.grad(
+            g, self.G.parameters(), create_graph=True, retain_graph=True
+        )
+        grad_f_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_f_x])
+        grad_g_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_g_x])
+
+        grad_f_y = autograd.grad(
+            f, self.D.parameters(), create_graph=True, retain_graph=True
+        )
+        grad_g_y = autograd.grad(
+            g, self.D.parameters(), create_graph=True, retain_graph=True
+        )
+        grad_f_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_f_y])
+        grad_g_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_g_y])
+
+        scaled_grad_f_x = torch.mul(self.lr_x, grad_f_x_vec)
+        scaled_grad_g_y = torch.mul(self.lr_y, grad_g_y_vec)
+
+        D_f_xy = Hvp_vec(
+            grad_f_y_vec,
+            self.G.parameters(),
+            scaled_grad_g_y,
+            retain_graph=True,
+        )  # Dxy_f * lr * grad_g_y
+        D_g_yx = Hvp_vec(
+            grad_g_x_vec,
+            self.D.parameters(),
+            scaled_grad_f_x,
+            retain_graph=True,
+        )  # Dyx_g* lr * grad_f_x
+
+        p_x = torch.add(
+            grad_f_x_vec, -D_f_xy
+        ).detach_()  # grad_f_x - Df_xy * lr * grad_g_y
+        p_y = torch.add(
+            grad_g_y_vec, -D_g_yx  # Segno di questa
+        ).detach_()  # grad_g_y - Dg_yx * lr * grad_f_x
+
+        p_x.mul_(self.lr_x.sqrt())
+
+        cg_x, iter_num = general_conjugate_gradient(
+            grad_x=grad_g_x_vec,
+            grad_y=grad_f_y_vec,
+            x_params=self.G.parameters(),
+            y_params=self.D.parameters(),
+            kk=p_x,
+            x=None,
+            nsteps=p_x.shape[0],
+            lr_x=self.lr_x,
+            lr_y=self.lr_y,
+        )
+
+        cg_x.detach_().mul_(-self.lr_y.sqrt())  # Necessario ?
+
+        p_y.mul_(self.lr_y.sqrt())
+        cg_y, iter_num = general_conjugate_gradient(
+            grad_x=grad_f_y_vec,
+            grad_y=grad_g_x_vec,
+            x_params=self.D.parameters(),
+            y_params=self.G.parameters(),
+            kk=p_y,
+            x=None,
+            nsteps=p_y.shape[0],
+            lr_x=self.lr_x,
+            lr_y=self.lr_y,
+        )
+
+        cg_y.detach_().mul_(-self.lr_y.sqrt())  # moltiplicare per -lr o +lr
+
+        return error_real.item(), error_fake.item(), errorG.item(), cg_x, cg_y

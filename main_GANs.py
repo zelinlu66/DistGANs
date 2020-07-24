@@ -11,7 +11,7 @@
 
 Usage:
   main_GANS.py (-h | --help)
-  main_GANS.py [-c CONFIG_FILE] [-m MODEL] [-e EPOCHS] [-o OPTIMIZER] [-r LEARNING_RATE] [--display] [--save]
+  main_GANS.py [-c CONFIG_FILE] [-m MODEL] [-e EPOCHS] [-o OPTIMIZER] [-r LEARNING_RATE] [--display] [--save] [--list]
 
 Options:
   -h, --help                  Show this screen.
@@ -28,7 +28,7 @@ Options:
 
 from docopt import docopt
 import matplotlib.pyplot as plt
-import sys
+import sys, os
 import yaml
 
 import mpi4py
@@ -37,11 +37,26 @@ mpi4py.rc.initialize = False
 mpi4py.rc.finalize = False
 from mpi4py import MPI
 
+from Dataloader import *
 
-from CGANs_MLP_object import *
-from DCGANs_object import *
-from MLP_GANs_object import *
-from CGANs_CNN_object import *
+list_GANs = {}
+
+models_dir = 'GANs_models'
+# model classes must have identic name with python file in models directory
+models_path = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), models_dir
+)
+
+# import GANs classes
+for filename in os.listdir(models_path):
+    modulename, ext = os.path.splitext(filename)
+    if modulename != '__pycache__' and ext == '.py':
+        subpackage = '{0}.{1}'.format(models_dir, modulename)
+        obj = getattr(
+            __import__(subpackage, globals(), locals(), [modulename]),
+            modulename,
+        )
+        list_GANs.update({obj.model_name: obj})
 
 '''
 ! READ ME !
@@ -106,6 +121,13 @@ def get_options():
 if __name__ == '__main__':
     config = get_options()
 
+    if config['list']:
+        print("\n  Available models:")
+        for key in list_GANs.keys():
+            print("    {}".format(key))
+        print("")
+        exit(0)
+
     if MPI.COMM_WORLD.Get_rank() == 0:
         print('-----------------')
         print('Input parameters:')
@@ -116,29 +138,14 @@ if __name__ == '__main__':
     optimizer_name = config['optimizer']
     learning_rate = float(config['learning_rate'])
 
-    model_switch = config['model']
+    model_name = config['model']
 
-    if model_switch == 'MLP':
-        print("Using MLP implementation of GANs: MLP_GANs_model")
-        model = MLP_GANs_model(mnist_data(), 10)
-    elif model_switch == 'CNN':
-        print("Using CNN implementation of GANs: DCGANs_model")
-        model = DCGANs_model(cifar10_data_dcgans(), 10)
-    elif model_switch == 'C-GANs':
-        print("Using conditional GANs implementation with MLP")
-        model = CGANs_MLP_model(
-            cifar100_data(), 100
-        )  # Second argument is n_classes
-    elif model_switch == 'CNN-CGANs':
-        print("Using conditional GANs implementation with CNN ")
-        model = CGANs_CNN_model(
-            mnist_data_dcgans(), 10
-        )  # Second argument is n_classes
-
-    else:
+    try:
+        model = list_GANs[model_name](cifar10_data_dcgans(), 10)
+    except KeyError:
         sys.exit(
-            '\n   *** Error. Specified model name: {} is not valid. Please choose MLP or CNN'.format(
-                model_switch
+            '\n   *** Error. Specified model name: {} is not valid.\n'.format(
+                model_name
             )
         )
 

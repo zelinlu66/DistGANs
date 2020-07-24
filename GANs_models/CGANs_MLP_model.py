@@ -12,27 +12,22 @@ Created on Sat Jun 20 12:38:15 2020
 
 """
 
-
+import os
+import time
 import torch
-import numpy
+import numpy as np
+import matplotlib.pyplot as plt
+import PIL.Image as pil
+from torch.autograd import Variable
+
+import GANs_abstract_object
 from models import *
 from optimizers import *
-from Dataloader import *
 from utils import *
-import time
-import PIL.Image as pil
-import numpy as np
-import os
-import matplotlib.pyplot as plt
-from torch.autograd import Variable
-from GANs_abstract_object import *
 
 
-class CGANs_MLP_model(GANs_model):
+class CGANs_MLP_model(GANs_abstract_object.GANs_model):
     model_name = 'C-GANs'
-
-    def __init__(self, data, n_classes):
-        super(CGANs_MLP_model, self).__init__(data, n_classes)
 
     def build_discriminator(self):
         D = ConditionalDiscriminator_MLP(self.data_dimension, self.n_classes)
