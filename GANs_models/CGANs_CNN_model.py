@@ -18,20 +18,20 @@ from optimizers import *
 from utils import *
 
 
-class CNN_CGANs_model(GANs_abstract_object.GANs_model):
+class CGANs_CNN_model(GANs_abstract_object.GANs_model):
     model_name = 'CNN-CGANs'
 
     def __init__(self, data, n_classes):
-        super(CNN_CGANs_model, self).__init__(data, n_classes)
+        super(CGANs_CNN_model, self).__init__(data, n_classes)
 
     def build_discriminator(self):
-        D = Discriminator_DCC(self.data_dimension, self.n_classes)
+        D = ConditionalDiscriminator_CNN(self.data_dimension, self.n_classes)
         return D
 
     def build_generator(self, noise_dimension=100):
         self.noise_dimension = noise_dimension
         # n_out = numpy.prod(self.data_dimension)
-        G = Generator_DCC(
+        G = ConditionalGenerator_CNN(
             self.data_dimension, self.n_classes, self.noise_dimension
         )
         return G

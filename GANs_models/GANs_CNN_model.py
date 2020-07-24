@@ -25,11 +25,11 @@ from optimizers import *
 from utils import *
 
 
-class DCGANs_model(GANs_abstract_object.GANs_model):
+class GANs_CNN_model(GANs_abstract_object.GANs_model):
     model_name = 'CNN'
 
     def __init__(self, data, n_classes):
-        super(DCGANs_model, self).__init__(data, n_classes)
+        super(GANs_CNN_model, self).__init__(data, n_classes)
 
     def build_discriminator(self):
         D = DiscriminatorCNN(self.data_dimension[0], self.data_dimension[1])

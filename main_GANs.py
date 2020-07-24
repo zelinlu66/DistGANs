@@ -141,7 +141,7 @@ if __name__ == '__main__':
     model_name = config['model']
 
     try:
-        model = list_GANs[model_name](cifar100_data(), 100)
+        model = list_GANs[model_name](cifar10_data_dcgans(), 10)
     except KeyError:
         sys.exit(
             '\n   *** Error. Specified model name: {} is not valid.\n'.format(

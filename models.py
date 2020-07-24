@@ -16,9 +16,9 @@ import torch.nn as nn
 import numpy
 
 
-class Discriminator(nn.Module):
+class Discriminator_MLP(nn.Module):
     def __init__(self, n_features):
-        super(Discriminator, self).__init__()
+        super(Discriminator_MLP, self).__init__()
         self.hidden0 = nn.Sequential(nn.Linear(n_features, 250), nn.ReLU())
         self.hidden1 = nn.Sequential(nn.Linear(250, 100), nn.ReLU())
         # self.out = nn.Sequential(nn.Linear(100, 1), nn.Sigmoid())
@@ -31,13 +31,13 @@ class Discriminator(nn.Module):
         return z
 
     def to(self, device):
-        super(Discriminator, self).to(device)
+        super(Discriminator_MLP, self).to(device)
         self.device = device
 
 
-class Generator(torch.nn.Module):
+class Generator_MLP(torch.nn.Module):
     def __init__(self, noise_dimension, n_out):
-        super(Generator, self).__init__()
+        super(Generator_MLP, self).__init__()
         self.hidden0 = nn.Sequential(
             nn.Linear(noise_dimension, 1000), nn.ReLU()
         )  #  ORIGINAL:   nn.LeakyReLU(0.2))
@@ -53,7 +53,7 @@ class Generator(torch.nn.Module):
         return z
 
     def to(self, device):
-        super(Generator, self).to(device)
+        super(Generator_MLP, self).to(device)
         self.device = device
 
 
@@ -145,9 +145,9 @@ class DiscriminatorCNN(nn.Module):
 ##########################
 
 
-class ConditionalGenerator(nn.Module):
+class ConditionalGenerator_MLP(nn.Module):
     def __init__(self, img_shape, n_classes, latent_dim=100):
-        super(ConditionalGenerator, self).__init__()
+        super(ConditionalGenerator_MLP, self).__init__()
 
         self.label_emb = nn.Embedding(n_classes, n_classes)
         self.img_shape = img_shape
@@ -176,13 +176,13 @@ class ConditionalGenerator(nn.Module):
         return img
 
     def to(self, device):
-        super(ConditionalGenerator, self).to(device)
+        super(ConditionalGenerator_MLP, self).to(device)
         self.device = device
 
 
-class ConditionalDiscriminator(nn.Module):
+class ConditionalDiscriminator_MLP(nn.Module):
     def __init__(self, img_shape, n_classes):
-        super(ConditionalDiscriminator, self).__init__()
+        super(ConditionalDiscriminator_MLP, self).__init__()
 
         self.label_embedding = nn.Embedding(n_classes, n_classes)
 
@@ -207,13 +207,13 @@ class ConditionalDiscriminator(nn.Module):
         return validity
 
     def to(self, device):
-        super(ConditionalDiscriminator, self).to(device)
+        super(ConditionalDiscriminator_MLP, self).to(device)
         self.device = device
 
 
-class Generator_DCC(nn.Module):
+class ConditionalGenerator_CNN(nn.Module):
     def __init__(self, img_shape, n_classes, latent_dim=100):
-        super(Generator_DCC, self).__init__()
+        super(ConditionalGenerator_CNN, self).__init__()
         self.label_emb = nn.Embedding(n_classes, n_classes)
         self.img_shape = img_shape
         self.init_size = self.img_shape[1] // 4
@@ -243,13 +243,13 @@ class Generator_DCC(nn.Module):
         return img
 
     def to(self, device):
-        super(Generator_DCC, self).to(device)
+        super(ConditionalGenerator_CNN, self).to(device)
         self.device = device
 
 
-class Discriminator_DCC(nn.Module):
+class ConditionalDiscriminator_CNN(nn.Module):
     def __init__(self, img_shape, n_classes):
-        super(Discriminator_DCC, self).__init__()
+        super(ConditionalDiscriminator_CNN, self).__init__()
         self.label_embedding = nn.Embedding(n_classes, n_classes)
         self.img_shape = img_shape
         self.main = nn.Sequential(
@@ -292,5 +292,5 @@ class Discriminator_DCC(nn.Module):
         return out
 
     def to(self, device):
-        super(Discriminator_DCC, self).to(device)
+        super(ConditionalDiscriminator_CNN, self).to(device)
         self.device = device

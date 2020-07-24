@@ -30,13 +30,13 @@ class CGANs_MLP_model(GANs_abstract_object.GANs_model):
     model_name = 'C-GANs'
 
     def build_discriminator(self):
-        D = ConditionalDiscriminator(self.data_dimension, self.n_classes)
+        D = ConditionalDiscriminator_MLP(self.data_dimension, self.n_classes)
         return D
 
     def build_generator(self, noise_dimension=100):
         self.noise_dimension = noise_dimension
         # n_out = numpy.prod(self.data_dimension)
-        G = ConditionalGenerator(
+        G = ConditionalGenerator_MLP(
             self.data_dimension, self.n_classes, self.noise_dimension
         )
         return G

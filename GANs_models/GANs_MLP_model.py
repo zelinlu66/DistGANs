@@ -25,18 +25,18 @@ from optimizers import *
 from utils import *
 
 
-class MLP_GANs_model(GANs_abstract_object.GANs_model):
+class GANs_MLP_model(GANs_abstract_object.GANs_model):
     model_name = 'MLP'
 
     def build_discriminator(self):
         n_features = np.prod(self.data_dimension)
-        D = Discriminator(n_features)
+        D = Discriminator_MLP(n_features)
         return D
 
     def build_generator(self, noise_dimension=100):
         self.noise_dimension = noise_dimension
         n_out = np.prod(self.data_dimension)
-        G = Generator(noise_dimension, n_out)
+        G = Generator_MLP(noise_dimension, n_out)
         return G
 
     # loss = torch.nn.BCEWithLogitsLoss()

@@ -140,7 +140,7 @@ class GANs_model(metaclass=ABCMeta):
         elif optimizer_name == "Adam":
             self.optimizer = Adam(self.G, self.D, loss, lr_x, lr_y)
         elif optimizer_name == "CGD_multi":
-            self.optimizer = CGD_multi(self.G, self.D, loss, lr_x)
+            self.optimizer = CGDMultiCost(self.G, self.D, loss, lr_x)
         elif optimizer_name == "AdamCon":
             self.optimizer = AdamCon(
                 self.G, self.D, loss, lr_x, lr_y, n_classes
