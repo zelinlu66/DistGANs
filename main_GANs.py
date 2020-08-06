@@ -58,24 +58,6 @@ for filename in os.listdir(models_path):
         )
         list_GANs.update({obj.model_name: obj})
 
-'''
-! READ ME !
-Multi-layer perceptrons neural networks (MLP)
-Convolutional neural networks (CNN)
-
-X = Generator
-Y = Discriminaror
-
-Different learning rates for X and Y can only be used with 'Jacobi' and
-'JacobiMultiCost' for the other optimizers the learning rate will be set to the
-value of lr_x
-
-Label smoothing variation is implemented only for optimizer 'Jacobi' and only
-for GANs_object
-
-Attribute save_models of both training object saves the state dicts of the
-networks into 2 different folders inside your current directory
-'''
 
 MPI.Init()
 

@@ -817,3 +817,52 @@ class CGDMultiCost(Optimizer):
         cg_y.detach_().mul_(-self.lr_y.sqrt())  # moltiplicare per -lr o +lr
 
         return error_real.item(), error_fake.item(), errorG.item(), cg_x, cg_y
+
+
+class AdamRes(Optimizer):
+    def __init__(self, G, D, criterion, lr_x, lr_y, b1=0.5, b2=0.999):
+        super(AdamRes, self).__init__(G, D, criterion)
+        self.G = G
+        self.D = D
+        self.lr_x = lr_x.item()
+        self.lr_y = lr_y.item()
+        self.b1 = b1
+        self.b2 = b2
+        # Optimizers
+        self.optimizer_G = torch.optim.Adam(
+            self.G.parameters(), lr=self.lr_x, betas=(self.b1, self.b2)
+        )
+        self.optimizer_D = torch.optim.Adam(
+            self.D.parameters(), lr=self.lr_y, betas=(self.b1, self.b2)
+        )
+
+    def step(self, real_data, N):
+        # Generator step
+        self.optimizer_G.zero_grad()
+        # Second argument of noise is the noise_dimension parameter of build_generator
+        fake_data = self.G(noise(N, 128).to(self.G.device))
+        d_pred_fake = self.D(fake_data.to(self.D.device))
+        g_error = self.criterion(
+            d_pred_fake.to(self.G.device),
+            ones_target_resnet(N).to(self.G.device),
+        )
+
+        g_error.backward()
+        self.optimizer_G.step()
+        # Discriminator step
+        self.optimizer_D.zero_grad()
+        # Measure discriminator's ability to classify real from generated samples
+        d_pred_real = self.D(real_data.to(self.D.device))
+        error_real = self.criterion(
+            d_pred_real, ones_target_resnet(N).to(self.D.device)
+        )
+        d_pred_fake = self.D(fake_data.to(self.D.device).detach())
+        error_fake = self.criterion(
+            d_pred_fake, zeros_target_resnet(N).to(self.D.device)
+        )
+
+        d_loss = (error_real + error_fake) / 2
+        d_loss.backward()
+        self.optimizer_D.step()
+
+        return error_real.item(), error_fake.item(), g_error.item()

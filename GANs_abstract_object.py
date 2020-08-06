@@ -145,6 +145,8 @@ class GANs_model(metaclass=ABCMeta):
             self.optimizer = AdamCon(
                 self.G, self.D, loss, lr_x, lr_y, n_classes
             )
+        elif optimizer_name == "AdamRes":
+            self.optimizer = AdamRes(self.G, self.D, loss, lr_x, lr_y)
         else:
             raise RuntimeError("Optimizer type is not valid")
 
