@@ -27,6 +27,7 @@ from torch.autograd import grad
 from optimizers import *
 from utils import *
 from abc import ABCMeta, abstractmethod
+import math
 
 
 class Optimizer(object, metaclass=ABCMeta):
@@ -819,9 +820,9 @@ class CGDMultiCost(Optimizer):
         return error_real.item(), error_fake.item(), errorG.item(), cg_x, cg_y
 
 
-class AdamRes(Optimizer):
+class AdamResNet(Optimizer):
     def __init__(self, G, D, criterion, lr_x, lr_y, b1=0.5, b2=0.999):
-        super(AdamRes, self).__init__(G, D, criterion)
+        super(AdamResNet, self).__init__(G, D, criterion)
         self.G = G
         self.D = D
         self.lr_x = lr_x.item()

@@ -2,20 +2,37 @@ from ResNet import *
 import GANs_abstract_object
 from optimizers import *
 from utils import *
+import torch
 
 
 class ResNet_model(GANs_abstract_object.GANs_model):
     model_name = 'ResNet'
 
-    def build_discriminator(self):
-        D = Discriminator64PixResnet()
-        # D.apply(weights_init_normal)
+    def build_discriminator(self, FMAP_D=64):
+
+        D = Discriminator64PixResnet(
+            fmap=self.data_dimension[1],
+            pooler=nn.AvgPool2d(kernel_size=2, stride=2),
+            blur_type=None,
+            nl=nn.ReLU(),
+            num_classes=0,
+            equalized_lr=False,
+            FMAP_SAMPLES=self.data_dimension[0],
+        )
         return D
 
-    def build_generator(self, noise_dimension=128):
+    def build_generator(self, noise_dimension=128, FMAP_G=64):
         self.noise_dimension = noise_dimension
-        G = Generator64PixResnet()
-        # G.apply(weights_init_normal)
+        G = Generator64PixResnet(
+            len_latent=noise_dimension,
+            fmap=self.data_dimension[1],
+            upsampler=nn.Upsample(scale_factor=2, mode='nearest'),
+            blur_type=None,
+            nl=nn.ReLU(),
+            num_classes=0,
+            equalized_lr=False,
+            FMAP_SAMPLES=self.data_dimension[0],
+        )
         return G
 
     # loss = torch.nn.BCEWithLogitsLoss()
@@ -33,7 +50,6 @@ class ResNet_model(GANs_abstract_object.GANs_model):
         label_smoothing=False,
         single_number=None,
         repeat_iterations=1,
-        conditional=False,
     ):
         self.data_loader = torch.utils.data.DataLoader(
             self.data, batch_size=100, shuffle=True
@@ -69,17 +85,15 @@ class ResNet_model(GANs_abstract_object.GANs_model):
             self.print_verbose(
                 "######################################################"
             )
-            for n_batch, (real_batch, _) in enumerate(self.data_loader):
+            for n_batch, (real_batch, labels) in enumerate(self.data_loader):
                 self.test_noise = noise(
                     self.num_test_samples, self.noise_dimension
                 )
                 real_data = Variable((real_batch))
                 N = real_batch.size(0)
-
-                self.optimizer.zero_grad()
                 if (
                     optimizer_name == 'GaussSeidel'
-                    or optimizer_name == 'AdamRes'
+                    or optimizer_name == 'AdamResNet'
                 ):
                     error_real, error_fake, g_error = self.optimizer.step(
                         real_data, N
@@ -111,7 +125,7 @@ class ResNet_model(GANs_abstract_object.GANs_model):
                             )
                             index += p.numel()
                         if index != p_y.numel():
-                            raise RuntimeError('CG size mismatch')
+                            raise RuntimeError('Size mismatch')
 
                 self.D_error_real_history.append(error_real)
                 self.D_error_fake_history.append(error_fake)

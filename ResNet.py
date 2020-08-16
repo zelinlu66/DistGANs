@@ -15,10 +15,9 @@ RES_INIT = 4
 class GAN(nn.Module, ABC):
     """Base GAN for all non-progressive architectures."""
 
-    def __init__(self, res, n_classes):
+    def __init__(self, res):
         super(GAN, self).__init__()
         self._res = res
-        self.n_classes = n_classes
 
     def most_parameters(self, recurse=True, excluded_params: list = []):
         """torch.nn.Module.parameters() generator method but with the option to exclude specified parameters."""
@@ -55,6 +54,7 @@ class Generator64PixResnet(GAN):
         nl=nn.ReLU(),
         num_classes=0,
         equalized_lr=False,
+        FMAP_SAMPLES=3,
     ):
         super(Generator64PixResnet, self).__init__(64)
 
@@ -151,6 +151,7 @@ class Discriminator64PixResnet(GAN):
         nl=nn.ReLU(),
         num_classes=0,
         equalized_lr=False,
+        FMAP_SAMPLES=3,
     ):
         super(Discriminator64PixResnet, self).__init__(64)
 

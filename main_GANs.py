@@ -11,7 +11,7 @@
 
 Usage:
   main_GANS.py (-h | --help)
-  main_GANS.py [-c CONFIG_FILE] [-m MODEL] [-e EPOCHS] [-o OPTIMIZER] [-r LEARNING_RATE] [--display] [--save] [--list]
+  main_GANS.py [-c CONFIG_FILE] [-m MODEL] [-e EPOCHS] [-o OPTIMIZER] [-r LEARNING_RATE] [-d DATASET] [--display] [--save] [--list]
 
 Options:
   -h, --help                  Show this screen.
@@ -24,6 +24,7 @@ Options:
   -m, --model=<str>           Implementation of GANs model. Multi-layer perceptrons NN (MLP), convolutional NN (CNN) [default: MLP].
   -o, --optimizer=<str>       Optimizer name [default: Jacobi].
   -r, --learning_rate=<f>     Learning rate [default: 0.01].
+  -d, --dataset=<srt>         Datased used for training. MNIST, CIFAR10, CIFAR100 [default: CIFAR10]
 """
 
 from docopt import docopt
@@ -121,9 +122,20 @@ if __name__ == '__main__':
     learning_rate = float(config['learning_rate'])
 
     model_name = config['model']
+    if config['dataset'] == 'MNIST':
+        data = mnist_data(rand_rotation=False, max_degree=90)
+        n_classes = 10
+    elif config['dataset'] == 'CIFAR10':
+        data = mnist_data(rand_rotation=False, max_degree=90)
+        n_classes = 10
+    elif config['dataset'] == 'CIFAR100':
+        data = cifar100_data()
+        n_classes = 100
+    else:
+        raise RuntimeError('Dataset not recognized')
 
     try:
-        model = list_GANs[model_name](cifar10_data_dcgans(), 10)
+        model = list_GANs[model_name](data, n_classes)
     except KeyError:
         sys.exit(
             '\n   *** Error. Specified model name: {} is not valid.\n'.format(
