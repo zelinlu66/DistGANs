@@ -12,12 +12,11 @@ Created on Tue Mar 17 11:26:08 2020
 
 """
 import torch
-import torch.nn as nn
 import numpy
-from ResBlock import ResBlock2d
-from ResNet_utils import Lambda, NormalizeLayer, Conv2dEx, LinearEx
+from ResNet_utils import Lambda, NormalizeLayer, Conv2dEx, LinearEx, ResBlock2d
 from torch import nn
 from abc import ABC, abstractmethod
+
 
 class Discriminator_MLP(nn.Module):
     def __init__(self, n_features):
@@ -298,6 +297,7 @@ class ConditionalDiscriminator_CNN(nn.Module):
         super(ConditionalDiscriminator_CNN, self).to(device)
         self.device = device
 
+
 #########################################################
 
 FMAP_G = 64
@@ -337,10 +337,7 @@ class GAN(nn.Module, ABC):
         )
 
 
-class Generator64PixResnet(GAN):
-    """ResNet GAN Generator for 64-pixel samples with optional class-conditioning (Mirza & Osindero, 2014).
-  """
-
+class GeneratorResnet(GAN):
     def __init__(
         self,
         len_latent=128,
@@ -352,7 +349,7 @@ class Generator64PixResnet(GAN):
         equalized_lr=False,
         FMAP_SAMPLES=3,
     ):
-        super(Generator64PixResnet, self).__init__(64)
+        super(GeneratorResnet, self).__init__(64)
 
         self.len_latent = len_latent
         self.num_classes = num_classes
@@ -431,14 +428,11 @@ class Generator64PixResnet(GAN):
         return self.generator_model(x)
 
     def to(self, device):
-        super(Generator64PixResnet, self).to(device)
+        super(GeneratorResnet, self).to(device)
         self.device = device
 
 
-class Discriminator64PixResnet(GAN):
-    """ResNet GAN Discriminator for 64-pixel samples with optional class-conditioning (Mirza & Osindero, 2014).
-  """
-
+class DiscriminatorResnet(GAN):
     def __init__(
         self,
         fmap=FMAP_D,
@@ -449,7 +443,7 @@ class Discriminator64PixResnet(GAN):
         equalized_lr=False,
         FMAP_SAMPLES=3,
     ):
-        super(Discriminator64PixResnet, self).__init__(64)
+        super(DiscriminatorResnet, self).__init__(64)
 
         self.num_classes = num_classes
         self.equalized_lr = equalized_lr
@@ -535,5 +529,5 @@ class Discriminator64PixResnet(GAN):
         )
 
     def to(self, device):
-        super(Discriminator64PixResnet, self).to(device)
+        super(DiscriminatorResnet, self).to(device)
         self.device = device

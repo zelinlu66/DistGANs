@@ -25,18 +25,13 @@ class Initializer(object):
                 'Only uniform and normal distributions are supported.'
             )
 
-        if self.init_type in ('default', 'resnet',):
+        if self.init_type == 'default':
             fan_in, fan_out = self._calculate_fan_in_fan_out(
                 tensor=tensor, stride=stride
             )
             std = self._calculate_init_weight_std(
                 fan_in=fan_in, fan_out=fan_out
             )
-        elif self.init_type in ('progan', 'stylegan',):
-            fan_in, _ = self._calculate_fan_in_fan_out(
-                tensor=tensor, stride=stride
-            )
-            std = self._calculate_init_weight_std(fan_in=fan_in)
 
         return np.sqrt(3) * std if distribution_type == 'uniform' else std
 
@@ -51,15 +46,12 @@ class Initializer(object):
         fan_out = None
         if dimensions == 2:  # Linear
             fan_in = tensor.size(1)
-            if self.init_type not in ('progan', 'stylegan',):
-                fan_out = tensor.size(0)
+            fan_out = tensor.size(0)
         else:
             receptive_field_size = 1
             if dimensions > 2:
                 receptive_field_size = tensor[0][0].numel()
             fan_in = tensor.size(1) * receptive_field_size
-            if self.init_type not in ('progan', 'stylegan',):
-                fan_out = tensor.size(0) * receptive_field_size / stride ** 2
 
         return fan_in, fan_out
 
@@ -103,7 +95,7 @@ class Lambda(nn.Module):
 # Blur (Low-pass Filtering):
 # --------------------------
 
-# TODO: Add More (such as Gaussian Blur)
+
 def get_blur_op(blur_type, num_channels):
     """Options for low-pass filter operations. Only 3x3 kernels supported currently."""
     if blur_type.casefold() == 'box':
@@ -184,7 +176,6 @@ class PixelNorm2d(nn.Module):
 class NormalizeLayer(nn.Module):
     """All normalization methods in one place."""
 
-    # TODO: Implement Spectral Normalization
     def __init__(self, norm_type, ni=None, res=None):
         super(NormalizeLayer, self).__init__()
 
@@ -210,44 +201,9 @@ class NormalizeLayer(nn.Module):
 
 
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
-# Minibatch Standard Deviation:
-# -----------------------------
-
-
-def concat_mbstd_layer(x, group_size=4):
-    """Minibatch Standard Deviation layer."""
-    _sz = x.size()
-
-    # `group_size` must be less than or equal to and divisible into minibatch size;
-    # otherwise use the entire minibatch
-    group_size = min(_sz[0], group_size)
-    if _sz[0] % group_size != 0:
-        group_size = _sz[0]
-    G = _sz[0] // group_size
-
-    if group_size > 1:
-        mbstd_map = x.view(G, group_size, _sz[1], _sz[2], _sz[3])
-        mbstd_map = torch.var(mbstd_map, dim=1)
-        mbstd_map = torch.sqrt(mbstd_map + 1.0e-8)
-        mbstd_map = mbstd_map.view(G, -1)
-        mbstd_map = torch.mean(mbstd_map, dim=1).view(G, 1)
-        mbstd_map = mbstd_map.expand(G, _sz[2] * _sz[3]).view(
-            (G, 1, 1, _sz[2], _sz[3])
-        )
-        mbstd_map = mbstd_map.expand(G, group_size, -1, -1, -1)
-        mbstd_map = mbstd_map.contiguous().view((-1, 1, _sz[2], _sz[3]))
-    else:
-        mbstd_map = torch.zeros(_sz[0], 1, _sz[2], _sz[3], device=x.device)
-
-    return torch.cat((x, mbstd_map,), dim=1)
-
-
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
-# Bread-and-butter Linear Operations, but with features such as
+# Standard Linear Operations, but with features such as
 # equalized LR, custom initialization, etc:
 # ------------------------------------------------------------
-
-
 class Conv2dEx(nn.Module):
     def __init__(
         self,
@@ -307,17 +263,6 @@ class Conv2dEx(nn.Module):
                 self.conv2d.weight.data.uniform_(-1.0 / lrmul, 1.0 / lrmul)
             else:
                 self.conv2d.weight.data.uniform_(-bound / lrmul, bound / lrmul)
-        elif init_type in ('progan', 'stylegan',) and init is not None:
-            bound = self.initializer.get_init_bound_layer(
-                tensor=self.conv2d.weight,
-                distribution_type='Normal',
-                stride=stride,
-            )
-            if equalized_lr:
-                self.wscale = bound
-                self.conv2d.weight.data.normal_(0.0, 1.0 / lrmul)
-            else:
-                self.conv2d.weight.data.normal_(0.0, bound / lrmul)
         elif (
             init_type == 'standard normal'
             and init is None
@@ -415,15 +360,6 @@ class LinearEx(nn.Module):
                 self.linear.weight.data.uniform_(-1.0 / lrmul, 1.0 / lrmul)
             else:
                 self.linear.weight.data.uniform_(-bound / lrmul, bound / lrmul)
-        elif init_type in ('progan', 'stylegan',) and init is not None:
-            bound = self.initializer.get_init_bound_layer(
-                tensor=self.linear.weight, distribution_type='Normal'
-            )
-            if equalized_lr:
-                self.wscale = bound
-                self.linear.weight.data.normal_(0.0, 1.0 / lrmul)
-            else:
-                self.linear.weight.data.normal_(0.0, bound / lrmul)
         elif (
             init_type == 'standard normal'
             and init is None
@@ -471,3 +407,126 @@ class LinearBias(nn.Module):
             return x + self.bias.mul(self.lrmul)
         else:
             return x + self.bias
+
+
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
+
+
+class ResBlock2d(nn.Module):
+    def __init__(
+        self,
+        ni,
+        nf,
+        ks,
+        norm_type,
+        upsampler=None,
+        pooler=None,
+        init='He',
+        nl=nn.ReLU(),
+        res=None,
+        flip_sampling=False,
+        equalized_lr=False,
+        blur_type=None,
+    ):
+        super(ResBlock2d, self).__init__()
+
+        assert not (upsampler is not None and pooler is not None)
+
+        padding = (ks - 1) // 2  # 'SAME' padding for stride 1 conv
+
+        if not flip_sampling:
+            self.nif = nf if (upsampler is not None and pooler is None) else ni
+        else:
+            self.nif = ni if (upsampler is None and pooler is not None) else nf
+        self.convs = (
+            Conv2dEx(
+                ni,
+                self.nif,
+                ks=ks,
+                stride=1,
+                padding=padding,
+                init=init,
+                equalized_lr=equalized_lr,
+            ),
+            Conv2dEx(
+                self.nif,
+                nf,
+                ks=ks,
+                stride=1,
+                padding=padding,
+                init=init,
+                equalized_lr=equalized_lr,
+            ),
+            Conv2dEx(
+                ni,
+                nf,
+                ks=1,
+                stride=1,
+                padding=0,
+                init='Xavier',
+                equalized_lr=equalized_lr,
+            ),  # this is same as a FC layer
+        )
+
+        blur_op = (
+            get_blur_op(blur_type=blur_type, num_channels=self.convs[0].nf)
+            if blur_type is not None
+            else None
+        )
+
+        _norm_nls = (
+            [NormalizeLayer(norm_type, ni=ni, res=res), nl],
+            [NormalizeLayer(norm_type, ni=self.convs[0].nf, res=res), nl],
+        )
+
+        if upsampler is not None:
+            _mostly_linear_op_1 = (
+                [upsampler, self.convs[0], blur_op]
+                if blur_type is not None
+                else [upsampler, self.convs[0]]
+            )
+            _mostly_linear_op_2 = (
+                [upsampler, self.convs[2], blur_op]
+                if blur_type is not None
+                else [upsampler, self.convs[2]]
+            )
+            _ops = (
+                _mostly_linear_op_1,
+                [self.convs[1]],
+                _mostly_linear_op_2,
+            )
+        elif pooler is not None:
+            _mostly_linear_op_1 = (
+                [blur_op, self.convs[1], pooler]
+                if blur_type is not None
+                else [self.convs[1], pooler]
+            )
+            _mostly_linear_op_2 = (
+                [blur_op, pooler, self.convs[2]]
+                if blur_type is not None
+                else [pooler, self.convs[2]]
+            )
+            _ops = (
+                [self.convs[0]],
+                _mostly_linear_op_1,
+                _mostly_linear_op_2,
+            )
+        else:
+            _ops = (
+                [self.convs[0]],
+                [self.convs[1]],
+                [self.convs[2]],
+            )
+
+        self.conv_layer_1 = nn.Sequential(*(_norm_nls[0] + _ops[0]))
+        self.conv_layer_2 = nn.Sequential(*(_norm_nls[1] + _ops[1]))
+
+        if (upsampler is not None or pooler is not None) or ni != nf:
+            self.skip_connection = nn.Sequential(*(_ops[2]))
+        else:
+            self.skip_connection = Lambda(lambda x: x)
+
+    def forward(self, x):
+        return self.skip_connection(x) + self.conv_layer_2(
+            self.conv_layer_1(x)
+        )

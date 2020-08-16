@@ -10,7 +10,7 @@ class ResNet_model(GANs_abstract_object.GANs_model):
 
     def build_discriminator(self, FMAP_D=64):
 
-        D = Discriminator64PixResnet(
+        D = DiscriminatorResnet(
             fmap=self.data_dimension[1],
             pooler=nn.AvgPool2d(kernel_size=2, stride=2),
             blur_type=None,
@@ -23,7 +23,7 @@ class ResNet_model(GANs_abstract_object.GANs_model):
 
     def build_generator(self, noise_dimension=128, FMAP_G=64):
         self.noise_dimension = noise_dimension
-        G = Generator64PixResnet(
+        G = GeneratorResnet(
             len_latent=noise_dimension,
             fmap=self.data_dimension[1],
             upsampler=nn.Upsample(scale_factor=2, mode='nearest'),
