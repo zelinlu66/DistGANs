@@ -1,4 +1,4 @@
-from ResNet import *
+from models import *
 import GANs_abstract_object
 from optimizers import *
 from utils import *
