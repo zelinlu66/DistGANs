@@ -120,8 +120,8 @@ if __name__ == '__main__':
     epochs = int(config['epochs'])
     optimizer_name = config['optimizer']
     learning_rate = float(config['learning_rate'])
-
     model_name = config['model']
+
     if config['dataset'] == 'MNIST':
         data = mnist_data(rand_rotation=False, max_degree=90)
         n_classes = 10

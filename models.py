@@ -298,7 +298,8 @@ class ConditionalDiscriminator_CNN(nn.Module):
         self.device = device
 
 
-#########################################################
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#Res net models
 
 FMAP_G = 64
 FMAP_D = 64
