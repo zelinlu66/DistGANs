@@ -11,11 +11,8 @@ Created on Thu Mar 12 14:22:47 2020
         : Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it) 
 """
 
-import torch
-from torch import nn, optim
-from torch.autograd.variable import Variable
+
 from torchvision import transforms, datasets
-import matplotlib.pyplot as plt
 import os
 
 
