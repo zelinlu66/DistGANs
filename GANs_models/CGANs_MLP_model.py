@@ -70,7 +70,7 @@ class CGANs_MLP_model(GANs_abstract_object.GANs_model):
         self.verbose = verbose
         self.save_path = save_path
         self.optimizer_initialize(
-            loss, lr_x, lr_y, optimizer_name, self.n_classes
+            loss, lr_x, lr_y, optimizer_name, self.n_classes, self.model_name
         )
         start = time.time()
         for e in range(num_epochs):
@@ -97,14 +97,14 @@ class CGANs_MLP_model(GANs_abstract_object.GANs_model):
                 self.optimizer.D = self.D
                 self.optimizer.zero_grad()
 
-                if optimizer_name == 'AdamCon':
+                if optimizer_name == 'Adam' or optimizer_name == 'Jacobi':
                     error_real, error_fake, g_error = self.optimizer.step(
                         real_data, labels, N
                     )
                     self.D = self.optimizer.D
                     self.G = self.optimizer.G
                 else:
-                    raise RuntimeError('optimizer not supported, use AdamCon')
+                    raise RuntimeError('optimizer not supported, use Adam')
 
                 self.D_error_real_history.append(error_real)
                 self.D_error_fake_history.append(error_fake)

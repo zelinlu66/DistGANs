@@ -79,14 +79,20 @@ class GANs_MLP_model(GANs_abstract_object.GANs_model):
         self.verbose = verbose
         self.save_path = save_path
         self.optimizer_initialize(
-            loss, lr_x, lr_y, optimizer_name, self.n_classes, label_smoothing
+            loss,
+            lr_x,
+            lr_y,
+            optimizer_name,
+            self.n_classes,
+            self.model_name,
+            label_smoothing,
         )
         start = time.time()
         for e in range(num_epochs):
             self.print_verbose(
                 "######################################################"
             )
-            for n_batch, (real_batch, _) in enumerate(self.data_loader):
+            for n_batch, (real_batch, labels) in enumerate(self.data_loader):
                 self.test_noise = noise(
                     self.num_test_samples, self.noise_dimension
                 )
@@ -98,7 +104,7 @@ class GANs_MLP_model(GANs_abstract_object.GANs_model):
 
                 if optimizer_name == 'GaussSeidel' or optimizer_name == 'Adam':
                     error_real, error_fake, g_error = self.optimizer.step(
-                        real_data, N
+                        real_data, labels, N
                     )
                     self.D = self.optimizer.D
                     self.G = self.optimizer.G

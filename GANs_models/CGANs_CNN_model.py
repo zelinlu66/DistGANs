@@ -21,8 +21,8 @@ from utils import *
 class CGANs_CNN_model(GANs_abstract_object.GANs_model):
     model_name = 'CNN-CGANs'
 
-    def __init__(self, data, n_classes):
-        super(CGANs_CNN_model, self).__init__(data, n_classes)
+    def __init__(self, data, n_classes, model_name):
+        super(CGANs_CNN_model, self).__init__(data, n_classes, model_name)
 
     def build_discriminator(self):
         D = ConditionalDiscriminator_CNN(self.data_dimension, self.n_classes)
@@ -72,7 +72,7 @@ class CGANs_CNN_model(GANs_abstract_object.GANs_model):
         self.verbose = verbose
         self.save_path = save_path
         self.optimizer_initialize(
-            loss, lr_x, lr_y, optimizer_name, self.n_classes
+            loss, lr_x, lr_y, optimizer_name, self.n_classes, self.model_name
         )
         start = time.time()
         for e in range(num_epochs):
@@ -99,14 +99,14 @@ class CGANs_CNN_model(GANs_abstract_object.GANs_model):
                 self.optimizer.D = self.D
                 self.optimizer.zero_grad()
 
-                if optimizer_name == 'AdamCon':
+                if optimizer_name == 'Adam':
                     error_real, error_fake, g_error = self.optimizer.step(
                         real_data, labels, N
                     )
                     self.D = self.optimizer.D
                     self.G = self.optimizer.G
                 else:
-                    raise RuntimeError('optimizer not supported, use AdamCon')
+                    raise RuntimeError('optimizer not supported, use Adam')
 
                 self.D_error_real_history.append(error_real)
                 self.D_error_fake_history.append(error_fake)

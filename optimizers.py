@@ -31,11 +31,24 @@ import math
 
 
 class Optimizer(object, metaclass=ABCMeta):
-    def __init__(self, G, D, criterion):
+    def __init__(self, G, D, criterion, model_name):
         self.count = 0
         self.criterion = criterion
         self.D = D
         self.G = G
+        self.model_name = model_name
+        if self.model_name == 'ResNet':
+            self.target_1 = ones_target_resnet
+            self.target_0 = zeros_target_resnet
+            self.noise_dim = 128
+        else:
+            self.target_1 = ones_target
+            self.target_0 = zeros_target
+            self.noise_dim = 100
+        if self.model_name == 'CNN-CGANs' or self.model_name == 'C-GANs':
+            self.conditional = True
+        else:
+            self.conditional = False
 
     def zero_grad(self):
         zero_grad(self.G.parameters())
@@ -47,8 +60,8 @@ class Optimizer(object, metaclass=ABCMeta):
 
 
 class CGD(Optimizer):
-    def __init__(self, G, D, criterion, lr=1e-3):
-        super(CGD, self).__init__(G, D, criterion)
+    def __init__(self, G, D, criterion, model_name, lr=1e-3):
+        super(CGD, self).__init__(G, D, criterion, model_name)
         self.lr = lr
 
     def step(self, real_data, N):
@@ -130,9 +143,17 @@ class CGD(Optimizer):
 
 class CGD_shafer(Optimizer):
     def __init__(
-        self, G, D, criterion, eps=1e-8, beta2=0.99, lr=1e-3, solve_x=False
+        self,
+        G,
+        D,
+        criterion,
+        model_name,
+        eps=1e-8,
+        beta2=0.99,
+        lr=1e-3,
+        solve_x=False,
     ):
-        super(CGD_shafer, self).__init__(G, D, criterion)
+        super(CGD_shafer, self).__init__(G, D, criterion, model_name)
         self.G_params = list(G.parameters())
         self.D_params = list(D.parameters())
         self.lr = lr
@@ -281,9 +302,16 @@ class CGD_shafer(Optimizer):
 
 class Jacobi(Optimizer):
     def __init__(
-        self, G, D, criterion, lr_x=1e-3, lr_y=1e-3, label_smoothing=False
+        self,
+        G,
+        D,
+        criterion,
+        model_name,
+        lr_x=1e-3,
+        lr_y=1e-3,
+        label_smoothing=False,
     ):
-        super(Jacobi, self).__init__(G, D, criterion)
+        super(Jacobi, self).__init__(G, D, criterion, model_name)
         self.lr_x = lr_x
         self.lr_y = lr_y
         self.label_smoothing = label_smoothing
@@ -349,12 +377,12 @@ class Jacobi(Optimizer):
 
 ################################################
 class GaussSeidel(Optimizer):
-    def __init__(self, G, D, criterion, lr_x=1e-3, lr_y=1e-3):
-        super(GaussSeidel, self).__init__(G, D, criterion)
+    def __init__(self, G, D, criterion, model_name, lr_x=1e-3, lr_y=1e-3):
+        super(GaussSeidel, self).__init__(G, D, criterion, model_name)
         self.lr_x = lr_x
         self.lr_y = lr_y
 
-    def step(self, real_data, N):
+    def step(self, real_data, labels, N):
         # Second argument of noise is the noise_dimension parameter of build_generator
         fake_data = self.G(noise(N, 100).to(self.G.device))
         d_pred_real = self.D(real_data.to(self.D.device))
@@ -437,8 +465,8 @@ class GaussSeidel(Optimizer):
 
 
 class SGD(Optimizer):
-    def __init__(self, G, D, criterion, lr=1e-3):
-        super(SGD, self).__init__(G, D, criterion)
+    def __init__(self, G, D, criterion, model_name, lr=1e-3):
+        super(SGD, self).__init__(G, D, criterion, model_name)
         self.lr = lr
 
     def step(self, real_data, N):
@@ -476,8 +504,8 @@ class SGD(Optimizer):
 
 ##############################################################################
 class Newton(Optimizer):
-    def __init__(self, G, D, criterion, lr_x=1e-3, lr_y=1e-3):
-        super(Newton, self).__init__(G, D, criterion)
+    def __init__(self, G, D, criterion, model_name, lr_x=1e-3, lr_y=1e-3):
+        super(Newton, self).__init__(G, D, criterion, model_name)
         self.lr_x = lr_x
         self.lr_y = lr_y
 
@@ -551,8 +579,8 @@ class Newton(Optimizer):
 
 
 class JacobiMultiCost(Optimizer):
-    def __init__(self, G, D, criterion, lr_x=1e-3, lr_y=1e-3):
-        super(JacobiMultiCost, self).__init__(G, D, criterion)
+    def __init__(self, G, D, criterion, model_name, lr_x=1e-3, lr_y=1e-3):
+        super(JacobiMultiCost, self).__init__(G, D, criterion, model_name)
         self.lr_x = lr_x
         self.lr_y = lr_y
 
@@ -612,58 +640,19 @@ class JacobiMultiCost(Optimizer):
 
 #################################################################################
 class Adam(Optimizer):
-    def __init__(self, G, D, criterion, lr_x, lr_y, b1=0.5, b2=0.999):
-        super(Adam, self).__init__(G, D, criterion)
-        self.G = G
-        self.D = D
-        self.lr_x = lr_x.item()
-        self.lr_y = lr_y.item()
-        self.b1 = b1
-        self.b2 = b2
-        # Optimizers
-        self.optimizer_G = torch.optim.Adam(
-            self.G.parameters(), lr=self.lr_x, betas=(self.b1, self.b2)
-        )
-        self.optimizer_D = torch.optim.Adam(
-            self.D.parameters(), lr=self.lr_y, betas=(self.b1, self.b2)
-        )
-
-    def step(self, real_data, N):
-        # Generator step
-        self.optimizer_G.zero_grad()
-        # Second argument of noise is the noise_dimension parameter of build_generator
-        fake_data = self.G(noise(N, 100).to(self.G.device))
-        d_pred_fake = self.D(fake_data.to(self.D.device))
-        g_error = self.criterion(
-            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
-        )
-
-        g_error.backward()
-        self.optimizer_G.step()
-        # Discriminator step
-        self.optimizer_D.zero_grad()
-        # Measure discriminator's ability to classify real from generated samples
-        d_pred_real = self.D(real_data.to(self.D.device))
-        error_real = self.criterion(
-            d_pred_real, ones_target(N).to(self.D.device)
-        )
-        d_pred_fake = self.D(fake_data.to(self.D.device).detach())
-        error_fake = self.criterion(
-            d_pred_fake, zeros_target(N).to(self.D.device)
-        )
-
-        d_loss = (error_real + error_fake) / 2
-        d_loss.backward()
-        self.optimizer_D.step()
-
-        return error_real.item(), error_fake.item(), g_error.item()
-
-
-class AdamCon(Optimizer):
     def __init__(
-        self, G, D, criterion, lr_x, lr_y, n_classes, b1=0.5, b2=0.999
+        self,
+        G,
+        D,
+        criterion,
+        model_name,
+        lr_x,
+        lr_y,
+        n_classes,
+        b1=0.5,
+        b2=0.999,
     ):
-        super(AdamCon, self).__init__(G, D, criterion)
+        super(Adam, self).__init__(G, D, criterion, model_name)
         self.G = G
         self.D = D
         self.lr_x = lr_x.item()
@@ -671,6 +660,7 @@ class AdamCon(Optimizer):
         self.b1 = b1
         self.b2 = b2
         self.n_classes = n_classes
+
         # Optimizers
         self.optimizer_G = torch.optim.Adam(
             self.G.parameters(), lr=self.lr_x, betas=(self.b1, self.b2)
@@ -680,52 +670,85 @@ class AdamCon(Optimizer):
         )
 
     def step(self, real_data, labels, N):
-        # Generator step
-        self.optimizer_G.zero_grad()
-        # Second argument of noise is the noise_dimension parameter of build_generator
+        if self.conditional == True:
+            # Generator step
+            self.optimizer_G.zero_grad()
+            # Second argument of noise is the noise_dimension parameter of build_generator
 
-        fake_labels = Variable(
-            torch.LongTensor(np.random.randint(0, self.n_classes, 100))
-        )  # one random label among 10 possible, 100 is batch dimension
-        fake_data = self.G(
-            noise(N, 100).to(self.G.device), fake_labels.to(self.G.device)
-        )
-        d_pred_fake = self.D(
-            fake_data.to(self.D.device), fake_labels.to(self.D.device)
-        )
-        g_error = self.criterion(
-            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
-        )
+            fake_labels = Variable(
+                torch.LongTensor(np.random.randint(0, self.n_classes, N))
+            )  # one random label among 10 possible, 100 is batch dimension
+            fake_data = self.G(
+                noise(N, self.noise_dim).to(self.G.device),
+                fake_labels.to(self.G.device),
+            )
+            d_pred_fake = self.D(
+                fake_data.to(self.D.device), fake_labels.to(self.D.device)
+            )
+            g_error = self.criterion(
+                d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+            )
 
-        g_error.backward()
-        self.optimizer_G.step()
-        # Discriminator step
-        self.optimizer_D.zero_grad()
-        # Measure discriminator's ability to classify real from generated samples
-        d_pred_real = self.D(
-            real_data.to(self.D.device), labels.to(self.D.device)
-        )
-        error_real = self.criterion(
-            d_pred_real, ones_target(N).to(self.D.device)
-        )
-        d_pred_fake = self.D(
-            fake_data.to(self.D.device).detach(), fake_labels.to(self.D.device)
-        )
-        error_fake = self.criterion(
-            d_pred_fake, zeros_target(N).to(self.D.device)
-        )
+            g_error.backward()
+            self.optimizer_G.step()
+            # Discriminator step
+            self.optimizer_D.zero_grad()
+            # Measure discriminator's ability to classify real from generated samples
+            d_pred_real = self.D(
+                real_data.to(self.D.device), labels.to(self.D.device)
+            )
+            error_real = self.criterion(
+                d_pred_real, ones_target(N).to(self.D.device)
+            )
+            d_pred_fake = self.D(
+                fake_data.to(self.D.device).detach(),
+                fake_labels.to(self.D.device),
+            )
+            error_fake = self.criterion(
+                d_pred_fake, zeros_target(N).to(self.D.device)
+            )
 
-        d_loss = (error_real + error_fake) / 2
-        d_loss.backward()
-        self.optimizer_D.step()
+            d_loss = (error_real + error_fake) / 2
+            d_loss.backward()
+            self.optimizer_D.step()
 
-        return error_real.item(), error_fake.item(), g_error.item()
+            return error_real.item(), error_fake.item(), g_error.item()
+        else:
+            # Generator step
+            self.optimizer_G.zero_grad()
+            # Second argument of noise is the noise_dimension parameter of build_generator
+            fake_data = self.G(noise(N, self.noise_dim).to(self.G.device))
+            d_pred_fake = self.D(fake_data.to(self.D.device))
+            g_error = self.criterion(
+                d_pred_fake.to(self.G.device),
+                self.target_1(N).to(self.G.device),
+            )
+
+            g_error.backward()
+            self.optimizer_G.step()
+            # Discriminator step
+            self.optimizer_D.zero_grad()
+            # Measure discriminator's ability to classify real from generated samples
+            d_pred_real = self.D(real_data.to(self.D.device))
+            error_real = self.criterion(
+                d_pred_real, self.target_1(N).to(self.D.device)
+            )
+            d_pred_fake = self.D(fake_data.to(self.D.device).detach())
+            error_fake = self.criterion(
+                d_pred_fake, self.target_0(N).to(self.D.device)
+            )
+
+            d_loss = (error_real + error_fake) / 2
+            d_loss.backward()
+            self.optimizer_D.step()
+
+            return error_real.item(), error_fake.item(), g_error.item()
 
 
 ####################################################################
 class CGDMultiCost(Optimizer):
-    def __init__(self, G, D, criterion, lr_x=1e-3, lr_y=1e-3):
-        super(CGDMultiCost, self).__init__(G, D, criterion)
+    def __init__(self, G, D, criterion, model_name, lr_x=1e-3, lr_y=1e-3):
+        super(CGDMultiCost, self).__init__(G, D, criterion, model_name)
         self.lr_x = lr_x
         self.lr_y = lr_y
 
@@ -818,52 +841,3 @@ class CGDMultiCost(Optimizer):
         cg_y.detach_().mul_(-self.lr_y.sqrt())  # moltiplicare per -lr o +lr
 
         return error_real.item(), error_fake.item(), errorG.item(), cg_x, cg_y
-
-
-class AdamResNet(Optimizer):
-    def __init__(self, G, D, criterion, lr_x, lr_y, b1=0.5, b2=0.999):
-        super(AdamResNet, self).__init__(G, D, criterion)
-        self.G = G
-        self.D = D
-        self.lr_x = lr_x.item()
-        self.lr_y = lr_y.item()
-        self.b1 = b1
-        self.b2 = b2
-        # Optimizers
-        self.optimizer_G = torch.optim.Adam(
-            self.G.parameters(), lr=self.lr_x, betas=(self.b1, self.b2)
-        )
-        self.optimizer_D = torch.optim.Adam(
-            self.D.parameters(), lr=self.lr_y, betas=(self.b1, self.b2)
-        )
-
-    def step(self, real_data, N):
-        # Generator step
-        self.optimizer_G.zero_grad()
-        # Second argument of noise is the noise_dimension parameter of build_generator
-        fake_data = self.G(noise(N, 128).to(self.G.device))
-        d_pred_fake = self.D(fake_data.to(self.D.device))
-        g_error = self.criterion(
-            d_pred_fake.to(self.G.device),
-            ones_target_resnet(N).to(self.G.device),
-        )
-
-        g_error.backward()
-        self.optimizer_G.step()
-        # Discriminator step
-        self.optimizer_D.zero_grad()
-        # Measure discriminator's ability to classify real from generated samples
-        d_pred_real = self.D(real_data.to(self.D.device))
-        error_real = self.criterion(
-            d_pred_real, ones_target_resnet(N).to(self.D.device)
-        )
-        d_pred_fake = self.D(fake_data.to(self.D.device).detach())
-        error_fake = self.criterion(
-            d_pred_fake, zeros_target_resnet(N).to(self.D.device)
-        )
-
-        d_loss = (error_real + error_fake) / 2
-        d_loss.backward()
-        self.optimizer_D.step()
-
-        return error_real.item(), error_fake.item(), g_error.item()
