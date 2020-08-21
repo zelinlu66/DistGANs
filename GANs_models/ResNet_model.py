@@ -1,62 +1,62 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Apr  4 17:34:40 2020
-
-@authors: Andrey Prokpenko (e-mail: prokopenkoav@ornl.gov)
-        : Debangshu Mukherjee (e-mail: mukherjeed@ornl.gov)
-        : Massimiliano Lupo Pasini (e-mail: lupopasinim@ornl.gov)
-        : Nouamane Laanait (e-mail: laanaitn@ornl.gov)
-        : Simona Perotto (e-mail: simona.perotto@polimi.it)
-        : Vitaliy Starchenko  (e-mail: starchenkov@ornl.gov)
-        : Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it) 
-
-"""
-
-import os
-import time
-import torch
-import numpy as np
-import matplotlib.pyplot as plt
-import PIL.Image as pil
-
-import GANs_abstract_object
 from models import *
+import GANs_abstract_object
 from optimizers import *
 from utils import *
+import torch
 
 
-class GANs_MLP_model(GANs_abstract_object.GANs_model):
-    model_name = 'MLP'
+class ResNet_model(GANs_abstract_object.GANs_model):
+    model_name = 'ResNet'
 
-    def build_discriminator(self):
-        n_features = np.prod(self.data_dimension)
-        D = Discriminator_MLP(n_features)
+    def build_discriminator(self, FMAP_D=64):
+
+        D = DiscriminatorResnet(
+            fmap=self.data_dimension[1],
+            pooler=nn.AvgPool2d(kernel_size=2, stride=2),
+            blur_type=None,
+            nl=nn.ReLU(),
+            num_classes=0,
+            equalized_lr=False,
+            FMAP_SAMPLES=self.data_dimension[0],
+        )
         return D
 
-    def build_generator(self, noise_dimension=100):
+    def build_generator(self, noise_dimension=128, FMAP_G=64):
         self.noise_dimension = noise_dimension
-        n_out = np.prod(self.data_dimension)
-        G = Generator_MLP(noise_dimension, n_out)
+        G = GeneratorResnet(
+            len_latent=noise_dimension,
+            fmap=self.data_dimension[1],
+            upsampler=nn.Upsample(scale_factor=2, mode='nearest'),
+            blur_type=None,
+            nl=nn.ReLU(),
+            num_classes=0,
+            equalized_lr=False,
+            FMAP_SAMPLES=self.data_dimension[0],
+        )
         return G
 
     # loss = torch.nn.BCEWithLogitsLoss()
     # loss = binary_cross_entropy
-    # loss = torch.nn.BCELoss()
     def train(
         self,
         loss=torch.nn.BCEWithLogitsLoss(),
-        lr_x=torch.tensor([0.001]),
-        lr_y=torch.tensor([0.001]),
-        optimizer_name='SGD',
+        lr_x=torch.tensor([0.01]),
+        lr_y=torch.tensor([0.01]),
+        optimizer_name='Jacobi',
         num_epochs=1,
         batch_size=100,
         verbose=True,
-        save_path='./data_fake',
+        save_path='./data_fake_ResNet',
         label_smoothing=False,
         single_number=None,
         repeat_iterations=1,
     ):
+        self.data_loader = torch.utils.data.DataLoader(
+            self.data, batch_size=100, shuffle=True
+        )
+
         if single_number is not None or self.mpi_comm_size > 1:
+            self.num_test_samples = 5
 
             if single_number is None and self.mpi_comm_size > 1:
                 single_number = torch.tensor(self.mpi_rank)
@@ -67,13 +67,12 @@ class GANs_MLP_model(GANs_abstract_object.GANs_model):
             self.data_loader = torch.utils.data.DataLoader(
                 self.data, batch_size=100, shuffle=True
             )
-            self.num_test_samples = 5
             self.display_progress = 50
         else:
             self.data_loader = torch.utils.data.DataLoader(
                 self.data, batch_size=100, shuffle=True
             )
-            self.num_test_samples = 16
+            self.num_test_samples = 10
             self.display_progress = 100
 
         self.verbose = verbose
@@ -96,12 +95,8 @@ class GANs_MLP_model(GANs_abstract_object.GANs_model):
                 self.test_noise = noise(
                     self.num_test_samples, self.noise_dimension
                 )
+                real_data = Variable((real_batch))
                 N = real_batch.size(0)
-                real_data = Variable(images_to_vectors(real_batch))
-                self.optimizer.G = self.G
-                self.optimizer.D = self.D
-                self.optimizer.zero_grad()
-
                 if optimizer_name == 'GaussSeidel' or optimizer_name == 'Adam':
                     error_real, error_fake, g_error = self.optimizer.step(
                         real_data, labels, N
@@ -110,7 +105,6 @@ class GANs_MLP_model(GANs_abstract_object.GANs_model):
                     self.G = self.optimizer.G
                 else:
                     for i in np.arange(repeat_iterations):
-
                         (
                             error_real,
                             error_fake,
@@ -118,6 +112,7 @@ class GANs_MLP_model(GANs_abstract_object.GANs_model):
                             p_x,
                             p_y,
                         ) = self.optimizer.step(real_data, N)
+
                         index = 0
                         for p in self.G.parameters():
                             p.data.add_(
@@ -133,7 +128,7 @@ class GANs_MLP_model(GANs_abstract_object.GANs_model):
                             )
                             index += p.numel()
                         if index != p_y.numel():
-                            raise RuntimeError('CG size mismatch')
+                            raise RuntimeError('Size mismatch')
 
                 self.D_error_real_history.append(error_real)
                 self.D_error_fake_history.append(error_fake)
@@ -151,10 +146,9 @@ class GANs_MLP_model(GANs_abstract_object.GANs_model):
                 )
 
                 if (n_batch) % self.display_progress == 0:
-                    test_images = vectors_to_images(
-                        self.G(self.test_noise.to(self.G.device)),
-                        self.data_dimension,
-                    )  # data_dimension: dimension of output image ex: [1,28,28]
+                    test_images = self.optimizer.G(
+                        self.test_noise.to(self.G.device)
+                    )
                     self.save_images(e, n_batch, test_images)
 
             self.print_verbose(

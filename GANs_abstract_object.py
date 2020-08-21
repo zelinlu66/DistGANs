@@ -27,7 +27,7 @@ from mpi4py import MPI
 
 
 class GANs_model(metaclass=ABCMeta):
-    def __init__(self, data, n_classes):
+    def __init__(self, data, n_classes, model_name):
         self.mpi_comm_size = MPI.COMM_WORLD.Get_size()
         self.mpi_rank = MPI.COMM_WORLD.Get_rank()
         self.num_gpus = count_gpus()
@@ -39,6 +39,7 @@ class GANs_model(metaclass=ABCMeta):
         self.D_error_real_history = []
         self.D_error_fake_history = []
         self.G_error_history = []
+        self.model_name = model_name
 
         if self.data_dimension[0] == 3:
             self.imtype = "RGB"
@@ -121,30 +122,41 @@ class GANs_model(metaclass=ABCMeta):
         lr_y,
         optimizer_name,
         n_classes,
+        model_name,
         label_smoothing=False,
     ):
         if optimizer_name == "Jacobi":
             self.optimizer = Jacobi(
-                self.G, self.D, loss, lr_x, lr_y, label_smoothing
+                self.G, self.D, loss, model_name, lr_x, lr_y, label_smoothing
             )
         elif optimizer_name == "CGD":
-            self.optimizer = CGD(self.G, self.D, loss, lr_x)
+            self.optimizer = CGD(self.G, self.D, loss, model_name, lr_x)
         elif optimizer_name == "Newton":
-            self.optimizer = Newton(self.G, self.D, loss, lr_x, lr_y)
-        elif optimizer_name == "JacobiMultiCost":
-            self.optimizer = JacobiMultiCost(self.G, self.D, loss, lr_x, lr_y)
-        elif optimizer_name == "GaussSeidel":
-            self.optimizer = GaussSeidel(self.G, self.D, loss, lr_x, lr_y)
-        elif optimizer_name == "SGD":
-            self.optimizer = SGD(self.G, self.D, loss, lr_x)
-        elif optimizer_name == "Adam":
-            self.optimizer = Adam(self.G, self.D, loss, lr_x, lr_y)
-        elif optimizer_name == "CGD_multi":
-            self.optimizer = CGDMultiCost(self.G, self.D, loss, lr_x)
-        elif optimizer_name == "AdamCon":
-            self.optimizer = AdamCon(
-                self.G, self.D, loss, lr_x, lr_y, n_classes
+            self.optimizer = Newton(
+                self.G, self.D, loss, model_name, lr_x, lr_y
             )
+        elif optimizer_name == "JacobiMultiCost":
+            self.optimizer = JacobiMultiCost(
+                self.G, self.D, loss, model_name, lr_x, lr_y
+            )
+        elif optimizer_name == "GaussSeidel":
+            self.optimizer = GaussSeidel(
+                self.G, self.D, loss, model_name, lr_x, lr_y
+            )
+        elif optimizer_name == "SGD":
+            self.optimizer = SGD(self.G, self.D, loss, model_name, lr_x)
+        elif optimizer_name == "Adam":
+            self.optimizer = Adam(
+                self.G, self.D, loss, model_name, lr_x, lr_y, n_classes
+            )
+        elif optimizer_name == "CGD_multi":
+            self.optimizer = CGDMultiCost(
+                self.G, self.D, loss, model_name, lr_x
+            )
+        # elif optimizer_name == "AdamCon":
+        #    self.optimizer = AdamCon(
+        #        self.G, self.D, loss, model_name,lr_x, lr_y, n_classes
+        #    )
         else:
             raise RuntimeError("Optimizer type is not valid")
 

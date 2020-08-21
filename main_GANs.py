@@ -11,7 +11,7 @@
 
 Usage:
   main_GANS.py (-h | --help)
-  main_GANS.py [-c CONFIG_FILE] [-m MODEL] [-e EPOCHS] [-o OPTIMIZER] [-r LEARNING_RATE] [--display] [--save] [--list]
+  main_GANS.py [-c CONFIG_FILE] [-m MODEL] [-e EPOCHS] [-o OPTIMIZER] [-r LEARNING_RATE] [-d DATASET] [--display] [--save] [--list]
 
 Options:
   -h, --help                  Show this screen.
@@ -21,16 +21,17 @@ Options:
   --list                      List available models.
   -c, --config=<str>          Filename containing configuration parameters
   -e, --epochs=<n>            Number of epochs [default: 100].
-  -m, --model=<str>           Implementation of GANs model. Multi-layer perceptrons NN (MLP), convolutional NN (CNN) [default: MLP].
+  -m, --model=<str>           Implementation of GANs model. Multi-layer perceptrons NN (MLP), convolutional NN (CNN), conditional MLP (C-GANs), conditional CNN (CNN-CGANs), resnet, (ResNet) [default: MLP].
   -o, --optimizer=<str>       Optimizer name [default: Jacobi].
   -r, --learning_rate=<f>     Learning rate [default: 0.01].
+  -d, --dataset=<srt>         Datased used for training. MNIST, CIFAR10, CIFAR100 [default: CIFAR10]
 """
 
 from docopt import docopt
 import matplotlib.pyplot as plt
 import sys, os
 import yaml
-
+import torch
 import mpi4py
 
 mpi4py.rc.initialize = False
@@ -58,24 +59,6 @@ for filename in os.listdir(models_path):
         )
         list_GANs.update({obj.model_name: obj})
 
-'''
-! READ ME !
-Multi-layer perceptrons neural networks (MLP)
-Convolutional neural networks (CNN)
-
-X = Generator
-Y = Discriminaror
-
-Different learning rates for X and Y can only be used with 'Jacobi' and
-'JacobiMultiCost' for the other optimizers the learning rate will be set to the
-value of lr_x
-
-Label smoothing variation is implemented only for optimizer 'Jacobi' and only
-for GANs_object
-
-Attribute save_models of both training object saves the state dicts of the
-networks into 2 different folders inside your current directory
-'''
 
 MPI.Init()
 
@@ -137,11 +120,22 @@ if __name__ == '__main__':
     epochs = int(config['epochs'])
     optimizer_name = config['optimizer']
     learning_rate = float(config['learning_rate'])
-
     model_name = config['model']
 
+    if config['dataset'] == 'MNIST':
+        data = mnist_data(rand_rotation=False, max_degree=90)
+        n_classes = 10
+    elif config['dataset'] == 'CIFAR10':
+        data = mnist_data(rand_rotation=False, max_degree=90)
+        n_classes = 10
+    elif config['dataset'] == 'CIFAR100':
+        data = cifar100_data()
+        n_classes = 100
+    else:
+        raise RuntimeError('Dataset not recognized')
+
     try:
-        model = list_GANs[model_name](cifar10_data_dcgans(), 10)
+        model = list_GANs[model_name](data, n_classes, model_name)
     except KeyError:
         sys.exit(
             '\n   *** Error. Specified model name: {} is not valid.\n'.format(

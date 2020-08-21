@@ -10,14 +10,11 @@
 ##########################################
 import os
 import numpy as np
-import torchvision.utils as vutils
-from tensorboardX import SummaryWriter
-from IPython import display
 from matplotlib import pyplot as plt
 import torch
 from torch import autograd
+from torch import nn
 from torch.autograd.variable import Variable
-import math
 from mpi4py import MPI
 
 if torch.cuda.is_available():
@@ -27,6 +24,7 @@ if torch.cuda.is_available():
 
     drv.init()
 
+
 ################################################################
 
 
@@ -35,6 +33,14 @@ def ones_target(size):
     Tensor containing ones, with shape = size
     '''
     data = Variable(torch.ones(size, 1))
+    return data
+
+
+def ones_target_resnet(size):
+    '''
+    Tensor containing ones, with shape = size
+    '''
+    data = Variable(torch.ones(size))
     return data
 
 
@@ -51,6 +57,14 @@ def zeros_target(size):
     Tensor containing zeros, with shape = size
     '''
     data = Variable(torch.zeros(size, 1))
+    return data
+
+
+def zeros_target_resnet(size):
+    '''
+    Tensor containing zeros, with shape = size
+    '''
+    data = Variable(torch.zeros(size))
     return data
 
 

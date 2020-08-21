@@ -11,51 +11,12 @@ Created on Thu Mar 12 14:22:47 2020
         : Vittorio Gabbi (e-mail: vittorio.gabbi@mail.polimi.it) 
 """
 
-import torch
-from torch import nn, optim
-from torch.autograd.variable import Variable
-from torchvision import transforms, datasets
-import matplotlib.pyplot as plt
-import os
 
-# from utils import Logger
+from torchvision import transforms, datasets
+import os
 
 
 def mnist_data(rand_rotation=False, max_degree=90):
-    if rand_rotation == True:
-        compose = transforms.Compose(
-            [
-                transforms.RandomRotation(max_degree),
-                transforms.ToTensor(),
-                transforms.Normalize((0.5,), (0.5,)),
-            ]
-        )
-    else:
-        compose = transforms.Compose(
-            [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
-        )
-
-    out_dir = './dataset'
-    return datasets.MNIST(
-        root=out_dir, train=True, transform=compose, download=True
-    )
-
-
-def cifar10_data():
-
-    compose = transforms.Compose(
-        [
-            transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-        ]
-    )
-    out_dir = './dataset'
-    return datasets.CIFAR10(
-        root=out_dir, train=True, transform=compose, download=True
-    )
-
-
-def mnist_data_dcgans(rand_rotation=False, max_degree=90):
     if rand_rotation == True:
         compose = transforms.Compose(
             [
@@ -80,7 +41,7 @@ def mnist_data_dcgans(rand_rotation=False, max_degree=90):
     )
 
 
-def cifar10_data_dcgans():
+def cifar10_data():
     compose = transforms.Compose(
         [
             transforms.Resize(64),

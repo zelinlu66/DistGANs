@@ -28,8 +28,8 @@ from utils import *
 class GANs_CNN_model(GANs_abstract_object.GANs_model):
     model_name = 'CNN'
 
-    def __init__(self, data, n_classes):
-        super(GANs_CNN_model, self).__init__(data, n_classes)
+    def __init__(self, data, n_classes, model_name):
+        super(GANs_CNN_model, self).__init__(data, n_classes, model_name)
 
     def build_discriminator(self):
         D = DiscriminatorCNN(self.data_dimension[0], self.data_dimension[1])
@@ -87,14 +87,20 @@ class GANs_CNN_model(GANs_abstract_object.GANs_model):
         self.verbose = verbose
         self.save_path = save_path
         self.optimizer_initialize(
-            loss, lr_x, lr_y, optimizer_name, self.n_classes, label_smoothing
+            loss,
+            lr_x,
+            lr_y,
+            optimizer_name,
+            self.n_classes,
+            self.model_name,
+            label_smoothing,
         )
         start = time.time()
         for e in range(num_epochs):
             self.print_verbose(
                 "######################################################"
             )
-            for n_batch, (real_batch, _) in enumerate(self.data_loader):
+            for n_batch, (real_batch, labels) in enumerate(self.data_loader):
                 self.test_noise = noise(
                     self.num_test_samples, self.noise_dimension
                 )
@@ -103,7 +109,7 @@ class GANs_CNN_model(GANs_abstract_object.GANs_model):
                 self.optimizer.zero_grad()
                 if optimizer_name == 'GaussSeidel' or optimizer_name == 'Adam':
                     error_real, error_fake, g_error = self.optimizer.step(
-                        real_data, N
+                        real_data, labels, N
                     )
                     self.D = self.optimizer.D
                     self.G = self.optimizer.G
@@ -124,7 +130,7 @@ class GANs_CNN_model(GANs_abstract_object.GANs_model):
                             )
                             index += p.numel()
                         if index != p_x.numel():
-                            raise RuntimeError('CG size mismatch')
+                            raise RuntimeError('size mismatch')
                         index = 0
                         for p in self.D.parameters():
                             p.data.add_(
@@ -132,7 +138,7 @@ class GANs_CNN_model(GANs_abstract_object.GANs_model):
                             )
                             index += p.numel()
                         if index != p_y.numel():
-                            raise RuntimeError('CG size mismatch')
+                            raise RuntimeError('size mismatch')
 
                 self.D_error_real_history.append(error_real)
                 self.D_error_fake_history.append(error_fake)
