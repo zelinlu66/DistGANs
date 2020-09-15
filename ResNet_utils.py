@@ -18,7 +18,7 @@ class Initializer(object):
         self.equalized_lr = equalized_lr
 
     @torch.no_grad()
-    def get_init_bound_layer(self, tensor, distribution_type, stride=1):
+    def get_init_bound_layer(self, tensor,        distribution_type, stride=1):
         distribution_type = distribution_type.casefold()
         if distribution_type not in ('uniform', 'normal',):
             raise ValueError(

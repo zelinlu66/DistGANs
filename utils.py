@@ -32,7 +32,7 @@ def ones_target(size):
     '''
     Tensor containing ones, with shape = size
     '''
-    data = Variable(torch.ones(size, 1))
+    data = Variable(torch.ones(size,         1))
     return data
 
 
