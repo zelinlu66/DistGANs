@@ -126,7 +126,7 @@ if __name__ == '__main__':
         data = mnist_data(rand_rotation=False, max_degree=90)
         n_classes = 10
     elif config['dataset'] == 'CIFAR10':
-        data = mnist_data(rand_rotation=False, max_degree=90)
+        data = cifar10_data()
         n_classes = 10
     elif config['dataset'] == 'CIFAR100':
         data = cifar100_data()
