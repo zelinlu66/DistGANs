@@ -97,7 +97,7 @@ class CGANs_MLP_model(GANs_abstract_object.GANs_model):
                 self.optimizer.D = self.D
                 self.optimizer.zero_grad()
 
-                if optimizer_name == 'Adam' or optimizer_name == 'Jacobi':
+                if optimizer_name == 'Adam':
                     error_real, error_fake, g_error = self.optimizer.step(
                         real_data, labels, N
                     )

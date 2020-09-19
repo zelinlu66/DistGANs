@@ -60,10 +60,6 @@ class GANs_CNN_model(GANs_abstract_object.GANs_model):
         single_number=None,
         repeat_iterations=1,
     ):
-        self.data_loader = torch.utils.data.DataLoader(
-            self.data, batch_size=100, shuffle=True
-        )
-
         if single_number is not None or self.mpi_comm_size > 1:
             self.num_test_samples = 5
 

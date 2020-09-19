@@ -85,6 +85,14 @@ def noise(size, noise_size):
     return n
 
 
+def noise2(N, c, w, h):
+    '''
+    Used for ResNet
+    '''
+    noise = torch.randn([N, c, w, h])
+    return noise
+
+
 def images_to_vectors(images):
     image_dim = images.size(1) * images.size(2) * images.size(3)
     return images.view(images.size(0), image_dim)
@@ -253,7 +261,6 @@ class Richardson(object):
             print(*args, **kwargs)
 
     def solve(self, initial_guess):
-        ## TODO: consider passing initial guess to solve()
 
         residual = self.rhs - self.matrix @ initial_guess
         residual_norm = residual.norm()
@@ -265,7 +272,6 @@ class Richardson(object):
             relative_residual_norm > self.tol
             and self.iteration_count < self.maxiter
         ):
-            ## TODO: consider making all of these non-attributes and just return them
             solution = solution + self.relaxation * residual
 
             residual = self.rhs - torch.matmul(self.matrix, solution)

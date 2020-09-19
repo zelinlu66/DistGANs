@@ -14,7 +14,7 @@ CGD: Ours implementation of CGD
 Jacobi: Ours implementation of CGD with Jacobi method
 JacobiMultiCost: Ours implementation of Jacobi with 2 different cost functions
 GaussSeidel: GaussSeidel variation of the algorithm
-Newton: Same algorithm but with pure essian term not set to identity
+Newton: Same algorithm but with pure Hessian term not set to identity
 '''
 
 import time
@@ -28,6 +28,7 @@ from optimizers import *
 from utils import *
 from abc import ABCMeta, abstractmethod
 import math
+from models import *
 
 
 class Optimizer(object, metaclass=ABCMeta):
@@ -37,14 +38,9 @@ class Optimizer(object, metaclass=ABCMeta):
         self.D = D
         self.G = G
         self.model_name = model_name
-        if self.model_name == 'ResNet':
-            self.target_1 = ones_target_resnet
-            self.target_0 = zeros_target_resnet
-            self.noise_dim = 128
-        else:
-            self.target_1 = ones_target
-            self.target_0 = zeros_target
-            self.noise_dim = 100
+        self.target_1 = ones_target
+        self.target_0 = zeros_target
+        self.noise_dim = 100
         if self.model_name == 'CNN-CGANs' or self.model_name == 'C-GANs':
             self.conditional = True
         else:
@@ -717,7 +713,12 @@ class Adam(Optimizer):
             # Generator step
             self.optimizer_G.zero_grad()
             # Second argument of noise is the noise_dimension parameter of build_generator
-            fake_data = self.G(noise(N, self.noise_dim).to(self.G.device))
+            if self.model_name == 'ResNet':
+                fake_data = self.G(
+                    noise2(N, self.noise_dim, 1, 1).to(self.G.device)
+                )
+            else:
+                fake_data = self.G(noise(N, self.noise_dim).to(self.G.device))
             d_pred_fake = self.D(fake_data.to(self.D.device))
             g_error = self.criterion(
                 d_pred_fake.to(self.G.device),
