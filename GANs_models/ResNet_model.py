@@ -80,8 +80,7 @@ class ResNet_model(GANs_abstract_object.GANs_model):
                 real_data = Variable((real_batch))
                 N = real_batch.size(0)
                 if optimizer_name == 'GaussSeidel' or optimizer_name == 'Adam':
-                    N = 2
-                    real_data = torch.randn(2, 3, 224, 224)
+
                     error_real, error_fake, g_error = self.optimizer.step(
                         real_data, _, N
                     )
