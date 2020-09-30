@@ -130,7 +130,7 @@ class GANs_model(metaclass=ABCMeta):
                 self.G, self.D, loss, model_name, lr_x, lr_y, label_smoothing
             )
         elif optimizer_name == "CGD":
-            self.optimizer = CGD(self.G, self.D, loss, model_name, lr_x)
+            self.optimizer = CGD_shafer(self.G, self.D, loss, model_name, lr_x)
         elif optimizer_name == "Newton":
             self.optimizer = Newton(
                 self.G, self.D, loss, model_name, lr_x, lr_y

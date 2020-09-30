@@ -24,7 +24,6 @@ from torch import Tensor
 from torch import autograd
 from torch.autograd import Variable
 from torch.autograd import grad
-from optimizers import *
 from utils import *
 from abc import ABCMeta, abstractmethod
 import math
