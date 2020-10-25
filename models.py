@@ -13,9 +13,13 @@ Created on Tue Mar 17 11:26:08 2020
 """
 import torch
 import numpy
+from ResNet_utils import Lambda, NormalizeLayer, Conv2dEx, LinearEx, ResBlock2d
 from torch import nn
+from abc import ABC, abstractmethod
 
-F = torch.nn.functional
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# ++++++++++++++++++++++++++++++++++++++  Models for MLP GANs both variants work  ++++++++++++++++++++++++++++++++++++#
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 
 class Discriminator_MLP(nn.Module):
@@ -41,6 +45,28 @@ class Generator_MLP(torch.nn.Module):
     def __init__(self, noise_dimension, n_out):
         super(Generator_MLP, self).__init__()
         self.hidden0 = nn.Sequential(
+            nn.Linear(noise_dimension, 1000), nn.ReLU()
+        )  #  ORIGINAL:   nn.LeakyReLU(0.2))
+        self.hidden1 = nn.Sequential(nn.Linear(1000, 1000), nn.ReLU())
+        self.hidden2 = nn.Sequential(nn.Linear(1000, 1000), nn.ReLU())
+        self.out = nn.Sequential(nn.Linear(1000, n_out), nn.Tanh())
+
+    def forward(self, input):
+        x = self.hidden0(input)
+        y = self.hidden1(x)
+        w = self.hidden2(y)
+        z = self.out(w)
+        return z
+
+    def to(self, device):
+        super(Generator_MLP, self).to(device)
+        self.device = device
+
+
+class Generator_MLP_other(torch.nn.Module):
+    def __init__(self, noise_dimension, n_out):
+        super(Generator_MLP_other, self).__init__()
+        self.hidden0 = nn.Sequential(
             nn.Linear(noise_dimension, 256), nn.LeakyReLU(0.2)
         )
         self.hidden1 = nn.Sequential(nn.Linear(256, 512), nn.LeakyReLU(0.2))
@@ -56,8 +82,44 @@ class Generator_MLP(torch.nn.Module):
         return x
 
     def to(self, device):
-        super(Generator_MLP, self).to(device)
+        super(Generator_MLP_other, self).to(device)
         self.device = device
+
+
+class Discriminator_MLP_other(torch.nn.Module):
+    def __init__(self, n_features):
+        super(Discriminator_MLP_other, self).__init__()
+        n_out = 1
+
+        self.hidden0 = nn.Sequential(
+            nn.Linear(n_features, 1024), nn.LeakyReLU(0.2), nn.Dropout(0.3)
+        )
+        self.hidden1 = nn.Sequential(
+            nn.Linear(1024, 512), nn.LeakyReLU(0.2), nn.Dropout(0.3)
+        )
+        self.hidden2 = nn.Sequential(
+            nn.Linear(512, 256), nn.LeakyReLU(0.2), nn.Dropout(0.3)
+        )
+        self.out = nn.Sequential(
+            torch.nn.Linear(256, n_out),
+            torch.nn.Sigmoid(),  # Comment this if using BCEWithLogitLoss
+        )
+
+    def forward(self, x):
+        x = self.hidden0(x)
+        x = self.hidden1(x)
+        x = self.hidden2(x)
+        x = self.out(x)
+        return x
+
+    def to(self, device):
+        super(Discriminator_MLP_other, self).to(device)
+        self.device = device
+
+
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# ++++++++++++++++++++++++  Models for DCGANs and Upsample class (nn.Upsample deprecated) ++++++++++++++++++++++++++++#
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 
 class Upsample(nn.Module):
@@ -85,11 +147,11 @@ class GeneratorCNN(nn.Module):
             Upsample(scale_factor=2),
             nn.Conv2d(128, 128, 3, stride=1, padding=1),
             nn.BatchNorm2d(128, 0.8),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.LeakyReLU(0.2, inplace=False),
             Upsample(scale_factor=2),  # nn.Upsample
             nn.Conv2d(128, 64, 3, stride=1, padding=1),
             nn.BatchNorm2d(64, 0.8),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.LeakyReLU(0.2, inplace=False),
             nn.Conv2d(64, n_channels, 3, stride=1, padding=1),
             nn.Tanh(),
         )
@@ -112,7 +174,7 @@ class DiscriminatorCNN(nn.Module):
         def discriminator_block(in_filters, out_filters, bn=True):
             block = [
                 nn.Conv2d(in_filters, out_filters, 3, 2, 1),
-                nn.LeakyReLU(0.2, inplace=True),
+                nn.LeakyReLU(0.2, inplace=False),
                 nn.Dropout2d(0.25),
             ]
             if bn:
@@ -145,9 +207,9 @@ class DiscriminatorCNN(nn.Module):
         self.device = device
 
 
-##########################
-
-
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# +++++++++++++++++++++++++++++++++++++++++++++  Models for MLP CGANs ++++++++++++++++++++++++++++++++++++++++++++++++#
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 class ConditionalGenerator_MLP(nn.Module):
     def __init__(self, img_shape, n_classes, latent_dim=100):
         super(ConditionalGenerator_MLP, self).__init__()
@@ -159,7 +221,7 @@ class ConditionalGenerator_MLP(nn.Module):
             layers = [nn.Linear(in_feat, out_feat)]
             if normalize:
                 layers.append(nn.BatchNorm1d(out_feat, 0.8))
-            layers.append(nn.LeakyReLU(0.2, inplace=True))
+            layers.append(nn.LeakyReLU(0.2, inplace=False))
             return layers
 
         self.model = nn.Sequential(
@@ -191,13 +253,13 @@ class ConditionalDiscriminator_MLP(nn.Module):
 
         self.model = nn.Sequential(
             nn.Linear(n_classes + int(numpy.prod(img_shape)), 512),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.LeakyReLU(0.2, inplace=False),
             nn.Linear(512, 512),
             nn.Dropout(0.4),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.LeakyReLU(0.2, inplace=False),
             nn.Linear(512, 512),
             nn.Dropout(0.4),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.LeakyReLU(0.2, inplace=False),
             nn.Linear(512, 1),
         )
 
@@ -214,34 +276,48 @@ class ConditionalDiscriminator_MLP(nn.Module):
         self.device = device
 
 
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# +++++++++++++++++++++++++++++++++++++++++++++  Models for CNN CGANs ++++++++++++++++++++++++++++++++++++++++++++++++#
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+
+
 class ConditionalGenerator_CNN(nn.Module):
     def __init__(self, img_shape, n_classes, latent_dim=100):
         super(ConditionalGenerator_CNN, self).__init__()
+
         self.label_emb = nn.Embedding(n_classes, n_classes)
         self.img_shape = img_shape
-        self.init_size = self.img_shape[1] // 4
-        self.l1 = nn.Sequential(
-            nn.Linear(latent_dim + n_classes, 128 * self.init_size ** 2)
+        self.n_classes = n_classes
+
+        def block(in_feat, out_feat, normalize=True):
+            layers = [nn.Linear(in_feat, out_feat)]
+            if normalize:
+                layers.append(nn.BatchNorm1d(out_feat))
+            layers.append(nn.LeakyReLU(0.2, inplace=False))
+            return layers
+
+        self.first = nn.Sequential(
+            *block(latent_dim + self.n_classes, 128 * 8 * 8, normalize=False)
         )
 
         self.conv_blocks = nn.Sequential(
             nn.BatchNorm2d(128),
             Upsample(scale_factor=2),
             nn.Conv2d(128, 128, 3, stride=1, padding=1),
-            nn.BatchNorm2d(128, 0.8),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(0.2, inplace=False),
             Upsample(scale_factor=2),  # nn.Upsample
             nn.Conv2d(128, 64, 3, stride=1, padding=1),
             nn.BatchNorm2d(64, 0.8),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.LeakyReLU(0.2, inplace=False),
             nn.Conv2d(64, self.img_shape[0], 3, stride=1, padding=1),
             nn.Tanh(),
         )
 
-    def forward(self, z, labels):
-        gen_input = torch.cat((self.label_emb(labels), z), -1)
-        out = self.l1(gen_input)
-        out = out.view(out.shape[0], 128, self.init_size, self.init_size)
+    def forward(self, noise, labels):
+        gen_input = torch.cat((self.label_emb(labels), noise), -1)
+        out = self.first(gen_input)
+        out = out.view(out.shape[0], 128, 8, 8)
         img = self.conv_blocks(out)
         return img
 
@@ -253,230 +329,286 @@ class ConditionalGenerator_CNN(nn.Module):
 class ConditionalDiscriminator_CNN(nn.Module):
     def __init__(self, img_shape, n_classes):
         super(ConditionalDiscriminator_CNN, self).__init__()
+
         self.label_embedding = nn.Embedding(n_classes, n_classes)
         self.img_shape = img_shape
-        self.main = nn.Sequential(
-            # input is (nc) x 64 x 64
-            nn.Conv2d(img_shape[0], 128, 4, 2, 1, bias=False),
-            nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf) x 32 x 32
-            nn.Conv2d(128, 128 * 2, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(128 * 2),
-            nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf*2) x 16 x 16
-            nn.Conv2d(128 * 2, 128 * 4, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(128 * 4),
-            nn.LeakyReLU(0.2, inplace=True),
+
+        def discriminator_block(in_filters, out_filters, bn=True):
+            block = [
+                nn.Conv2d(in_filters, out_filters, 3, 2, 1),
+                nn.LeakyReLU(0.2, inplace=False),
+                nn.Dropout2d(0.25),
+            ]
+            if bn:
+                block.append(nn.BatchNorm2d(out_filters, 0.8))
+            return block
+
+        self.encoder = nn.Sequential(
+            nn.Linear(n_classes, img_shape[0] * img_shape[1] * img_shape[2]),
+            nn.LeakyReLU(0.2),
         )
-        # state size. (ndf*4) x 8 x 8
-        # nn.Conv2d(128 * 4, 128 * 8, 4, 2, 1, bias=False),
-        # nn.BatchNorm2d(128 * 8),
-        # nn.LeakyReLU(0.2, inplace=True),
-        # state size. (ndf*8) x 4 x 4
-        # nn.Conv2d(128 * 8, 1, 4, 1, 0, bias=False),
-        # nn.Sigmoid()
-        self.second = nn.Sequential(
-            nn.Linear(n_classes, 1000), nn.LeakyReLU(0.2, inplace=True)
+        self.adv_layer = nn.Sequential(
+            # nn.Linear(128 * ds_size ** 2, 1), nn.Sigmoid()
+            nn.Linear(128 * 2 ** 2, 1)
         )
-        self.third = nn.Sequential(
-            nn.Linear(1000 + 128 * 4 * 8 * 8, 1000),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(1000, 1),
-            nn.Sigmoid(),
+        self.model = nn.Sequential(
+            *discriminator_block(self.img_shape[0], 16, bn=False),
+            *discriminator_block(16, 32),
+            *discriminator_block(32, 64),
+            *discriminator_block(64, 128),
         )
 
     def forward(self, img, labels):
-        x = self.main(img)
-        y = self.second(self.label_embedding(labels))
-        x = x.view(img.size(0), 128 * 4 * 8 * 8)  # 128*np.prod(self.img_shape)
-        x = torch.cat([x, y], 1)
-        out = self.third(x)
+        encoded_labels = self.encoder(self.label_embedding(labels))
+        encoded_labels = encoded_labels.view(
+            -1, self.img_shape[0], self.img_shape[1], self.img_shape[2]
+        )
+        img_and_labels = torch.cat((img, encoded_labels), 0)
+        out = self.model(img_and_labels)
+        N = out.shape[0] // 2
+        out = out[:N, :, :, :]
+        out = out.view(out.shape[0], -1)
+        validity = self.adv_layer(out)
 
-        return out
+        return validity
 
     def to(self, device):
         super(ConditionalDiscriminator_CNN, self).to(device)
         self.device = device
 
 
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-# Res net models: Discriminator
-class ResidualBlock(nn.Module):
-    expansion = 1
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# ++++++++++++++++++++++++++++++++++++++++++++++++  ResNet models  +++++++++++++++++++++++++++++++++++++++++++++++++++#
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-    def __init__(self, inchannel, outchannel, stride=1):
-        super(ResidualBlock, self).__init__()
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(
-                inchannel,
-                outchannel,
-                kernel_size=3,
-                stride=stride,
-                padding=1,
-                bias=False,
-            ),
-            nn.BatchNorm2d(outchannel),
+FMAP_G = 64
+FMAP_D = 64
+FMAP_G_INIT_64_FCTR = 4
+RES_FEATURE_SPACE = 4
+FMAP_SAMPLES = 3
+RES_INIT = 4
+
+
+class GAN(nn.Module, ABC):
+    """Base GANs architechture for ResNet """
+
+    def __init__(self, res):
+        super(GAN, self).__init__()
+        self._res = res
+
+    def most_parameters(self, recurse=True, excluded_params: list = []):
+        """torch.nn.Module.parameters() generator method but with the option to exclude specified parameters."""
+        for name, params in self.named_parameters(recurse=recurse):
+            if name not in excluded_params:
+                yield params
+
+    @property
+    def res(self):
+        return self._res
+
+    @res.setter
+    def res(self, new_res):
+        message = f'GAN().res cannot be changed, as {self.__class__.__name__} only permits one resolution: {self._res}.'
+        raise AttributeError(message)
+
+    @abstractmethod
+    def forward(self, x):
+        raise NotImplementedError(
+            'Can only call `forward` on valid subclasses.'
         )
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(
-                outchannel,
-                outchannel,
-                kernel_size=3,
+
+
+class GeneratorResnet(GAN):
+    def __init__(
+        self,
+        len_latent=128,
+        fmap=FMAP_G,
+        upsampler=nn.Upsample(scale_factor=2, mode='nearest'),
+        blur_type=None,
+        nl=nn.ReLU(),
+        num_classes=0,
+        equalized_lr=False,
+        FMAP_SAMPLES=3,
+    ):
+        super(GeneratorResnet, self).__init__(64)
+
+        self.len_latent = len_latent
+        self.num_classes = num_classes
+
+        self.equalized_lr = equalized_lr
+
+        _fmap_init_64 = len_latent * FMAP_G_INIT_64_FCTR
+        self.generator_model = nn.Sequential(
+            Lambda(lambda x: x.view(-1, len_latent + num_classes)),
+            LinearEx(
+                nin_feat=len_latent + num_classes,
+                nout_feat=_fmap_init_64 * RES_INIT ** 2,
+                init='Xavier',
+                equalized_lr=equalized_lr,
+            ),
+            Lambda(lambda x: x.view(-1, _fmap_init_64, RES_INIT, RES_INIT)),
+            ResBlock2d(
+                ni=_fmap_init_64,
+                nf=8 * fmap,
+                ks=3,
+                norm_type='BatchNorm',
+                upsampler=upsampler,
+                init='He',
+                nl=nl,
+                equalized_lr=equalized_lr,
+                blur_type=blur_type,
+            ),
+            ResBlock2d(
+                ni=8 * fmap,
+                nf=4 * fmap,
+                ks=3,
+                norm_type='BatchNorm',
+                upsampler=upsampler,
+                init='He',
+                nl=nl,
+                equalized_lr=equalized_lr,
+                blur_type=blur_type,
+            ),
+            ResBlock2d(
+                ni=4 * fmap,
+                nf=2 * fmap,
+                ks=3,
+                norm_type='BatchNorm',
+                upsampler=upsampler,
+                init='He',
+                nl=nl,
+                equalized_lr=equalized_lr,
+                blur_type=blur_type,
+            ),
+            ResBlock2d(
+                ni=2 * fmap,
+                nf=1 * fmap,
+                ks=3,
+                norm_type='BatchNorm',
+                upsampler=upsampler,
+                init='He',
+                nl=nl,
+                equalized_lr=equalized_lr,
+                blur_type=blur_type,
+            ),
+            NormalizeLayer('BatchNorm', ni=1 * fmap),
+            nl,
+            Conv2dEx(
+                ni=1 * fmap,
+                nf=FMAP_SAMPLES,
+                ks=3,
                 stride=1,
                 padding=1,
-                bias=False,
+                init='He',
+                equalized_lr=equalized_lr,
             ),
-            nn.BatchNorm2d(outchannel),
+            nn.Tanh(),
         )
-        self.skip = nn.Sequential()
-        if stride != 1 or inchannel != self.expansion * outchannel:
-            self.skip = nn.Sequential(
-                nn.Conv2d(
-                    inchannel,
-                    self.expansion * outchannel,
-                    kernel_size=1,
-                    stride=stride,
-                    bias=False,
-                ),
-                nn.BatchNorm2d(self.expansion * outchannel),
-            )
-
-    def forward(self, X):
-        out = F.relu(self.conv1(X))
-        out = self.conv2(out)
-        out += self.skip(X)
-        out = F.relu(out)
-        return out
-
-
-class ResNetD(nn.Module):
-    def __init__(self, ResidualBlock, num_classes):
-        super(ResNetD, self).__init__()
-        self.inchannel = 64
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(64),
-        )
-        self.layer1 = self.make_layer(ResidualBlock, 64, 2, stride=1)
-        self.layer2 = self.make_layer(ResidualBlock, 128, 2, stride=2)
-        self.layer3 = self.make_layer(ResidualBlock, 256, 2, stride=2)
-        self.layer4 = self.make_layer(ResidualBlock, 512, 2, stride=2)
-        self.fc = nn.Linear(512 * ResidualBlock.expansion, num_classes)
-
-    def make_layer(self, block, channels, num_blocks, stride):
-        strides = [stride] + [1] * (num_blocks - 1)
-        layers = []
-        for stride in strides:
-            layers.append(block(self.inchannel, channels, stride))
-            self.inchannel = channels * block.expansion
-        return nn.Sequential(*layers)
 
     def forward(self, x):
-        out = F.relu(self.conv1(x))
-        out = self.layer1(out)
-        out = self.layer2(out)
-        out = self.layer3(out)
-        out = self.layer4(out)
-        out = F.avg_pool2d(out, out.size()[3])
-        out = torch.flatten(out, 1)
-        out = self.fc(out)
-        return out
+        return self.generator_model(x)
 
     def to(self, device):
-        super(ResNetD, self).to(device)
+        super(GeneratorResnet, self).to(device)
         self.device = device
 
 
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-# ResNet model: Generator
-
-
-class ResidualBlock_(nn.Module):
-    def __init__(self, ch):
-        super().__init__()
-        self.conv1 = self.conv_bn_relu(ch)
-        self.conv2 = self.conv_bn_relu(ch)
-
-    def conv_bn_relu(self, ch):
-        return nn.Sequential(
-            nn.Conv2d(ch, ch, kernel_size=3, padding=1),
-            nn.BatchNorm2d(ch),
-            nn.ReLU(True),
-        )
-
-    def forward(self, inputs):
-        x = self.conv2(self.conv1(inputs))
-        return inputs + x
-
-
-class ResNetG(nn.Module):
-    def __init__(self, upsampling_type):
-        assert upsampling_type in [
-            "nearest_neighbor",
-            "transpose_conv",
-            "pixel_shuffler",
-        ]
-        self.upsampling_type = upsampling_type
-        super().__init__()
-        self.inital = nn.Sequential(
-            nn.Conv2d(100, 768, 1), nn.BatchNorm2d(768), nn.ReLU(True)
-        )
-        self.conv1 = self.generator_block(768, 512, 7, 2)
-        self.conv2 = self.generator_block(512, 256, 2, 2)
-        self.conv3 = self.generator_block(256, 128, 2, 2)
-        self.conv4 = self.generator_block(128, 64, 2, 2)
-        self.conv5 = self.generator_block(64, 32, 2, 2)
-        self.conv6 = self.generator_block(32, 16, 2, 1)
-        self.out = nn.Sequential(
-            nn.Conv2d(16, 3, kernel_size=3, padding=1), nn.Tanh()
-        )
-
-    def generator_block(
-        self, in_ch, out_ch, upsampling_factor, n_residual_block
+class DiscriminatorResnet(GAN):
+    def __init__(
+        self,
+        fmap=FMAP_D,
+        pooler=nn.AvgPool2d(kernel_size=2, stride=2),
+        blur_type=None,
+        nl=nn.ReLU(),
+        num_classes=0,
+        equalized_lr=False,
+        FMAP_SAMPLES=3,
     ):
-        layers = []
-        if self.upsampling_type == "transpose_conv":
-            layers.append(
-                nn.ConvTranspose2d(
-                    in_ch,
-                    out_ch,
-                    kernel_size=upsampling_factor,
-                    stride=upsampling_factor,
-                )
-            )
-            layers.append(nn.BatchNorm2d(out_ch))
-            layers.append(nn.ReLU(True))
-        elif self.upsampling_type == "nearest_neighbor":
-            layers.append(
-                nn.UpsamplingNearest2d(scale_factor=upsampling_factor)
-            )
-            layers.append(nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1))
-            layers.append(nn.BatchNorm2d(out_ch))
-            layers.append(nn.ReLU(True))
-        elif self.upsampling_type == "pixel_shuffler":
-            layers.append(
-                nn.Conv2d(
-                    in_ch, out_ch * upsampling_factor ** 2, kernel_size=1
-                )
-            )
-            layers.append(nn.BatchNorm2d(out_ch * upsampling_factor ** 2))
-            layers.append(nn.ReLU(True))
-            layers.append(nn.PixelShuffle(upscale_factor=upsampling_factor))
+        super(DiscriminatorResnet, self).__init__(64)
 
-        for i in range(n_residual_block):
-            layers.append(ResidualBlock_(out_ch))
-        return nn.Sequential(*layers)
+        self.num_classes = num_classes
+        self.equalized_lr = equalized_lr
 
-    def forward(self, inputs):
-        x = self.conv6(
-            self.conv5(
-                self.conv4(
-                    self.conv3(self.conv2(self.conv1(self.inital(inputs))))
-                )
+        self.view1 = Lambda(
+            lambda x: x.view(
+                -1, FMAP_SAMPLES + num_classes, self.res, self.res
             )
         )
-        return self.out(x)
+        self.conv1 = Conv2dEx(
+            ni=FMAP_SAMPLES + num_classes,
+            nf=1 * fmap,
+            ks=3,
+            stride=1,
+            padding=1,
+            init='Xavier',
+            equalized_lr=equalized_lr,
+        )
+        self.resblocks = nn.Sequential(
+            ResBlock2d(
+                ni=1 * fmap,
+                nf=2 * fmap,
+                ks=3,
+                norm_type='LayerNorm',
+                pooler=pooler,
+                init='He',
+                nl=nl,
+                res=self.res // 1,
+                equalized_lr=equalized_lr,
+                blur_type=blur_type,
+            ),
+            ResBlock2d(
+                ni=2 * fmap,
+                nf=4 * fmap,
+                ks=3,
+                norm_type='LayerNorm',
+                pooler=pooler,
+                init='He',
+                nl=nl,
+                res=self.res // 2,
+                equalized_lr=equalized_lr,
+                blur_type=blur_type,
+            ),
+            ResBlock2d(
+                ni=4 * fmap,
+                nf=8 * fmap,
+                ks=3,
+                norm_type='LayerNorm',
+                pooler=pooler,
+                init='He',
+                nl=nl,
+                res=self.res // 4,
+                equalized_lr=equalized_lr,
+                blur_type=blur_type,
+            ),
+            ResBlock2d(
+                ni=8 * fmap,
+                nf=8 * fmap,
+                ks=3,
+                norm_type='LayerNorm',
+                pooler=pooler,
+                init='He',
+                nl=nl,
+                res=self.res // 8,
+                equalized_lr=equalized_lr,
+                blur_type=blur_type,
+            ),
+            Lambda(
+                lambda x: x.view(-1, RES_FEATURE_SPACE ** 2 * 8 * fmap)
+            )  # final feature space
+            # NormalizeLayer( 'LayerNorm', ni = fmap, res = 1 )
+        )
+        self.linear1 = LinearEx(
+            nin_feat=RES_FEATURE_SPACE ** 2 * 8 * fmap,
+            nout_feat=1,
+            init='Xavier',
+            equalized_lr=equalized_lr,
+        )
+
+    def forward(self, x):
+        return (self.linear1(self.resblocks(self.conv1(self.view1(x))))).view(
+            -1
+        )
 
     def to(self, device):
-        super(ResNetG, self).to(device)
+        super(DiscriminatorResnet, self).to(device)
         self.device = device

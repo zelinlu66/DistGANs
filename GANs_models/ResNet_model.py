@@ -8,13 +8,31 @@ import torch
 class ResNet_model(GANs_abstract_object.GANs_model):
     model_name = 'ResNet'
 
-    def build_discriminator(self):
-        D = ResNetD(ResidualBlock, 1)
+    def build_discriminator(self, FMAP_D=64):
+
+        D = DiscriminatorResnet(
+            fmap=self.data_dimension[1],
+            pooler=nn.AvgPool2d(kernel_size=2, stride=2),
+            blur_type=None,
+            nl=nn.ReLU(),
+            num_classes=0,
+            equalized_lr=False,
+            FMAP_SAMPLES=self.data_dimension[0],
+        )
         return D
 
-    def build_generator(self):
-        self.noise_dimension = 100
-        G = ResNetG("transpose_conv")
+    def build_generator(self, noise_dimension=128, FMAP_G=64):
+        self.noise_dimension = noise_dimension
+        G = GeneratorResnet(
+            len_latent=noise_dimension,
+            fmap=self.data_dimension[1],
+            upsampler=nn.Upsample(scale_factor=2, mode='nearest'),
+            blur_type=None,
+            nl=nn.ReLU(),
+            num_classes=0,
+            equalized_lr=False,
+            FMAP_SAMPLES=self.data_dimension[0],
+        )
         return G
 
     # loss = torch.nn.BCEWithLogitsLoss()
@@ -73,16 +91,15 @@ class ResNet_model(GANs_abstract_object.GANs_model):
             self.print_verbose(
                 "######################################################"
             )
-            for n_batch, (real_batch, _) in enumerate(self.data_loader):
-                self.test_noise = noise2(
-                    self.num_test_samples, self.noise_dimension, 1, 1
+            for n_batch, (real_batch, labels) in enumerate(self.data_loader):
+                self.test_noise = noise(
+                    self.num_test_samples, self.noise_dimension
                 )
                 real_data = Variable((real_batch))
                 N = real_batch.size(0)
                 if optimizer_name == 'GaussSeidel' or optimizer_name == 'Adam':
-
                     error_real, error_fake, g_error = self.optimizer.step(
-                        real_data, _, N
+                        real_data, labels, N
                     )
                     self.D = self.optimizer.D
                     self.G = self.optimizer.G

@@ -44,7 +44,7 @@ def mnist_data(rand_rotation=False, max_degree=90):
 def cifar10_data():
     compose = transforms.Compose(
         [
-            transforms.Resize(64),
+            transforms.Resize(32),
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ]
@@ -58,7 +58,7 @@ def cifar10_data():
 def cifar100_data():
     compose = transforms.Compose(
         [
-            transforms.Resize(64),
+            transforms.Resize(32),
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ]
@@ -67,15 +67,3 @@ def cifar100_data():
     return datasets.CIFAR100(
         root=out_dir, train=True, transform=compose, download=True
     )
-
-
-PREPROCESS = transforms.Compose(
-    [
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        transforms.Normalize(
-            mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-        ),
-    ]
-)
