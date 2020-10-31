@@ -17,6 +17,10 @@ from ResNet_utils import Lambda, NormalizeLayer, Conv2dEx, LinearEx, ResBlock2d
 from torch import nn
 from abc import ABC, abstractmethod
 
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# ++++++++++++++++++++++++++++++++++++++  Models for MLP GANs both variants work  ++++++++++++++++++++++++++++++++++++#
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+
 
 class Discriminator_MLP(nn.Module):
     def __init__(self, n_features):
@@ -59,6 +63,65 @@ class Generator_MLP(torch.nn.Module):
         self.device = device
 
 
+class Generator_MLP_other(torch.nn.Module):
+    def __init__(self, noise_dimension, n_out):
+        super(Generator_MLP_other, self).__init__()
+        self.hidden0 = nn.Sequential(
+            nn.Linear(noise_dimension, 256), nn.LeakyReLU(0.2)
+        )
+        self.hidden1 = nn.Sequential(nn.Linear(256, 512), nn.LeakyReLU(0.2))
+        self.hidden2 = nn.Sequential(nn.Linear(512, 1024), nn.LeakyReLU(0.2))
+
+        self.out = nn.Sequential(nn.Linear(1024, n_out), nn.Tanh())
+
+    def forward(self, x):
+        x = self.hidden0(x)
+        x = self.hidden1(x)
+        x = self.hidden2(x)
+        x = self.out(x)
+        return x
+
+    def to(self, device):
+        super(Generator_MLP_other, self).to(device)
+        self.device = device
+
+
+class Discriminator_MLP_other(torch.nn.Module):
+    def __init__(self, n_features):
+        super(Discriminator_MLP_other, self).__init__()
+        n_out = 1
+
+        self.hidden0 = nn.Sequential(
+            nn.Linear(n_features, 1024), nn.LeakyReLU(0.2), nn.Dropout(0.3)
+        )
+        self.hidden1 = nn.Sequential(
+            nn.Linear(1024, 512), nn.LeakyReLU(0.2), nn.Dropout(0.3)
+        )
+        self.hidden2 = nn.Sequential(
+            nn.Linear(512, 256), nn.LeakyReLU(0.2), nn.Dropout(0.3)
+        )
+        self.out = nn.Sequential(
+            torch.nn.Linear(256, n_out),
+            torch.nn.Sigmoid(),  # Comment this if using BCEWithLogitLoss
+        )
+
+    def forward(self, x):
+        x = self.hidden0(x)
+        x = self.hidden1(x)
+        x = self.hidden2(x)
+        x = self.out(x)
+        return x
+
+    def to(self, device):
+        super(Discriminator_MLP_other, self).to(device)
+        self.device = device
+
+
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# ++++++++++++++++++++++++  Models for DCGANs and Upsample class (nn.Upsample deprecated) ++++++++++++++++++++++++++++#
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+
+
 class Upsample(nn.Module):
     def __init__(self, scale_factor):
         super(Upsample, self).__init__()
@@ -84,11 +147,11 @@ class GeneratorCNN(nn.Module):
             Upsample(scale_factor=2),
             nn.Conv2d(128, 128, 3, stride=1, padding=1),
             nn.BatchNorm2d(128, 0.8),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.LeakyReLU(0.2, inplace=False),
             Upsample(scale_factor=2),  # nn.Upsample
             nn.Conv2d(128, 64, 3, stride=1, padding=1),
             nn.BatchNorm2d(64, 0.8),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.LeakyReLU(0.2, inplace=False),
             nn.Conv2d(64, n_channels, 3, stride=1, padding=1),
             nn.Tanh(),
         )
@@ -111,7 +174,7 @@ class DiscriminatorCNN(nn.Module):
         def discriminator_block(in_filters, out_filters, bn=True):
             block = [
                 nn.Conv2d(in_filters, out_filters, 3, 2, 1),
-                nn.LeakyReLU(0.2, inplace=True),
+                nn.LeakyReLU(0.2, inplace=False),
                 nn.Dropout2d(0.25),
             ]
             if bn:
@@ -144,9 +207,9 @@ class DiscriminatorCNN(nn.Module):
         self.device = device
 
 
-##########################
-
-
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# +++++++++++++++++++++++++++++++++++++++++++++  Models for MLP CGANs ++++++++++++++++++++++++++++++++++++++++++++++++#
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 class ConditionalGenerator_MLP(nn.Module):
     def __init__(self, img_shape, n_classes, latent_dim=100):
         super(ConditionalGenerator_MLP, self).__init__()
@@ -158,7 +221,7 @@ class ConditionalGenerator_MLP(nn.Module):
             layers = [nn.Linear(in_feat, out_feat)]
             if normalize:
                 layers.append(nn.BatchNorm1d(out_feat, 0.8))
-            layers.append(nn.LeakyReLU(0.2, inplace=True))
+            layers.append(nn.LeakyReLU(0.2, inplace=False))
             return layers
 
         self.model = nn.Sequential(
@@ -190,13 +253,13 @@ class ConditionalDiscriminator_MLP(nn.Module):
 
         self.model = nn.Sequential(
             nn.Linear(n_classes + int(numpy.prod(img_shape)), 512),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.LeakyReLU(0.2, inplace=False),
             nn.Linear(512, 512),
             nn.Dropout(0.4),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.LeakyReLU(0.2, inplace=False),
             nn.Linear(512, 512),
             nn.Dropout(0.4),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.LeakyReLU(0.2, inplace=False),
             nn.Linear(512, 1),
         )
 
@@ -213,34 +276,48 @@ class ConditionalDiscriminator_MLP(nn.Module):
         self.device = device
 
 
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# +++++++++++++++++++++++++++++++++++++++++++++  Models for CNN CGANs ++++++++++++++++++++++++++++++++++++++++++++++++#
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+
+
 class ConditionalGenerator_CNN(nn.Module):
     def __init__(self, img_shape, n_classes, latent_dim=100):
         super(ConditionalGenerator_CNN, self).__init__()
+
         self.label_emb = nn.Embedding(n_classes, n_classes)
         self.img_shape = img_shape
-        self.init_size = self.img_shape[1] // 4
-        self.l1 = nn.Sequential(
-            nn.Linear(latent_dim + n_classes, 128 * self.init_size ** 2)
+        self.n_classes = n_classes
+
+        def block(in_feat, out_feat, normalize=True):
+            layers = [nn.Linear(in_feat, out_feat)]
+            if normalize:
+                layers.append(nn.BatchNorm1d(out_feat))
+            layers.append(nn.LeakyReLU(0.2, inplace=False))
+            return layers
+
+        self.first = nn.Sequential(
+            *block(latent_dim + self.n_classes, 128 * 8 * 8, normalize=False)
         )
 
         self.conv_blocks = nn.Sequential(
             nn.BatchNorm2d(128),
             Upsample(scale_factor=2),
             nn.Conv2d(128, 128, 3, stride=1, padding=1),
-            nn.BatchNorm2d(128, 0.8),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(0.2, inplace=False),
             Upsample(scale_factor=2),  # nn.Upsample
             nn.Conv2d(128, 64, 3, stride=1, padding=1),
             nn.BatchNorm2d(64, 0.8),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.LeakyReLU(0.2, inplace=False),
             nn.Conv2d(64, self.img_shape[0], 3, stride=1, padding=1),
             nn.Tanh(),
         )
 
-    def forward(self, z, labels):
-        gen_input = torch.cat((self.label_emb(labels), z), -1)
-        out = self.l1(gen_input)
-        out = out.view(out.shape[0], 128, self.init_size, self.init_size)
+    def forward(self, noise, labels):
+        gen_input = torch.cat((self.label_emb(labels), noise), -1)
+        out = self.first(gen_input)
+        out = out.view(out.shape[0], 128, 8, 8)
         img = self.conv_blocks(out)
         return img
 
@@ -252,54 +329,57 @@ class ConditionalGenerator_CNN(nn.Module):
 class ConditionalDiscriminator_CNN(nn.Module):
     def __init__(self, img_shape, n_classes):
         super(ConditionalDiscriminator_CNN, self).__init__()
+
         self.label_embedding = nn.Embedding(n_classes, n_classes)
         self.img_shape = img_shape
-        self.main = nn.Sequential(
-            # input is (nc) x 64 x 64
-            nn.Conv2d(img_shape[0], 128, 4, 2, 1, bias=False),
-            nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf) x 32 x 32
-            nn.Conv2d(128, 128 * 2, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(128 * 2),
-            nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf*2) x 16 x 16
-            nn.Conv2d(128 * 2, 128 * 4, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(128 * 4),
-            nn.LeakyReLU(0.2, inplace=True),
+
+        def discriminator_block(in_filters, out_filters, bn=True):
+            block = [
+                nn.Conv2d(in_filters, out_filters, 3, 2, 1),
+                nn.LeakyReLU(0.2, inplace=False),
+                nn.Dropout2d(0.25),
+            ]
+            if bn:
+                block.append(nn.BatchNorm2d(out_filters, 0.8))
+            return block
+
+        self.encoder = nn.Sequential(
+            nn.Linear(n_classes, img_shape[0] * img_shape[1] * img_shape[2]),
+            nn.LeakyReLU(0.2),
         )
-        # state size. (ndf*4) x 8 x 8
-        # nn.Conv2d(128 * 4, 128 * 8, 4, 2, 1, bias=False),
-        # nn.BatchNorm2d(128 * 8),
-        # nn.LeakyReLU(0.2, inplace=True),
-        # state size. (ndf*8) x 4 x 4
-        # nn.Conv2d(128 * 8, 1, 4, 1, 0, bias=False),
-        # nn.Sigmoid()
-        self.second = nn.Sequential(
-            nn.Linear(n_classes, 1000), nn.LeakyReLU(0.2, inplace=True)
+        self.adv_layer = nn.Sequential(
+            # nn.Linear(128 * ds_size ** 2, 1), nn.Sigmoid()
+            nn.Linear(128 * 2 ** 2, 1)
         )
-        self.third = nn.Sequential(
-            nn.Linear(1000 + 128 * 4 * 8 * 8, 1000),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(1000, 1),
-            nn.Sigmoid(),
+        self.model = nn.Sequential(
+            *discriminator_block(self.img_shape[0], 16, bn=False),
+            *discriminator_block(16, 32),
+            *discriminator_block(32, 64),
+            *discriminator_block(64, 128),
         )
 
     def forward(self, img, labels):
-        x = self.main(img)
-        y = self.second(self.label_embedding(labels))
-        x = x.view(img.size(0), 128 * 4 * 8 * 8)  # 128*np.prod(self.img_shape)
-        x = torch.cat([x, y], 1)
-        out = self.third(x)
+        encoded_labels = self.encoder(self.label_embedding(labels))
+        encoded_labels = encoded_labels.view(
+            -1, self.img_shape[0], self.img_shape[1], self.img_shape[2]
+        )
+        img_and_labels = torch.cat((img, encoded_labels), 0)
+        out = self.model(img_and_labels)
+        N = out.shape[0] // 2
+        out = out[:N, :, :, :]
+        out = out.view(out.shape[0], -1)
+        validity = self.adv_layer(out)
 
-        return out
+        return validity
 
     def to(self, device):
         super(ConditionalDiscriminator_CNN, self).to(device)
         self.device = device
 
 
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-# Res net models
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# ++++++++++++++++++++++++++++++++++++++++++++++++  ResNet models  +++++++++++++++++++++++++++++++++++++++++++++++++++#
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 FMAP_G = 64
 FMAP_D = 64

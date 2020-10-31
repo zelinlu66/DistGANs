@@ -20,7 +20,7 @@ def mnist_data(rand_rotation=False, max_degree=90):
     if rand_rotation == True:
         compose = transforms.Compose(
             [
-                transforms.Resize(32),
+                transforms.Resize(28),
                 transforms.RandomRotation(max_degree),
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,), (0.5,)),
@@ -30,7 +30,7 @@ def mnist_data(rand_rotation=False, max_degree=90):
     else:
         compose = transforms.Compose(
             [
-                transforms.Resize(32),
+                transforms.Resize(28),
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,), (0.5,)),
             ]
@@ -44,7 +44,7 @@ def mnist_data(rand_rotation=False, max_degree=90):
 def cifar10_data():
     compose = transforms.Compose(
         [
-            transforms.Resize(64),
+            transforms.Resize(32),
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ]
@@ -58,7 +58,7 @@ def cifar10_data():
 def cifar100_data():
     compose = transforms.Compose(
         [
-            transforms.Resize(64),
+            transforms.Resize(32),
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ]
