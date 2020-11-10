@@ -195,22 +195,35 @@ if __name__ == '__main__':
         stdD_error_fake_history = np.zeros(len(model.D_error_fake_history))
         stdG_error_history = np.zeros(len(model.G_error_history))
 
-        MPI.COMM_WORLD.Allreduce(
-            model.D_error_real_history, averageD_error_real_history, op=MPI.SUM
-        )
-        MPI.COMM_WORLD.Allreduce(
-            model.D_error_fake_history, averageD_error_fake_history, op=MPI.SUM
-        )
-        MPI.COMM_WORLD.Allreduce(
-            model.G_error_history, averageG_error_history, op=MPI.SUM
-        )
-        averageD_error_real_history = (
-            averageD_error_real_history / mpi_comm_size
-        )
-        averageD_error_fake_history = (
-            averageD_error_fake_history / mpi_comm_size
-        )
-        averageG_error_history = averageG_error_history / mpi_comm_size
+        for i in range(0, len(model.D_error_real_history)):
+            pointwise_error_LOC = np.zeros(mpi_comm_size)
+            pointwise_error_LOC[mpi_rank] = model.D_error_real_history[i]
+            pointwise_error_GLOB = np.zeros(mpi_comm_size)
+            MPI.COMM_WORLD.Allreduce(
+                pointwise_error_LOC, pointwise_error_GLOB, op=MPI.SUM
+            )
+            mean_val = np.mean(pointwise_error_GLOB)
+            averageD_error_real_history[i] = mean_val
+
+        for i in range(0, len(model.D_error_fake_history)):
+            pointwise_error_LOC = np.zeros(mpi_comm_size)
+            pointwise_error_LOC[mpi_rank] = model.D_error_fake_history[i]
+            pointwise_error_GLOB = np.zeros(mpi_comm_size)
+            MPI.COMM_WORLD.Allreduce(
+                pointwise_error_LOC, pointwise_error_GLOB, op=MPI.SUM
+            )
+            mean_val = np.mean(pointwise_error_GLOB)
+            averageD_error_fake_history[i] = mean_val
+
+        for i in range(0, len(model.G_error_history)):
+            pointwise_error_LOC = np.zeros(mpi_comm_size)
+            pointwise_error_LOC[mpi_rank] = model.G_error_history[i]
+            pointwise_error_GLOB = np.zeros(mpi_comm_size)
+            MPI.COMM_WORLD.Allreduce(
+                pointwise_error_LOC, pointwise_error_GLOB, op=MPI.SUM
+            )
+            mean_val = np.mean(pointwise_error_GLOB)
+            averageG_error_history[i] = mean_val
 
         for i in range(0, len(model.D_error_real_history)):
             pointwise_error_LOC = np.zeros(mpi_comm_size)
