@@ -106,10 +106,6 @@ class CGANs_MLP_model(GANs_abstract_object.GANs_model):
                 else:
                     raise RuntimeError('optimizer not supported, use Adam')
 
-                self.D_error_real_history.append(error_real)
-                self.D_error_fake_history.append(error_fake)
-                self.G_error_history.append(g_error)
-
                 self.print_verbose('Epoch: ', str(e + 1), '/', str(num_epochs))
                 self.print_verbose('Batch Number: ', str(n_batch + 1))
                 self.print_verbose(
@@ -131,6 +127,9 @@ class CGANs_MLP_model(GANs_abstract_object.GANs_model):
                     )  # data_dimension: dimension of output image ex: [1,28,28]
                     self.save_images(e, n_batch, test_images)
 
+            self.D_error_real_history.append(error_real)
+            self.D_error_fake_history.append(error_fake)
+            self.G_error_history.append(g_error)
             self.print_verbose(
                 "######################################################"
             )

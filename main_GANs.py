@@ -39,6 +39,8 @@ mpi4py.rc.initialize = False
 mpi4py.rc.finalize = False
 from mpi4py import MPI
 
+plt.rcParams.update({'font.size': 14})
+
 from Dataloader import *
 
 list_GANs = {}
@@ -177,7 +179,7 @@ if __name__ == '__main__':
             [x for x in range(0, len(model.G_error_history))],
             model.G_error_history,
         )
-        plt.xlabel('Iterations')
+        plt.xlabel('Epochs')
         plt.ylabel('Loss function value')
         plt.legend(
             [
@@ -296,7 +298,7 @@ if __name__ == '__main__':
                 color='g',
                 alpha=0.2,
             )
-            plt.xlabel('Iterations')
+            plt.xlabel('Epochs')
             plt.ylabel('Loss function value')
             plt.legend(
                 [
