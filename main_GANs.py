@@ -155,10 +155,9 @@ if __name__ == '__main__':
         repeat_iterations=1,
     )  # save_path = ''
 
-
     mpi_comm_size = MPI.COMM_WORLD.Get_size()
     mpi_rank = MPI.COMM_WORLD.Get_rank()
-    
+
     if mpi_rank == 0:
         if config['save']:
             print("Saving the model...")
@@ -187,35 +186,49 @@ if __name__ == '__main__':
                 'Generator: Loss',
             ]
         )
-        plt.savefig('cost_report'+str(mpi_rank)+'.png')
-        
+        plt.savefig('cost_report' + str(mpi_rank) + '.png')
+
         averageD_error_real_history = np.zeros(len(model.D_error_real_history))
         averageD_error_fake_history = np.zeros(len(model.D_error_fake_history))
         averageG_error_history = np.zeros(len(model.G_error_history))
         stdD_error_real_history = np.zeros(len(model.D_error_real_history))
         stdD_error_fake_history = np.zeros(len(model.D_error_fake_history))
-        stdG_error_history = np.zeros(len(model.G_error_history))       
-        
-        MPI.COMM_WORLD.Allreduce(model.D_error_real_history, averageD_error_real_history, op=MPI.SUM)
-        MPI.COMM_WORLD.Allreduce(model.D_error_fake_history, averageD_error_fake_history, op=MPI.SUM)
-        MPI.COMM_WORLD.Allreduce(model.G_error_history, averageG_error_history, op=MPI.SUM)
-        averageD_error_real_history = averageD_error_real_history/mpi_comm_size;
-        averageD_error_fake_history = averageD_error_fake_history/mpi_comm_size;
-        averageG_error_history = averageG_error_history/mpi_comm_size;
-        
+        stdG_error_history = np.zeros(len(model.G_error_history))
+
+        MPI.COMM_WORLD.Allreduce(
+            model.D_error_real_history, averageD_error_real_history, op=MPI.SUM
+        )
+        MPI.COMM_WORLD.Allreduce(
+            model.D_error_fake_history, averageD_error_fake_history, op=MPI.SUM
+        )
+        MPI.COMM_WORLD.Allreduce(
+            model.G_error_history, averageG_error_history, op=MPI.SUM
+        )
+        averageD_error_real_history = (
+            averageD_error_real_history / mpi_comm_size
+        )
+        averageD_error_fake_history = (
+            averageD_error_fake_history / mpi_comm_size
+        )
+        averageG_error_history = averageG_error_history / mpi_comm_size
+
         for i in range(0, len(model.D_error_real_history)):
             pointwise_error_LOC = np.zeros(mpi_comm_size)
             pointwise_error_LOC[mpi_rank] = model.D_error_real_history[i]
             pointwise_error_GLOB = np.zeros(mpi_comm_size)
-            MPI.COMM_WORLD.Allreduce(pointwise_error_LOC, pointwise_error_GLOB, op=MPI.SUM)
+            MPI.COMM_WORLD.Allreduce(
+                pointwise_error_LOC, pointwise_error_GLOB, op=MPI.SUM
+            )
             standard_deviation = np.std(pointwise_error_GLOB)
             stdD_error_real_history[i] = standard_deviation
-            
+
         for i in range(0, len(model.D_error_fake_history)):
             pointwise_error_LOC = np.zeros(mpi_comm_size)
             pointwise_error_LOC[mpi_rank] = model.D_error_fake_history[i]
             pointwise_error_GLOB = np.zeros(mpi_comm_size)
-            MPI.COMM_WORLD.Allreduce(pointwise_error_LOC, pointwise_error_GLOB, op=MPI.SUM)
+            MPI.COMM_WORLD.Allreduce(
+                pointwise_error_LOC, pointwise_error_GLOB, op=MPI.SUM
+            )
             standard_deviation = np.std(pointwise_error_GLOB)
             stdD_error_fake_history[i] = standard_deviation
 
@@ -223,34 +236,57 @@ if __name__ == '__main__':
             pointwise_error_LOC = np.zeros(mpi_comm_size)
             pointwise_error_LOC[mpi_rank] = model.G_error_history[i]
             pointwise_error_GLOB = np.zeros(mpi_comm_size)
-            MPI.COMM_WORLD.Allreduce(pointwise_error_LOC, pointwise_error_GLOB, op=MPI.SUM)
+            MPI.COMM_WORLD.Allreduce(
+                pointwise_error_LOC, pointwise_error_GLOB, op=MPI.SUM
+            )
             standard_deviation = np.std(pointwise_error_GLOB)
-            stdG_error_history[i] = standard_deviation            
-        
+            stdG_error_history[i] = standard_deviation
+
         if mpi_rank == 0:
-            
+
             plt.figure()
             plt.plot(
                 [x for x in range(0, len(averageD_error_real_history))],
-                averageD_error_real_history, color='b' 
+                averageD_error_real_history,
+                color='b',
             )
             ci = 1.96 * stdD_error_real_history
-            plt.fill_between([x for x in range(0, len(averageD_error_real_history))], (averageD_error_real_history-ci), (averageD_error_real_history+ci), color='b', alpha=.1)
-            
+            plt.fill_between(
+                [x for x in range(0, len(averageD_error_real_history))],
+                (averageD_error_real_history - ci),
+                (averageD_error_real_history + ci),
+                color='b',
+                alpha=0.1,
+            )
+
             plt.plot(
                 [x for x in range(0, len(averageD_error_fake_history))],
-                averageD_error_fake_history, color = 'orange'
+                averageD_error_fake_history,
+                color='orange',
             )
             ci = 1.96 * stdD_error_fake_history
-            plt.fill_between([x for x in range(0, len(averageD_error_fake_history))], (averageD_error_fake_history-ci), (averageD_error_fake_history+ci), color='orange', alpha=.1)
-            
+            plt.fill_between(
+                [x for x in range(0, len(averageD_error_fake_history))],
+                (averageD_error_fake_history - ci),
+                (averageD_error_fake_history + ci),
+                color='orange',
+                alpha=0.1,
+            )
+
             plt.plot(
                 [x for x in range(0, len(averageG_error_history))],
-                averageG_error_history, color='g'
+                averageG_error_history,
+                color='g',
             )
             ci = 1.96 * stdG_error_history
-            plt.fill_between([x for x in range(0, len(averageG_error_history))], (averageG_error_history-ci), (averageG_error_history+ci), color='g', alpha=.1)
-            
+            plt.fill_between(
+                [x for x in range(0, len(averageG_error_history))],
+                (averageG_error_history - ci),
+                (averageG_error_history + ci),
+                color='g',
+                alpha=0.1,
+            )
+
             plt.xlabel('Iterations')
             plt.ylabel('Loss function value')
             plt.legend(
@@ -260,7 +296,7 @@ if __name__ == '__main__':
                     'Generator: Loss',
                 ]
             )
-            plt.savefig('average_cost_report'+str(mpi_rank)+'.png')           
-            
+            plt.savefig('average_cost_report' + str(mpi_rank) + '.png')
+
 
 MPI.Finalize()
