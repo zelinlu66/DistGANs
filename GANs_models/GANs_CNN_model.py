@@ -140,10 +140,6 @@ class GANs_CNN_model(GANs_abstract_object.GANs_model):
                         if index != p_y.numel():
                             raise RuntimeError('size mismatch')
 
-                self.D_error_real_history.append(error_real)
-                self.D_error_fake_history.append(error_fake)
-                self.G_error_history.append(g_error)
-
                 self.print_verbose('Epoch: ', str(e + 1), '/', str(num_epochs))
                 self.print_verbose('Batch Number: ', str(n_batch + 1))
                 self.print_verbose(
@@ -161,6 +157,9 @@ class GANs_CNN_model(GANs_abstract_object.GANs_model):
                     )
                     self.save_images(e, n_batch, test_images)
 
+            self.D_error_real_history.append(error_real)
+            self.D_error_fake_history.append(error_fake)
+            self.G_error_history.append(g_error)
             self.print_verbose(
                 "######################################################"
             )
