@@ -14,6 +14,7 @@ import torchvision
 import numpy as np
 from scipy.stats import entropy
 
+
 def inception_score(imgs, cuda=True, batch_size=32, resize=False, splits=1):
     """Computes the inception score of the generated images imgs
     imgs -- Torch dataset of (3xHxW) numpy images normalized in the range [-1, 1]
@@ -31,16 +32,21 @@ def inception_score(imgs, cuda=True, batch_size=32, resize=False, splits=1):
         dtype = torch.cuda.FloatTensor
     else:
         if torch.cuda.is_available():
-            print("WARNING: You have a CUDA device, so you should probably set cuda=True")
+            print(
+                "WARNING: You have a CUDA device, so you should probably set cuda=True"
+            )
         dtype = torch.FloatTensor
 
     # Set up dataloader
     dataloader = torch.utils.data.DataLoader(imgs, batch_size=batch_size)
 
     # Load inception model
-    inception_model = inception_v3(pretrained=True, transform_input=False).type(dtype)
-    inception_model.eval();
+    inception_model = inception_v3(
+        pretrained=True, transform_input=False
+    ).type(dtype)
+    inception_model.eval()
     up = nn.Upsample(size=(299, 299), mode='bilinear').type(dtype)
+
     def get_pred(x):
         if resize:
             x = up(x)
@@ -51,18 +57,20 @@ def inception_score(imgs, cuda=True, batch_size=32, resize=False, splits=1):
     preds = np.zeros((N, 1000))
 
     for i, batch in enumerate(dataloader, 0):
-        #batch = torch.FloatTensor(batch)
+        # batch = torch.FloatTensor(batch)
         batch = batch.type(dtype)
         batchv = Variable(batch)
         batch_size_i = batch.size()[0]
 
-        preds[i*batch_size:i*batch_size + batch_size_i] = get_pred(batchv)
+        preds[i * batch_size : i * batch_size + batch_size_i] = get_pred(
+            batchv
+        )
 
     # Now compute the mean kl-div
     split_scores = []
 
     for k in range(splits):
-        part = preds[k * (N // splits): (k+1) * (N // splits), :]
+        part = preds[k * (N // splits) : (k + 1) * (N // splits), :]
         py = np.mean(part, axis=0)
         scores = []
         for i in range(part.shape[0]):
@@ -74,26 +82,37 @@ def inception_score(imgs, cuda=True, batch_size=32, resize=False, splits=1):
 
 
 class IgnoreLabelDataset(torch.utils.data.Dataset):
-     def __init__(self, orig):
-         self.orig = orig
-     def __getitem__(self, index):
-         return self.orig[index][0]
-     def __len__(self):
-         return len(self.orig)
+    def __init__(self, orig):
+        self.orig = orig
 
-#imgs = []
-#data_path = r"C:\Users\claud\Desktop\CIFAR100\COPIA_RINOMI"
+    def __getitem__(self, index):
+        return self.orig[index][0]
+
+    def __len__(self):
+        return len(self.orig)
+
+
+# imgs = []
+# data_path = r"C:\Users\claud\Desktop\CIFAR100\COPIA_RINOMI"
 data_path = r'C:\Users\claud\Desktop\CIFAR100'
 
-#data_path = 'YOUR_PATH'
+# data_path = 'YOUR_PATH'
 fake_data = torchvision.datasets.ImageFolder(
     root=data_path,
-     transform=transforms.Compose([
-                                 transforms.ToTensor(),
-                                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-                             ])
+    transform=transforms.Compose(
+        [
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        ]
+    ),
 )
-    
-print (inception_score(IgnoreLabelDataset(fake_data
-                                          ), cuda=True, batch_size=32, resize=True, splits=10))
-    
+
+print(
+    inception_score(
+        IgnoreLabelDataset(fake_data),
+        cuda=True,
+        batch_size=32,
+        resize=True,
+        splits=10,
+    )
+)
