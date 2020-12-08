@@ -102,7 +102,7 @@ class Discriminator_MLP_other(torch.nn.Module):
         )
         self.out = nn.Sequential(
             torch.nn.Linear(256, n_out),
-            torch.nn.Sigmoid(),  # Comment this if using BCEWithLogitLoss
+            # torch.nn.Sigmoid(),  # Comment this if using BCEWithLogitLoss
         )
 
     def forward(self, x):
@@ -374,6 +374,171 @@ class ConditionalDiscriminator_CNN(nn.Module):
 
     def to(self, device):
         super(ConditionalDiscriminator_CNN, self).to(device)
+        self.device = device
+
+
+#######################################################################################################################
+image_size = 64
+# Number of channels in the training images. For color images this is 3
+nc = 3
+# Size of z latent vector (i.e. size of generator input)
+nz = 100
+# Size of feature maps in generator
+ngf = 64
+# Size of feature maps in discriminator
+ndf = 64
+
+
+class Discriminator_torch(nn.Module):
+    def __init__(self, img_shape, n_classes):
+        super(Discriminator_torch, self).__init__()
+        self.main = nn.Sequential(
+            # input is (nc) x 64 x 64
+            nn.Conv2d(nc, ndf, 4, 2, 1, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf) x 32 x 32
+            nn.Conv2d(ndf, ndf * 2, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ndf * 2),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf*2) x 16 x 16
+            nn.Conv2d(ndf * 2, ndf * 4, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ndf * 4),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf*4) x 8 x 8
+            nn.Conv2d(ndf * 4, ndf * 8, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ndf * 8),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf*8) x 4 x 4
+            nn.Conv2d(ndf * 8, 1, 4, 1, 0, bias=False),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, input):
+        return self.main(input)
+
+    def to(self, device):
+        super(Discriminator_torch, self).to(device)
+        self.device = device
+
+
+class Generator_torch(nn.Module):
+    def __init__(self, img_shape, n_classes, latent_dim=100):
+        super(Generator_torch, self).__init__()
+        self.main = nn.Sequential(
+            # input is Z, going into a convolution
+            nn.ConvTranspose2d(nz, ngf * 8, 4, 1, 0, bias=False),
+            nn.BatchNorm2d(ngf * 8),
+            nn.ReLU(True),
+            # state size. (ngf*8) x 4 x 4
+            nn.ConvTranspose2d(ngf * 8, ngf * 4, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ngf * 4),
+            nn.ReLU(True),
+            # state size. (ngf*4) x 8 x 8
+            nn.ConvTranspose2d(ngf * 4, ngf * 2, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ngf * 2),
+            nn.ReLU(True),
+            # state size. (ngf*2) x 16 x 16
+            nn.ConvTranspose2d(ngf * 2, ngf, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ngf),
+            nn.ReLU(True),
+            # state size. (ngf) x 32 x 32
+            nn.ConvTranspose2d(ngf, nc, 4, 2, 1, bias=False),
+            nn.Tanh()
+            # state size. (nc) x 64 x 64
+        )
+
+    def forward(self, input):
+        return self.main(input)
+
+    def to(self, device):
+        super(Generator_torch, self).to(device)
+        self.device = device
+
+
+class ConditionalDiscriminator_CNN_torch(nn.Module):
+    def __init__(self, img_shape, n_classes):
+        super(ConditionalDiscriminator_CNN_torch, self).__init__()
+        self.img_shape = img_shape
+        self.label_emb = nn.Embedding(n_classes, n_classes)
+        self.encoder = nn.Sequential(
+            nn.Linear(n_classes, img_shape[0] * img_shape[1] * img_shape[2]),
+            nn.LeakyReLU(0.2),
+        )
+        self.main = nn.Sequential(
+            # input is (nc) x 64 x 64
+            nn.Conv2d(nc, ndf, 4, 2, 1, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf) x 32 x 32
+            nn.Conv2d(ndf, ndf * 2, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ndf * 2),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf*2) x 16 x 16
+            nn.Conv2d(ndf * 2, ndf * 4, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ndf * 4),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf*4) x 8 x 8
+            nn.Conv2d(ndf * 4, ndf * 8, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ndf * 8),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf*8) x 4 x 4
+            nn.Conv2d(ndf * 8, 1, 4, 1, 0, bias=False),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, input, labels):
+        encoded_labels = self.encoder(self.label_emb(labels))
+        encoded_labels = encoded_labels.view(
+            -1, self.img_shape[0], self.img_shape[1], self.img_shape[2]
+        )
+        img_and_labels = torch.cat((input, encoded_labels), 0)
+        return self.main(img_and_labels)
+
+    def to(self, device):
+        super(ConditionalDiscriminator_CNN_torch, self).to(device)
+        self.device = device
+
+
+class ConditionalGenerator_CNN_torch(nn.Module):
+    def __init__(self, img_shape, n_classes, latent_dim=100):
+        super(ConditionalGenerator_CNN_torch, self).__init__()
+        self.label_emb = nn.Embedding(n_classes, n_classes)
+        self.n_classes = n_classes
+        self.main = nn.Sequential(
+            # input is Z, going into a convolution
+            nn.ConvTranspose2d(nz + n_classes, ngf * 8, 4, 1, 0, bias=False),
+            nn.BatchNorm2d(ngf * 8),
+            nn.ReLU(True),
+            # state size. (ngf*8) x 4 x 4
+            nn.ConvTranspose2d(ngf * 8, ngf * 4, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ngf * 4),
+            nn.ReLU(True),
+            # state size. (ngf*4) x 8 x 8
+            nn.ConvTranspose2d(ngf * 4, ngf * 2, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ngf * 2),
+            nn.ReLU(True),
+            # state size. (ngf*2) x 16 x 16
+            nn.ConvTranspose2d(ngf * 2, ngf, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ngf),
+            nn.ReLU(True),
+            # state size. (ngf) x 32 x 32
+            nn.ConvTranspose2d(ngf, nc, 4, 2, 1, bias=False),
+            nn.Tanh()
+            # state size. (nc) x 64 x 64
+        )
+
+    def forward(self, input, labels, N):
+        return self.main(
+            torch.cat(
+                (
+                    self.label_emb(labels).resize(N, self.n_classes, 1, 1),
+                    input,
+                ),
+                1,
+            )
+        )
+
+    def to(self, device):
+        super(ConditionalGenerator_CNN_torch, self).to(device)
         self.device = device
 
 

@@ -841,3 +841,116 @@ class CGDMultiCost(Optimizer):
         cg_y.detach_().mul_(-self.lr_y.sqrt())  # moltiplicare per -lr o +lr
 
         return error_real.item(), error_fake.item(), errorG.item(), cg_x, cg_y
+
+
+class Adam_torch(Optimizer):
+    def __init__(
+        self,
+        G,
+        D,
+        criterion,
+        model_name,
+        lr_x,
+        lr_y,
+        n_classes,
+        b1=0.5,
+        b2=0.999,
+    ):
+        super(Adam_torch, self).__init__(G, D, criterion, model_name)
+        self.G = G
+        self.D = D
+        self.lr_x = lr_x.item()
+        self.lr_y = lr_y.item()
+        self.b1 = b1
+        self.b2 = b2
+        self.n_classes = n_classes
+
+        # Optimizers
+        self.optimizer_G = torch.optim.Adam(
+            self.G.parameters(), lr=self.lr_x, betas=(self.b1, self.b2)
+        )
+        self.optimizer_D = torch.optim.Adam(
+            self.D.parameters(), lr=self.lr_y, betas=(self.b1, self.b2)
+        )
+
+    def step(self, real_data, labels, N):
+        if self.conditional == True:
+            # Generator step
+            self.optimizer_G.zero_grad()
+            # Second argument of noise is the noise_dimension parameter of build_generator
+            # noise = torch.randn(N, 100, 1, 1).to(self.G.device)
+            # fake_labels = Variable(
+            # torch.LongTensor(np.random.randint(0, self.n_classes, N))
+            # )  # one random label among 10 possible, 100 is batch dimension
+            fake_labels = Variable(torch.randint(0, self.n_classes, (N, 1, 1)))
+            fake_data = self.G(
+                torch.randn(N, 100, 1, 1).to(self.G.device),
+                fake_labels.type(torch.LongTensor).to(self.G.device),
+                N,
+            )
+            d_pred_fake = self.D(
+                fake_data.to(self.D.device), fake_labels.to(self.D.device)
+            )
+            label_1 = torch.full((N,), 1.0, dtype=torch.float).to(
+                self.G.device
+            )
+            g_error = self.criterion(
+                d_pred_fake.to(self.G.device), label_1.to(self.G.device)
+            )
+
+            g_error.backward()
+            self.optimizer_G.step()
+            # Discriminator step
+            self.optimizer_D.zero_grad()
+            # Measure discriminator's ability to classify real from generated samples
+            d_pred_real = self.D(
+                real_data.to(self.D.device), labels.to(self.D.device)
+            )
+            error_real = self.criterion(d_pred_real, label_1.to(self.D.device))
+            d_pred_fake = self.D(
+                fake_data.to(self.D.device).detach(),
+                fake_labels.to(self.D.device),
+            )
+            label_0 = torch.full((N,), 0.0, dtype=torch.float).to(
+                self.D.device
+            )
+            error_fake = self.criterion(d_pred_fake, label_0.to(self.D.device))
+
+            d_loss = (error_real + error_fake) / 2
+            d_loss.backward()
+            self.optimizer_D.step()
+
+            return error_real.item(), error_fake.item(), g_error.item()
+        else:
+            # Generator step
+            self.optimizer_G.zero_grad()
+            noise = torch.randn(N, 100, 1, 1).to(self.G.device)
+            # Second argument of noise is the noise_dimension parameter of build_generator
+            fake_data = self.G(noise)
+            d_pred_fake = self.D(fake_data.to(self.D.device)).view(-1)
+            label_1 = torch.full((N,), 1.0, dtype=torch.float).to(
+                self.G.device
+            )
+            g_error = self.criterion(d_pred_fake.to(self.G.device), label_1)
+
+            g_error.backward()
+            self.optimizer_G.step()
+            # Discriminator step
+            self.optimizer_D.zero_grad()
+            # Measure discriminator's ability to classify real from generated samples
+            d_pred_real = self.D(real_data.to(self.D.device)).view(-1)
+            label_1 = torch.full((N,), 1.0, dtype=torch.float).to(
+                self.D.device
+            )
+            error_real = self.criterion(d_pred_real, label_1)
+            d_pred_fake = self.D(fake_data.to(self.D.device).detach()).view(-1)
+            label_0 = torch.full((N,), 0.0, dtype=torch.float).to(
+                self.D.device
+            )
+            error_fake = self.criterion(d_pred_fake, label_0)
+
+            d_loss = (error_real + error_fake) / 2
+            d_loss.backward()
+            self.optimizer_D.step()
+
+            return error_real.item(), error_fake.item(), g_error.item()

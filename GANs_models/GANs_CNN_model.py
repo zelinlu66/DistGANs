@@ -32,23 +32,24 @@ class GANs_CNN_model(GANs_abstract_object.GANs_model):
         super(GANs_CNN_model, self).__init__(data, n_classes, model_name)
 
     def build_discriminator(self):
-        D = DiscriminatorCNN(self.data_dimension[0], self.data_dimension[1])
+        D = Discriminator_torch(self.data_dimension[0], self.data_dimension[1])
         D.apply(weights_init_normal)
         return D
 
     def build_generator(self, noise_dimension=100):
         self.noise_dimension = noise_dimension
-        G = GeneratorCNN(
+        G = Generator_torch(
             noise_dimension, self.data_dimension[0], self.data_dimension[1]
         )
         G.apply(weights_init_normal)
         return G
 
     # loss = torch.nn.BCEWithLogitsLoss()
+    # loss = torch.nn.BCELoss()
     # loss = binary_cross_entropy
     def train(
         self,
-        loss=torch.nn.BCEWithLogitsLoss(),
+        loss=torch.nn.BCELoss(),
         lr_x=torch.tensor([0.01]),
         lr_y=torch.tensor([0.01]),
         optimizer_name='Jacobi',
@@ -60,10 +61,6 @@ class GANs_CNN_model(GANs_abstract_object.GANs_model):
         single_number=None,
         repeat_iterations=1,
     ):
-        self.data_loader = torch.utils.data.DataLoader(
-            self.data, batch_size=100, shuffle=True
-        )
-
         if single_number is not None or self.mpi_comm_size > 1:
             self.num_test_samples = 5
 
@@ -101,8 +98,8 @@ class GANs_CNN_model(GANs_abstract_object.GANs_model):
                 "######################################################"
             )
             for n_batch, (real_batch, labels) in enumerate(self.data_loader):
-                self.test_noise = noise(
-                    self.num_test_samples, self.noise_dimension
+                self.test_noise = torch.randn(
+                    self.num_test_samples, self.noise_dimension, 1, 1
                 )
                 real_data = Variable((real_batch))
                 N = real_batch.size(0)
@@ -140,6 +137,10 @@ class GANs_CNN_model(GANs_abstract_object.GANs_model):
                         if index != p_y.numel():
                             raise RuntimeError('size mismatch')
 
+                self.D_error_real_history.append(error_real)
+                self.D_error_fake_history.append(error_fake)
+                self.G_error_history.append(g_error)
+
                 self.print_verbose('Epoch: ', str(e + 1), '/', str(num_epochs))
                 self.print_verbose('Batch Number: ', str(n_batch + 1))
                 self.print_verbose(
@@ -157,9 +158,6 @@ class GANs_CNN_model(GANs_abstract_object.GANs_model):
                     )
                     self.save_images(e, n_batch, test_images)
 
-            self.D_error_real_history.append(error_real)
-            self.D_error_fake_history.append(error_fake)
-            self.G_error_history.append(g_error)
             self.print_verbose(
                 "######################################################"
             )
