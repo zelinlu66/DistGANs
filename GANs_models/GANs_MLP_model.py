@@ -152,7 +152,7 @@ class GANs_MLP_model(GANs_abstract_object.GANs_model):
                         self.data_dimension,
                     )  # data_dimension: dimension of output image ex: [1,28,28]
                     self.save_images(e, n_batch, test_images)
-                    
+
             self.D_error_real_history.append(error_real)
             self.D_error_fake_history.append(error_fake)
             self.G_error_history.append(g_error)
