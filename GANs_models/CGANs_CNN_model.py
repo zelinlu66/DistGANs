@@ -25,13 +25,15 @@ class CGANs_CNN_model(GANs_abstract_object.GANs_model):
         super(CGANs_CNN_model, self).__init__(data, n_classes, model_name)
 
     def build_discriminator(self):
-        D = ConditionalDiscriminator_CNN(self.data_dimension, self.n_classes)
+        D = ConditionalDiscriminator_CNN_torch(
+            self.data_dimension, self.n_classes
+        )
         return D
 
     def build_generator(self, noise_dimension=100):
         self.noise_dimension = noise_dimension
         # n_out = numpy.prod(self.data_dimension)
-        G = ConditionalGenerator_CNN(
+        G = ConditionalGenerator_CNN_torch(
             self.data_dimension, self.n_classes, self.noise_dimension
         )
         return G
@@ -80,19 +82,18 @@ class CGANs_CNN_model(GANs_abstract_object.GANs_model):
                 "######################################################"
             )
             for n_batch, (real_batch, labels) in enumerate(self.data_loader):
-                self.test_noise = noise(
-                    self.num_test_samples, self.noise_dimension
+                self.test_noise = torch.randn(
+                    self.num_test_samples, self.noise_dimension, 1, 1
                 )
                 # numpy.random.randint(0,10,self.num_test_samples)
+                N = real_batch.size(0)
                 self.test_labels = Variable(
-                    torch.LongTensor(
-                        numpy.random.randint(
-                            0, self.n_classes, self.num_test_samples
-                        )
+                    torch.randint(
+                        0, self.n_classes, (self.num_test_samples, 1, 1)
                     )
                 )
                 # self.test_labels = Variable(torch.LongTensor(np.random.randint(0, self.n_classes, batch_size)))
-                N = real_batch.size(0)
+
                 real_data = Variable((real_batch))
                 labels = Variable(labels.type(torch.LongTensor))
                 self.optimizer.G = self.G
@@ -123,6 +124,7 @@ class CGANs_CNN_model(GANs_abstract_object.GANs_model):
                     test_images = self.G(
                         self.test_noise.to(self.G.device),
                         self.test_labels.to(self.G.device),
+                        self.num_test_samples,
                     )
                     # data_dimension: dimension of output image ex: [1,28,28]
                     self.save_images(e, n_batch, test_images)
@@ -130,6 +132,7 @@ class CGANs_CNN_model(GANs_abstract_object.GANs_model):
             self.D_error_real_history.append(error_real)
             self.D_error_fake_history.append(error_fake)
             self.G_error_history.append(g_error)
+
             self.print_verbose(
                 "######################################################"
             )

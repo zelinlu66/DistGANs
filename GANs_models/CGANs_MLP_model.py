@@ -130,6 +130,7 @@ class CGANs_MLP_model(GANs_abstract_object.GANs_model):
             self.D_error_real_history.append(error_real)
             self.D_error_fake_history.append(error_fake)
             self.G_error_history.append(g_error)
+
             self.print_verbose(
                 "######################################################"
             )
