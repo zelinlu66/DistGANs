@@ -145,7 +145,11 @@ class GANs_model(metaclass=ABCMeta):
             )
         elif optimizer_name == "SGD":
             self.optimizer = SGD(self.G, self.D, loss, model_name, lr_x)
-        elif optimizer_name == "Adam":
+        elif optimizer_name == "Adam" and self.data_dimension[0] == 1:
+            self.optimizer = Adam(
+                self.G, self.D, loss, model_name, lr_x, lr_y, n_classes
+            )            
+        elif optimizer_name == "Adam" and self.data_dimension[0] == 3:
             self.optimizer = Adam_torch(
                 self.G, self.D, loss, model_name, lr_x, lr_y, n_classes
             )
