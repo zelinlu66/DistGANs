@@ -14,6 +14,7 @@ Created on Thu Mar 12 14:22:47 2020
 
 from torchvision import transforms, datasets
 import os
+import torch
 
 
 def mnist_data(rand_rotation=False, max_degree=90):
@@ -67,3 +68,19 @@ def cifar100_data():
     return datasets.CIFAR100(
         root=out_dir, train=True, transform=compose, download=True
     )
+    
+    
+def imagenet_data():
+    data_path = '/Users/7ml/Documents/ImageNet1k/'
+    
+    traindir = os.path.join(data_path, "train")
+    train_dataset = datasets.ImageFolder(
+        traindir,
+        transforms.Compose(
+            [transforms.RandomResizedCrop(64), transforms.ToTensor()]
+        ),
+    )
+     
+    return train_dataset
+    
+        
