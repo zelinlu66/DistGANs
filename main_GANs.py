@@ -136,7 +136,7 @@ if __name__ == '__main__':
         n_classes = 100
     elif config['dataset'] == 'IMAGENET1K':
         data = imagenet_data()
-        n_classes = 1000       
+        n_classes = 1000
     else:
         raise RuntimeError('Dataset not recognized')
 
