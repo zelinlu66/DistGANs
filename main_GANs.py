@@ -134,6 +134,9 @@ if __name__ == '__main__':
     elif config['dataset'] == 'CIFAR100':
         data = cifar100_data()
         n_classes = 100
+    elif config['dataset'] == 'IMAGENET1K':
+        data = imagenet_data()
+        n_classes = 1000
     else:
         raise RuntimeError('Dataset not recognized')
 
