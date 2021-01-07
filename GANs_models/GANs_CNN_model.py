@@ -148,7 +148,7 @@ class GANs_CNN_model(GANs_abstract_object.GANs_model):
                     "{:.5e}".format(g_error),
                 )
 
-                if (n_batch) % self.display_progress == 0:
+                if ( (n_batch) % self.display_progress == 0 ) and (e % 100 == 0 ):
                     test_images = self.optimizer.G(
                         self.test_noise.to(self.G.device)
                     )
