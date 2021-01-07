@@ -14,6 +14,7 @@ Created on Sat Apr  4 17:34:40 2020
 
 import os
 import time
+import random
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -148,7 +149,10 @@ class GANs_CNN_model(GANs_abstract_object.GANs_model):
                     "{:.5e}".format(g_error),
                 )
 
-                if ( (n_batch) % self.display_progress == 0 ) and (e % 100 == 0 ):
+                if ((n_batch) % self.display_progress == 0) and (
+                    self.mpi_rank
+                    in random.sample(list(range(0, self.mpi_comm_size)), 10)
+                ):
                     test_images = self.optimizer.G(
                         self.test_noise.to(self.G.device)
                     )
