@@ -77,7 +77,11 @@ def imagenet_data():
     train_dataset = datasets.ImageFolder(
         traindir,
         transforms.Compose(
-            [transforms.RandomResizedCrop(64), transforms.ToTensor()]
+            [
+                transforms.RandomResizedCrop(64),
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            ]
         ),
     )
 
