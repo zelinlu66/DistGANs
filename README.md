@@ -1,3 +1,8 @@
+# Distributed Generative Adversarial Neural Networks (DistGANs)
+
+DistGANs is a Python package to perform distributed training of conditional generative adversarial neural networks for multi-class labeled image data.\
+DistGANs partitionins the training data according to data labels, and enhances scalability by performing a parallel training where multiple generators are concurrently trained, each one of them focusing on a single data label.
+
 This is a code implemented in collaboration with:
 
 - Massimiliano Lupo Pasini at Oak Ridge National Laboratory (lupopasinim@ornl.gov)
@@ -7,6 +12,14 @@ This is a code implemented in collaboration with:
 - Vitaliy Starchenko at Oak Ridge National Laboratory (starchenkov@ornl.gov)
 - Junqi Yin at Oak Ridge National Laboratory (yinj@ornl.gov)
 - Andrey Prokpenko at Oak Ridge National Laboratory (prokopenkoav@ornl.gov)
+
+## Requirements
+Python 3.5 or greater\
+PyTorch (any version works)
+Optional, if NVIDIA gpu is present:
+```
+pip install pycuda
+```
 
 ## Code style
 
@@ -23,11 +36,6 @@ conda install -n {env_name} matplotlib docopt ipython mpi4py
 conda install -n {env_name} -c anaconda pyyaml
 conda install -n {env_name} pytorch torchvision -c pytorch
 conda install -n {env_name} tensorboardx -c conda-forge
-```
-
-Optional, if NVIDIA gpu is present:
-```
-pip install pycuda
 ```
 
 ## Models
