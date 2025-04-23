@@ -41,7 +41,6 @@ def mnist_data(rand_rotation=False, max_degree=90):
         root=out_dir, train=True, transform=compose, download=True
     )
 
-
 def cifar10_data():
     compose = transforms.Compose(
         [
@@ -50,11 +49,10 @@ def cifar10_data():
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ]
     )
-    out_dir = '{}/dataset'.format(os.getcwd())
+    #out_dir = '{}/dataset'.format(os.getcwd())
     return datasets.CIFAR10(
-        root=out_dir, train=True, transform=compose, download=True
+        root='/home/xqi12/project/DistGANs/dataset/cifar10', train=True, transform=compose, download=False
     )
-
 
 def cifar100_data():
     compose = transforms.Compose(
