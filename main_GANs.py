@@ -95,6 +95,7 @@ if __name__ == '__main__':
     if 'RANK' in os.environ:
         torch.distributed.init_process_group(backend='nccl')
         local_rank = int(os.environ['LOCAL_RANK'])
+        print(f"local rank = {local_rank}")
         torch.cuda.set_device(local_rank)
         device = torch.device(f"cuda:{local_rank}")
     else:
