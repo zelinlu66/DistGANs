@@ -26,13 +26,22 @@ Options:
   -r, --learning_rate=<f>     Learning rate [default: 0.01].
   -d, --dataset=<srt>         Datased used for training. MNIST, CIFAR10, CIFAR100 [default: CIFAR10]
 """
+# Patch for DDP added with label-parallelism
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+[...existing docstring preserved...]
+"""
 
 from docopt import docopt
 import matplotlib.pyplot as plt
 import sys, os
 import yaml
 import torch
-import mpi4py
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
+import mpi4py  # <-- Keep MPI for inter-label communication
 import numpy as np
 
 mpi4py.rc.initialize = False
@@ -46,75 +55,52 @@ from Dataloader import *
 list_GANs = {}
 
 models_dir = 'GANs_models'
-# model classes must have identic name with python file in models directory
-models_path = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), models_dir
-)
+models_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), models_dir)
 
-# import GANs classes
 for filename in os.listdir(models_path):
     modulename, ext = os.path.splitext(filename)
     if modulename != '__pycache__' and ext == '.py':
         subpackage = '{0}.{1}'.format(models_dir, modulename)
-        obj = getattr(
-            __import__(subpackage, globals(), locals(), [modulename]),
-            modulename,
-        )
+        obj = getattr(__import__(subpackage, globals(), locals(), [modulename]), modulename)
         list_GANs.update({obj.model_name: obj})
 
-
 MPI.Init()
-
 
 def merge_args(cmdline_args, config_args):
     for key in config_args.keys():
         if key not in cmdline_args:
-            sys.exit(
-                'Error: unknown key in the configuration file \"{}\"'.format(
-                    key
-                )
-            )
-
+            sys.exit('Error: unknown key in the configuration file "{}"'.format(key))
     args = {}
     args.update(cmdline_args)
     args.update(config_args)
-
     return args
-
 
 def get_options():
     args = docopt(__doc__, version='Competitive Gradient Descent 0.0')
-
-    # strip -- from names
     args = {key[2:]: value for key, value in args.items()}
-
     config_args = {}
     if args['config']:
         with open(args['config']) as f:
             config_args = yaml.load(f, Loader=yaml.FullLoader)
-
-    # strip certain options
-    # this serves 2 purposes:
-    # - This option have already been parsed, and have no meaning as input
-    #   parameters
-    # - The config file options would be unallowed to contain them
     for skip_option in {'config', 'help'}:
         del args[skip_option]
-
     return merge_args(args, config_args)
-
 
 if __name__ == '__main__':
     config = get_options()
 
-    if config['list']:
-        print("\n  Available models:")
-        for key in list_GANs.keys():
-            print("    {}".format(key))
-        print("")
-        exit(0)
+    mpi_comm_size = MPI.COMM_WORLD.Get_size()
+    mpi_rank = MPI.COMM_WORLD.Get_rank()
 
-    if MPI.COMM_WORLD.Get_rank() == 0:
+    if 'RANK' in os.environ:
+        torch.distributed.init_process_group(backend='nccl')
+        local_rank = int(os.environ['LOCAL_RANK'])
+        torch.cuda.set_device(local_rank)
+        device = torch.device(f"cuda:{local_rank}")
+    else:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    if mpi_rank == 0:
         print('-----------------')
         print('Input parameters:')
         print(yaml.dump(config))
@@ -140,14 +126,18 @@ if __name__ == '__main__':
     else:
         raise RuntimeError('Dataset not recognized')
 
+    # ? Filter data by label for each MPI rank (label-parallelism)
+    assigned_label = mpi_rank % n_classes
+    data = [sample for sample in data if sample[1] == assigned_label]
+
     try:
         model = list_GANs[model_name](data, n_classes, model_name)
+        model.G.to(device)
+        model.D.to(device)
+        model.G = DDP(model.G, device_ids=[device.index], output_device=device.index)
+        model.D = DDP(model.D, device_ids=[device.index], output_device=device.index)
     except KeyError:
-        sys.exit(
-            '\n   *** Error. Specified model name: {} is not valid.\n'.format(
-                model_name
-            )
-        )
+        sys.exit('\n   *** Error. Specified model name: {} is not valid.\n'.format(model_name))
 
     model.train(
         num_epochs=epochs,
@@ -156,12 +146,9 @@ if __name__ == '__main__':
         optimizer_name=optimizer_name,
         verbose=True,
         label_smoothing=False,
-        single_number=None,
+        single_number=assigned_label,
         repeat_iterations=1,
-    )  # save_path = ''
-
-    mpi_comm_size = MPI.COMM_WORLD.Get_size()
-    mpi_rank = MPI.COMM_WORLD.Get_rank()
+    )
 
     if mpi_rank == 0:
         if config['save']:
