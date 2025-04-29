@@ -43,6 +43,7 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 import mpi4py  # <-- Keep MPI for inter-label communication
 import numpy as np
+import subprocess
 
 mpi4py.rc.initialize = False
 mpi4py.rc.finalize = False
@@ -86,6 +87,15 @@ def get_options():
         del args[skip_option]
     return merge_args(args, config_args)
 
+def get_mig_device_info():
+    try:
+        result = subprocess.check_output(
+            ["nvidia-smi", "-L"], encoding='utf-8'
+        )
+        return result
+    except Exception as e:
+        return f"Error getting device info: {e}"
+
 if __name__ == '__main__':
     config = get_options()
 
@@ -93,9 +103,26 @@ if __name__ == '__main__':
     mpi_rank = MPI.COMM_WORLD.Get_rank()
 
     if 'RANK' in os.environ:
-        torch.distributed.init_process_group(backend='nccl')
-        local_rank = int(os.environ['LOCAL_RANK'])
-        print(f"local rank = {local_rank}")
+        # torch.distributed.init_process_group(backend='nccl')
+        init_file = "/tmp/ddp_init"
+        world_size = int(os.environ["WORLD_SIZE"])
+
+
+        dist.init_process_group(
+            backend="nccl",
+            init_method=f"file://{init_file}",
+            world_size=world_size,
+            rank=int(os.environ["RANK"])
+        )
+        
+        local_rank = int(os.environ.get('LOCAL_RANK', 0))
+        world_size = int(os.environ.get('WORLD_SIZE', 1))
+        # Print for debugging
+        print(f"[Rank {local_rank}] Local rank: {local_rank}")
+        print(f"[Rank {local_rank}] CUDA_VISIBLE_DEVICES: {os.environ.get('CUDA_VISIBLE_DEVICES')}")
+        print(f"[Rank {local_rank}] torch.cuda.device_count(): {torch.cuda.device_count()}")
+        print(f"[Rank {local_rank}] Selected device name: {torch.cuda.get_device_name(0)}")
+
         torch.cuda.set_device(local_rank)
         device = torch.device(f"cuda:{local_rank}")
     else:
