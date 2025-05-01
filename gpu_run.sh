@@ -2,6 +2,7 @@
 #SBATCH -N 1                            # Request 1 node
 #SBATCH -p gpu                          # Use the GPU partition
 #SBATCH --gres=gpu:a100:4       # Request 2 GPUs
+#SBATCH --mem=128G
 #SBATCH -A cmsc714-class               # Your account
 #SBATCH -J DistGAN                     # Job name
 #SBATCH -t 01:00:00                    # Time limit
