@@ -15,7 +15,7 @@ import torch
 from torch import autograd
 from torch import nn
 from torch.autograd.variable import Variable
-from mpi4py import MPI
+# from mpi4py import MPI
 
 if torch.cuda.is_available():
     import pycuda
@@ -141,7 +141,7 @@ def get_gpu(number):
             )  # you can continue going on here, like cuda:1 cuda:2....etc.
             print(
                 "MPI rank "
-                + str(MPI.COMM_WORLD.Get_rank())
+                + str(int(os.environ.get('LOCAL_RANK', 0)))
                 + " running on the GPU with ID: "
                 + str(number)
             )

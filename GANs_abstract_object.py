@@ -23,13 +23,13 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from abc import ABCMeta, abstractmethod
-from mpi4py import MPI
+# from mpi4py import MPI
 
 
 class GANs_model(metaclass=ABCMeta):
     def __init__(self, data, n_classes, model_name):
-        self.mpi_comm_size = MPI.COMM_WORLD.Get_size()
-        self.mpi_rank = MPI.COMM_WORLD.Get_rank()
+        self.mpi_comm_size = int(os.environ.get('WORLD_SIZE', 1))
+        self.mpi_rank = int(os.environ.get('LOCAL_RANK', 0))
         self.num_gpus = count_gpus()
         self.list_gpuIDs = get_gpus_list()
         self.data = data
@@ -101,7 +101,7 @@ class GANs_model(metaclass=ABCMeta):
             self.generator_device = get_gpu(
                 self.list_gpuIDs[generator_gpu_index]
             )
-
+        print(f"Rank {self.mpi_rank} is running D on device {self.discriminator_device} and G on {self.generator_device}")
         D.to(self.discriminator_device)
         G.to(self.generator_device)
 
