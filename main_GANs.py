@@ -41,13 +41,13 @@ import yaml
 import torch
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
-import mpi4py  # <-- Keep MPI for inter-label communication
+# import mpi4py  # <-- Keep MPI for inter-label communication
 import numpy as np
 import subprocess
 
-mpi4py.rc.initialize = False
-mpi4py.rc.finalize = False
-from mpi4py import MPI
+# mpi4py.rc.initialize = False
+# mpi4py.rc.finalize = False
+# from mpi4py import MPI
 
 plt.rcParams.update({'font.size': 14})
 
@@ -65,7 +65,7 @@ for filename in os.listdir(models_path):
         obj = getattr(__import__(subpackage, globals(), locals(), [modulename]), modulename)
         list_GANs.update({obj.model_name: obj})
 
-MPI.Init()
+# MPI.Init()
 
 def merge_args(cmdline_args, config_args):
     for key in config_args.keys():
@@ -95,14 +95,34 @@ def get_mig_device_info():
         return result
     except Exception as e:
         return f"Error getting device info: {e}"
+    
+def gather_and_compute_std(value: float, device: torch.device):
+    """
+    Gathers `value` from all ranks and computes std (on rank 0 only).
+    """
+    val_tensor = torch.tensor([value], device=device)
+    world_size = dist.get_world_size()
+    gathered = [torch.zeros_like(val_tensor) for _ in range(world_size)]
+    
+    dist.all_gather(gathered, val_tensor)  # gather from all ranks
+    gathered_tensor = torch.cat(gathered)  # shape: (world_size,)
+    
+    if dist.get_rank() == 0:
+        return gathered_tensor.std().item()
+    else:
+        return None
 
 if __name__ == '__main__':
     config = get_options()
 
-    mpi_comm_size = MPI.COMM_WORLD.Get_size()
-    mpi_rank = MPI.COMM_WORLD.Get_rank()
+    # mpi_comm_size = MPI.COMM_WORLD.Get_size()
+    # mpi_rank = MPI.COMM_WORLD.Get_rank()
 
     if 'RANK' in os.environ:
+        local_rank = int(os.environ.get('LOCAL_RANK', 0))
+        world_size = int(os.environ.get('WORLD_SIZE', 1))
+        mpi_rank = local_rank
+        mpi_comm_size = world_size
         # torch.distributed.init_process_group(backend='nccl')
         init_file = "/tmp/ddp_init"
         world_size = int(os.environ["WORLD_SIZE"])
@@ -115,8 +135,7 @@ if __name__ == '__main__':
             rank=int(os.environ["RANK"])
         )
         
-        local_rank = int(os.environ.get('LOCAL_RANK', 0))
-        world_size = int(os.environ.get('WORLD_SIZE', 1))
+        
         # Print for debugging
         print(f"[Rank {local_rank}] Local rank: {local_rank}")
         print(f"[Rank {local_rank}] CUDA_VISIBLE_DEVICES: {os.environ.get('CUDA_VISIBLE_DEVICES')}")
@@ -216,64 +235,53 @@ if __name__ == '__main__':
         stdG_error_history = np.zeros(len(model.G_error_history))
 
         for i in range(0, len(model.D_error_real_history)):
-            pointwise_error_LOC = np.zeros(mpi_comm_size)
-            pointwise_error_LOC[mpi_rank] = model.D_error_real_history[i]
-            pointwise_error_GLOB = np.zeros(mpi_comm_size)
-            MPI.COMM_WORLD.Reduce(
-                pointwise_error_LOC, pointwise_error_GLOB, op=MPI.SUM, root=0
-            )
-            mean_val = np.mean(pointwise_error_GLOB)
-            averageD_error_real_history[i] = mean_val
+            local_val = torch.tensor(model.D_error_real_history[i], device='cuda')
+            
+            # Perform an all-reduce sum across all processes
+            dist.all_reduce(local_val, op=dist.ReduceOp.SUM)
+
+            # Compute average manually
+            local_val /= dist.get_world_size()
+
+            averageD_error_real_history[i] = local_val.item()
 
         for i in range(0, len(model.D_error_fake_history)):
-            pointwise_error_LOC = np.zeros(mpi_comm_size)
-            pointwise_error_LOC[mpi_rank] = model.D_error_fake_history[i]
-            pointwise_error_GLOB = np.zeros(mpi_comm_size)
-            MPI.COMM_WORLD.Reduce(
-                pointwise_error_LOC, pointwise_error_GLOB, op=MPI.SUM, root=0
-            )
-            mean_val = np.mean(pointwise_error_GLOB)
-            averageD_error_fake_history[i] = mean_val
+            local_val = torch.tensor(model.D_error_fake_history[i], device='cuda')
+            
+            # Perform an all-reduce sum across all processes
+            dist.all_reduce(local_val, op=dist.ReduceOp.SUM)
+
+            # Compute average manually
+            local_val /= dist.get_world_size()
+
+            averageD_error_fake_history[i] = local_val.item()
 
         for i in range(0, len(model.G_error_history)):
-            pointwise_error_LOC = np.zeros(mpi_comm_size)
-            pointwise_error_LOC[mpi_rank] = model.G_error_history[i]
-            pointwise_error_GLOB = np.zeros(mpi_comm_size)
-            MPI.COMM_WORLD.Reduce(
-                pointwise_error_LOC, pointwise_error_GLOB, op=MPI.SUM, root=0
-            )
-            mean_val = np.mean(pointwise_error_GLOB)
-            averageG_error_history[i] = mean_val
+            local_val = torch.tensor(model.G_error_history[i], device='cuda')
+            
+            # Perform an all-reduce sum across all processes
+            dist.all_reduce(local_val, op=dist.ReduceOp.SUM)
 
-        for i in range(0, len(model.D_error_real_history)):
-            pointwise_error_LOC = np.zeros(mpi_comm_size)
-            pointwise_error_LOC[mpi_rank] = model.D_error_real_history[i]
-            pointwise_error_GLOB = np.zeros(mpi_comm_size)
-            MPI.COMM_WORLD.Reduce(
-                pointwise_error_LOC, pointwise_error_GLOB, op=MPI.SUM, root=0
-            )
-            standard_deviation = np.std(pointwise_error_GLOB)
-            stdD_error_real_history[i] = standard_deviation
+            # Compute average manually
+            local_val /= dist.get_world_size()
 
-        for i in range(0, len(model.D_error_fake_history)):
-            pointwise_error_LOC = np.zeros(mpi_comm_size)
-            pointwise_error_LOC[mpi_rank] = model.D_error_fake_history[i]
-            pointwise_error_GLOB = np.zeros(mpi_comm_size)
-            MPI.COMM_WORLD.Reduce(
-                pointwise_error_LOC, pointwise_error_GLOB, op=MPI.SUM, root=0
-            )
-            standard_deviation = np.std(pointwise_error_GLOB)
-            stdD_error_fake_history[i] = standard_deviation
+            averageG_error_history[i] = local_val.item()
 
-        for i in range(0, len(model.G_error_history)):
-            pointwise_error_LOC = np.zeros(mpi_comm_size)
-            pointwise_error_LOC[mpi_rank] = model.G_error_history[i]
-            pointwise_error_GLOB = np.zeros(mpi_comm_size)
-            MPI.COMM_WORLD.Reduce(
-                pointwise_error_LOC, pointwise_error_GLOB, op=MPI.SUM, root=0
-            )
-            standard_deviation = np.std(pointwise_error_GLOB)
-            stdG_error_history[i] = standard_deviation
+
+        for i in range(len(model.D_error_real_history)):
+            std_val = gather_and_compute_std(model.D_error_real_history[i], device)
+            if dist.get_rank() == 0:
+                stdD_error_real_history[i] = std_val
+        
+        for i in range(len(model.D_error_fake_history)):
+            std_val = gather_and_compute_std(model.D_error_fake_history[i], device)
+            if dist.get_rank() == 0:
+                stdD_error_fake_history[i] = std_val
+        
+        for i in range(len(model.G_error_history)):
+            std_val = gather_and_compute_std(model.G_error_history[i], device)
+            if dist.get_rank() == 0:
+                stdG_error_history[i] = std_val
 
         if mpi_rank == 0:
             plt.figure()
@@ -327,4 +335,4 @@ if __name__ == '__main__':
             )
             plt.savefig('average_cost_report.png')
 
-MPI.Finalize()
+# MPI.Finalize()
