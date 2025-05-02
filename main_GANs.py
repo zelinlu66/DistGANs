@@ -44,6 +44,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 # import mpi4py  # <-- Keep MPI for inter-label communication
 import numpy as np
 import subprocess
+import time
 
 # mpi4py.rc.initialize = False
 # mpi4py.rc.finalize = False
@@ -186,6 +187,8 @@ if __name__ == '__main__':
     except KeyError:
         sys.exit('\n   *** Error. Specified model name: {} is not valid.\n'.format(model_name))
 
+    start = time.time()
+    print(f"[Rank {local_rank}] Training starts: {start}")
     model.train(
         num_epochs=epochs,
         lr_x=torch.tensor([learning_rate]),
@@ -196,6 +199,8 @@ if __name__ == '__main__':
         single_number=assigned_label,
         repeat_iterations=1,
     )
+    end = time.time()
+    print(f"[Rank {local_rank}] Training ends: {end}")
 
     if mpi_rank == 0:
         if config['save']:
