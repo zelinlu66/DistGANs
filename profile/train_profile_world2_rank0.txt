@@ -1,0 +1,756 @@
+         9311263 function calls (9286735 primitive calls) in 36.064 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.117    0.117   29.892   29.892 main_GANs.py:211(<listcomp>)
+    50001    0.382    0.000   29.775    0.001 cifar.py:103(__getitem__)
+    50000    0.421    0.000   24.169    0.000 transforms.py:93(__call__)
+103426/100602    0.418    0.000   15.647    0.000 module.py:1494(_call_impl)
+    50000    0.090    0.000    9.380    0.000 transforms.py:129(__call__)
+    50000    1.095    0.000    9.291    0.000 functional.py:125(to_tensor)
+    50000    0.109    0.000    7.902    0.000 transforms.py:353(forward)
+    50000    0.579    0.000    7.794    0.000 functional.py:391(resize)
+    50000    0.057    0.000    5.824    0.000 transforms.py:269(forward)
+    50000    0.394    0.000    5.767    0.000 functional.py:340(normalize)
+    50000    0.169    0.000    5.469    0.000 _functional_pil.py:238(resize)
+    50000    0.513    0.000    5.274    0.000 Image.py:2090(resize)
+    50000    0.866    0.000    5.224    0.000 Image.py:3031(fromarray)
+    50000    1.721    0.000    5.018    0.000 _functional_tensor.py:905(normalize)
+        1    0.027    0.027    4.326    4.326 GANs_MLP_model.py:45(train)
+    50000    4.182    0.000    4.182    0.000 {method 'resize' of 'ImagingCore' objects}
+      100    0.017    0.000    3.804    0.038 optimizers.py:319(step)
+    50000    0.918    0.000    2.714    0.000 {built-in method numpy.array}
+    50010    0.104    0.000    2.452    0.000 Image.py:2974(frombuffer)
+    50000    0.240    0.000    2.195    0.000 Image.py:2936(frombytes)
+      400    0.004    0.000    2.107    0.005 __init__.py:204(grad)
+      400    2.072    0.005    2.072    0.005 {method 'run_backward' of 'torch._C._EngineBase' objects}
+    50000    1.843    0.000    1.843    0.000 {method 'tobytes' of 'numpy.ndarray' objects}
+    50000    0.188    0.000    1.741    0.000 Image.py:686(__array_interface__)
+    50000    0.435    0.000    1.335    0.000 Image.py:725(tobytes)
+    52800    1.319    0.000    1.319    0.000 {method 'contiguous' of 'torch._C._TensorBase' objects}
+    50000    1.309    0.000    1.309    0.000 {method 'div' of 'torch._C._TensorBase' objects}
+        1    0.001    0.001    1.077    1.077 Dataloader.py:45(cifar10_data)
+        1    0.000    0.000    1.076    1.076 cifar.py:51(__init__)
+    50010    0.231    0.000    1.018    0.000 Image.py:2897(new)
+   200005    0.544    0.000    1.013    0.000 utils.py:538(_log_api_usage_once)
+      200    0.069    0.000    0.916    0.005 utils.py:177(Hvp_vec)
+   152902    0.846    0.000    0.846    0.000 {method 'view' of 'torch._C._TensorBase' objects}
+    50000    0.172    0.000    0.842    0.000 functional.py:64(get_dimensions)
+    50000    0.232    0.000    0.840    0.000 Image.py:803(frombytes)
+        7    0.000    0.000    0.807    0.115 utils.py:69(check_integrity)
+   100000    0.804    0.000    0.804    0.000 {built-in method torch.as_tensor}
+        1    0.000    0.000    0.796    0.796 cifar.py:128(_check_integrity)
+    50940    0.788    0.000    0.788    0.000 {method 'to' of 'torch._C._TensorBase' objects}
+        7    0.000    0.000    0.788    0.113 utils.py:65(check_md5)
+        7    0.000    0.000    0.787    0.112 utils.py:51(calculate_md5)
+    50600    0.672    0.000    0.672    0.000 {method 'any' of 'torch._C._TensorBase' objects}
+      300    0.001    0.000    0.659    0.002 loss.py:719(forward)
+      300    0.001    0.000    0.657    0.002 functional.py:3101(binary_cross_entropy_with_logits)
+      300    0.656    0.002    0.656    0.002 {built-in method torch.binary_cross_entropy_with_logits}
+     1008    0.004    0.000    0.611    0.001 container.py:215(forward)
+    50000    0.597    0.000    0.597    0.000 {method 'clone' of 'torch._C._TensorBase' objects}
+        1    0.000    0.000    0.560    0.560 __init__.py:338(set_device)
+        1    0.560    0.560    0.560    0.560 {built-in method torch._C._cuda_setDevice}
+    50000    0.543    0.000    0.543    0.000 {method 'permute' of 'torch._C._TensorBase' objects}
+1502800/1502763    0.485    0.000    0.487    0.000 {built-in method builtins.isinstance}
+      193    0.485    0.003    0.485    0.003 {method 'read' of '_io.BufferedReader' objects}
+      188    0.000    0.000    0.484    0.003 utils.py:60(<lambda>)
+    50000    0.471    0.000    0.471    0.000 {method 'div_' of 'torch._C._TensorBase' objects}
+   150020    0.379    0.000    0.461    0.000 Image.py:831(load)
+   200001    0.305    0.000    0.444    0.000 _trace.py:1101(is_tracing)
+   100020    0.297    0.000    0.432    0.000 Image.py:542(_new)
+      102    0.001    0.000    0.416    0.004 models.py:54(forward)
+    50000    0.414    0.000    0.414    0.000 {method 'sub_' of 'torch._C._TensorBase' objects}
+    50000    0.265    0.000    0.402    0.000 Image.py:394(_getdecoder)
+     1008    0.002    0.000    0.378    0.000 linear.py:113(forward)
+     1008    0.375    0.000    0.375    0.000 {built-in method torch._C._nn.linear}
+    50000    0.118    0.000    0.339    0.000 _functional_pil.py:22(get_dimensions)
+   200030    0.328    0.000    0.328    0.000 {built-in method torch._C._log_api_usage_once}
+   150020    0.191    0.000    0.305    0.000 Image.py:2876(_check_size)
+    50010    0.303    0.000    0.303    0.000 {method 'encode' of 'ImagingEncoder' objects}
+    50000    0.301    0.000    0.301    0.000 {built-in method torch.from_numpy}
+    50000    0.117    0.000    0.295    0.000 _functional_pil.py:41(get_image_num_channels)
+   150030    0.295    0.000    0.295    0.000 Image.py:511(__init__)
+      181    0.286    0.002    0.286    0.002 {method 'update' of '_hashlib.HASH' objects}
+    50010    0.187    0.000    0.285    0.000 Image.py:417(_getencoder)
+    50010    0.282    0.000    0.282    0.000 {built-in method PIL._imaging.fill}
+    50000    0.212    0.000    0.282    0.000 functional.py:366(_compute_resized_output_size)
+   100000    0.197    0.000    0.241    0.000 Image.py:1308(getbands)
+   103426    0.232    0.000    0.232    0.000 {built-in method torch._C._get_tracing_state}
+    50000    0.130    0.000    0.219    0.000 Image.py:249(_conv_type_shape)
+      200    0.001    0.000    0.202    0.001 models.py:33(forward)
+    50000    0.170    0.000    0.170    0.000 {method 'decode' of 'ImagingDecoder' objects}
+   200000    0.097    0.000    0.161    0.000 _functional_pil.py:14(_is_pil_image)
+661283/661281    0.158    0.000    0.158    0.000 {built-in method builtins.len}
+      102    0.001    0.000    0.151    0.001 dataloader.py:628(__next__)
+      102    0.000    0.000    0.145    0.001 dataloader.py:675(_next_data)
+      100    0.000    0.000    0.141    0.001 fetch.py:46(fetch)
+      100    0.000    0.000    0.139    0.001 collate.py:204(default_collate)
+  300/100    0.002    0.000    0.138    0.001 collate.py:87(collate)
+      706    0.001    0.000    0.137    0.000 activation.py:102(forward)
+      706    0.001    0.000    0.137    0.000 functional.py:1446(relu)
+      706    0.136    0.000    0.136    0.000 {built-in method torch.relu}
+        6    0.134    0.022    0.134    0.022 {built-in method _pickle.load}
+      100    0.000    0.000    0.133    0.001 collate.py:142(<listcomp>)
+      100    0.000    0.000    0.130    0.001 collate.py:153(collate_tensor_fn)
+      100    0.130    0.001    0.130    0.001 {built-in method torch.stack}
+        2    0.001    0.000    0.114    0.057 GANs_abstract_object.py:172(save_images)
+       10    0.000    0.000    0.110    0.011 pyplot.py:2392(imsave)
+       10    0.000    0.000    0.110    0.011 image.py:1531(imsave)
+    50000    0.106    0.000    0.106    0.000 {built-in method PIL._imaging.raw_decoder}
+   500040    0.105    0.000    0.105    0.000 Image.py:538(size)
+       10    0.000    0.000    0.105    0.010 Image.py:2347(save)
+        1    0.000    0.000    0.104    0.104 GANs_abstract_object.py:30(__init__)
+        1    0.000    0.000    0.104    0.104 GANs_abstract_object.py:78(build_models)
+   200001    0.096    0.000    0.096    0.000 {built-in method torch._C._is_tracing}
+        7    0.000    0.000    0.094    0.013 linear.py:90(__init__)
+        7    0.000    0.000    0.094    0.013 linear.py:103(reset_parameters)
+       14    0.093    0.007    0.093    0.007 {method 'uniform_' of 'torch._C._TensorBase' objects}
+        7    0.000    0.000    0.093    0.013 init.py:366(kaiming_uniform_)
+      102    0.000    0.000    0.087    0.001 activation.py:358(forward)
+      102    0.086    0.001    0.086    0.001 {built-in method torch.tanh}
+    50000    0.048    0.000    0.085    0.000 functional.py:1596(_check_antialias)
+   200163    0.085    0.000    0.085    0.000 {method 'startswith' of 'str' objects}
+      600    0.084    0.000    0.084    0.000 {built-in method torch.isnan}
+    50000    0.043    0.000    0.082    0.000 _functional_tensor.py:13(_assert_image_tensor)
+   150020    0.082    0.000    0.082    0.000 {method 'pixel_access' of 'ImagingCore' objects}
+       18    0.081    0.005    0.081    0.005 {method '__exit__' of '_io._IOBase' objects}
+   400146    0.080    0.000    0.080    0.000 _jit_internal.py:1102(is_scripting)
+        1    0.000    0.000    0.079    0.079 GANs_MLP_model.py:36(build_generator)
+        1    0.000    0.000    0.079    0.079 models.py:45(__init__)
+        1    0.000    0.000    0.072    0.072 __init__.py:645(device_count)
+        1    0.000    0.000    0.072    0.072 __init__.py:616(_device_count_nvml)
+        1    0.071    0.071    0.072    0.072 __init__.py:539(_raw_device_count_nvml)
+   100000    0.055    0.000    0.070    0.000 Image.py:530(width)
+       23    0.067    0.003    0.067    0.003 {built-in method io.open}
+   150000    0.065    0.000    0.065    0.000 ImageMode.py:36(getmode)
+    50000    0.055    0.000    0.063    0.000 functional.py:115(_is_numpy)
+   100071    0.061    0.000    0.061    0.000 {built-in method builtins.getattr}
+    50021    0.056    0.000    0.056    0.000 {built-in method builtins.max}
+    50000    0.055    0.000    0.055    0.000 {built-in method PIL._imaging.raw_encoder}
+    50000    0.054    0.000    0.054    0.000 Image.py:524(__getattr__)
+   100000    0.039    0.000    0.051    0.000 Image.py:534(height)
+    50000    0.028    0.000    0.051    0.000 enum.py:783(__hash__)
+      400    0.050    0.000    0.050    0.000 {built-in method torch.cat}
+     6400    0.003    0.000    0.045    0.000 module.py:2059(parameters)
+   150728    0.043    0.000    0.043    0.000 {built-in method builtins.hasattr}
+     6400    0.003    0.000    0.042    0.000 module.py:2084(named_parameters)
+       10    0.041    0.004    0.041    0.004 {method 'close' of '_io.BufferedRandom' objects}
+       44    0.041    0.001    0.041    0.001 {built-in method posix.stat}
+     6400    0.012    0.000    0.040    0.000 module.py:2045(_named_members)
+    50000    0.039    0.000    0.039    0.000 _functional_tensor.py:9(_is_tensor_a_torch_image)
+    50000    0.038    0.000    0.038    0.000 {built-in method torch.get_default_dtype}
+    50010    0.034    0.000    0.034    0.000 {method 'setimage' of 'ImagingEncoder' objects}
+        1    0.030    0.030    0.030    0.030 shape_base.py:219(vstack)
+    50028    0.029    0.000    0.029    0.000 {method 'is_floating_point' of 'torch._C._TensorBase' objects}
+    50000    0.029    0.000    0.029    0.000 {method 'setimage' of 'ImagingDecoder' objects}
+        1    0.016    0.016    0.027    0.027 GANs_MLP_model.py:64(<listcomp>)
+   100021    0.026    0.000    0.026    0.000 {method 'copy' of 'dict' objects}
+    50002    0.023    0.000    0.023    0.000 {built-in method builtins.hash}
+30800/9600    0.018    0.000    0.020    0.000 module.py:2224(named_modules)
+        7    0.000    0.000    0.019    0.003 genericpath.py:27(isfile)
+      3/1    0.000    0.000    0.019    0.019 __init__.py:353(get_device_name)
+      7/1    0.000    0.000    0.019    0.019 __init__.py:385(get_device_properties)
+      8/2    0.000    0.000    0.019    0.010 __init__.py:219(_lazy_init)
+        1    0.000    0.000    0.019    0.019 __init__.py:128(_check_capability)
+        4    0.000    0.000    0.019    0.005 __init__.py:368(get_device_capability)
+        7    0.019    0.003    0.019    0.003 {built-in method torch.cuda._get_device_properties}
+   100291    0.018    0.000    0.018    0.000 {method 'get' of 'dict' objects}
+       20    0.000    0.000    0.018    0.001 genericpath.py:16(exists)
+        1    0.000    0.000    0.016    0.016 GANs_MLP_model.py:31(build_discriminator)
+        1    0.000    0.000    0.016    0.016 models.py:26(__init__)
+     1400    0.015    0.000    0.015    0.000 {method 'add_' of 'torch._C._TensorBase' objects}
+     5102    0.013    0.000    0.013    0.000 {built-in method torch.tensor}
+        1    0.000    0.000    0.012    0.012 distributed_c10d.py:766(init_process_group)
+        1    0.000    0.000    0.012    0.012 cifar.py:94(_load_meta)
+        1    0.000    0.000    0.011    0.011 distributed_c10d.py:434(_store_based_barrier)
+        1    0.011    0.011    0.011    0.011 {built-in method time.sleep}
+      100    0.000    0.000    0.011    0.000 optimizers.py:53(zero_grad)
+      200    0.001    0.000    0.011    0.000 utils.py:161(zero_grad)
+       10    0.000    0.000    0.011    0.001 Image.py:322(preinit)
+     10/6    0.000    0.000    0.011    0.002 <frozen importlib._bootstrap>:1053(_handle_fromlist)
+      9/4    0.000    0.000    0.010    0.003 <frozen importlib._bootstrap>:233(_call_with_frames_removed)
+        4    0.000    0.000    0.010    0.003 {built-in method builtins.__import__}
+      5/4    0.000    0.000    0.010    0.003 <frozen importlib._bootstrap>:1022(_find_and_load)
+      5/4    0.000    0.000    0.010    0.003 <frozen importlib._bootstrap>:987(_find_and_load_unlocked)
+       10    0.000    0.000    0.010    0.001 PngImagePlugin.py:1230(_save)
+    50050    0.010    0.000    0.010    0.000 {method 'join' of 'bytes' objects}
+       10    0.000    0.000    0.010    0.001 ImageFile.py:496(_save)
+       10    0.000    0.000    0.009    0.001 ImageFile.py:524(_encode_tile)
+        4    0.000    0.000    0.009    0.002 module.py:1039(to)
+    50619    0.009    0.000    0.009    0.000 {method 'append' of 'list' objects}
+     44/4    0.001    0.000    0.009    0.002 module.py:795(_apply)
+      5/4    0.000    0.000    0.008    0.002 <frozen importlib._bootstrap>:664(_load_unlocked)
+      5/4    0.000    0.000    0.008    0.002 <frozen importlib._bootstrap_external>:877(exec_module)
+       28    0.000    0.000    0.008    0.000 module.py:1139(convert)
+      304    0.007    0.000    0.007    0.000 {method 'item' of 'torch._C._TensorBase' objects}
+      200    0.001    0.000    0.007    0.000 utils.py:80(noise)
+      400    0.002    0.000    0.007    0.000 __init__.py:50(_make_grads)
+        5    0.000    0.000    0.006    0.001 <frozen importlib._bootstrap_external>:950(get_code)
+      200    0.006    0.000    0.006    0.000 {built-in method torch.add}
+      200    0.006    0.000    0.006    0.000 {built-in method torch.randn}
+        2    0.000    0.000    0.006    0.003 models.py:61(to)
+        5    0.000    0.000    0.005    0.001 <frozen importlib._bootstrap_external>:1070(get_data)
+     1400    0.004    0.000    0.004    0.000 {method 'reshape' of 'torch._C._TensorBase' objects}
+      200    0.004    0.000    0.004    0.000 {built-in method torch.ones_like}
+      213    0.000    0.000    0.004    0.000 {built-in method builtins.next}
+      102    0.000    0.000    0.004    0.000 dataloader.py:622(_next_index)
+      200    0.001    0.000    0.004    0.000 utils.py:188(<listcomp>)
+    14442    0.003    0.000    0.004    0.000 {method 'add' of 'set' objects}
+      102    0.002    0.000    0.004    0.000 sampler.py:241(__iter__)
+        5    0.004    0.001    0.004    0.001 {built-in method io.open_code}
+     8800    0.003    0.000    0.004    0.000 module.py:2113(<lambda>)
+    11200    0.002    0.000    0.003    0.000 _tensor.py:942(__hash__)
+       15    0.000    0.000    0.003    0.000 <frozen importlib._bootstrap_external>:140(_path_stat)
+      100    0.001    0.000    0.003    0.000 {built-in method builtins.all}
+      200    0.001    0.000    0.003    0.000 utils.py:31(ones_target)
+      100    0.000    0.000    0.003    0.000 optimizers.py:353(<listcomp>)
+        5    0.000    0.000    0.003    0.001 <frozen importlib._bootstrap>:921(_find_spec)
+        2    0.000    0.000    0.003    0.001 models.py:39(to)
+        5    0.000    0.000    0.003    0.001 <frozen importlib._bootstrap_external>:1431(find_spec)
+        5    0.000    0.000    0.003    0.001 <frozen importlib._bootstrap_external>:1399(_get_spec)
+        5    0.000    0.000    0.003    0.001 <frozen importlib._bootstrap_external>:1536(find_spec)
+     3679    0.003    0.000    0.003    0.000 module.py:1601(__getattr__)
+      200    0.003    0.000    0.003    0.000 {method 'mul_' of 'torch._C._TensorBase' objects}
+       10    0.000    0.000    0.003    0.000 GANs_abstract_object.py:63(createFolder)
+      100    0.000    0.000    0.003    0.000 collate.py:182(collate_int_fn)
+      5/4    0.000    0.000    0.002    0.001 {built-in method builtins.exec}
+      102    0.000    0.000    0.002    0.000 profiler.py:491(__enter__)
+        1    0.000    0.000    0.002    0.002 __init__.py:213(__getattr__)
+        1    0.000    0.000    0.002    0.002 __init__.py:235(<lambda>)
+        1    0.000    0.000    0.002    0.002 __init__.py:213(_get_version)
+      100    0.000    0.000    0.002    0.000 optimizers.py:357(<listcomp>)
+      100    0.002    0.000    0.002    0.000 fetch.py:51(<listcomp>)
+    10000    0.002    0.000    0.002    0.000 collate.py:137(<genexpr>)
+      100    0.001    0.000    0.002    0.000 utils.py:55(zeros_target)
+      102    0.000    0.000    0.002    0.000 _ops.py:497(__call__)
+      102    0.002    0.000    0.002    0.000 {built-in method torch._ops.profiler._record_function_enter_new}
+        1    0.000    0.000    0.002    0.002 pathlib.py:1064(resolve)
+      200    0.002    0.000    0.002    0.000 {built-in method torch.ones}
+      102    0.001    0.000    0.002    0.000 profiler.py:495(__exit__)
+        1    0.000    0.000    0.002    0.002 posixpath.py:392(realpath)
+      3/1    0.000    0.000    0.002    0.002 posixpath.py:401(_joinrealpath)
+    10002    0.001    0.000    0.002    0.000 sampler.py:117(__iter__)
+        1    0.000    0.000    0.002    0.002 JpegImagePlugin.py:1(<module>)
+      305    0.000    0.000    0.002    0.000 GANs_abstract_object.py:59(print_verbose)
+      100    0.002    0.000    0.002    0.000 {built-in method torch.zeros}
+      324    0.001    0.000    0.001    0.000 {built-in method builtins.print}
+    17732    0.001    0.000    0.001    0.000 {method 'items' of 'collections.OrderedDict' objects}
+     1008    0.001    0.000    0.001    0.000 container.py:207(__iter__)
+        1    0.000    0.000    0.001    0.001 __init__.py:248(dump)
+        1    0.000    0.000    0.001    0.001 __init__.py:215(dump_all)
+        2    0.001    0.001    0.001    0.001 {built-in method posix.readlink}
+      800    0.001    0.000    0.001    0.000 overrides.py:1750(is_tensor_like)
+        1    0.000    0.000    0.001    0.001 representer.py:26(represent)
+  904/903    0.001    0.000    0.001    0.000 typing.py:306(inner)
+    11201    0.001    0.000    0.001    0.000 {built-in method builtins.id}
+        5    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap_external>:159(_path_isfile)
+      221    0.000    0.000    0.001    0.000 abc.py:117(__instancecheck__)
+        5    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap_external>:150(_path_is_mode_type)
+       10    0.001    0.000    0.001    0.000 cm.py:443(to_rgba)
+        1    0.000    0.000    0.001    0.001 serializer.py:46(serialize)
+      221    0.000    0.000    0.001    0.000 {built-in method _abc._abc_instancecheck}
+     21/1    0.000    0.000    0.001    0.001 serializer.py:78(serialize_node)
+     3200    0.001    0.000    0.001    0.000 {method 'numel' of 'torch._C._TensorBase' objects}
+      102    0.000    0.000    0.001    0.000 _ops.py:286(__call__)
+       26    0.000    0.000    0.001    0.000 emitter.py:111(emit)
+        7    0.000    0.000    0.001    0.000 init.py:122(uniform_)
+        7    0.000    0.000    0.001    0.000 init.py:12(_no_grad_uniform_)
+      102    0.000    0.000    0.001    0.000 profiler.py:482(__init__)
+        5    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap_external>:670(_compile_bytecode)
+        5    0.001    0.000    0.001    0.000 {built-in method marshal.loads}
+      102    0.001    0.000    0.001    0.000 {built-in method torch._ops.profiler.}
+        5    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap_external>:1089(path_stats)
+  172/106    0.000    0.000    0.001    0.000 abc.py:121(__subclasscheck__)
+      100    0.000    0.000    0.001    0.000 utils.py:88(images_to_vectors)
+       10    0.000    0.000    0.001    0.000 cm.py:398(__init__)
+  172/106    0.001    0.000    0.001    0.000 {built-in method _abc._abc_subclasscheck}
+       10    0.000    0.000    0.001    0.000 {built-in method builtins.__build_class__}
+     1130    0.001    0.000    0.001    0.000 {method 'size' of 'torch._C._TensorBase' objects}
+        1    0.001    0.001    0.001    0.001 distributed_c10d.py:935(_new_process_group_helper)
+        4    0.000    0.000    0.000    0.000 {built-in method torch.randperm}
+       41    0.000    0.000    0.000    0.000 {built-in method posix.lstat}
+      200    0.000    0.000    0.000    0.000 {method 'detach_' of 'torch._C._TensorBase' objects}
+      100    0.000    0.000    0.000    0.000 {built-in method numpy.arange}
+      339    0.000    0.000    0.000    0.000 {method 'format' of 'str' objects}
+       11    0.000    0.000    0.000    0.000 emitter.py:395(expect_block_mapping_key)
+        1    0.000    0.000    0.000    0.000 dataloader.py:225(__init__)
+       10    0.000    0.000    0.000    0.000 cm.py:642(set_norm)
+      200    0.000    0.000    0.000    0.000 {built-in method torch.is_same_size}
+       21    0.000    0.000    0.000    0.000 emitter.py:232(expect_node)
+       10    0.000    0.000    0.000    0.000 cm.py:613(norm)
+       51    0.000    0.000    0.000    0.000 module.py:1617(__setattr__)
+       50    0.000    0.000    0.000    0.000 PngImagePlugin.py:1066(putchunk)
+        1    0.000    0.000    0.000    0.000 __init__.py:340(__init__)
+        1    0.000    0.000    0.000    0.000 GifImagePlugin.py:1(<module>)
+       24    0.000    0.000    0.000    0.000 module.py:437(__init__)
+        1    0.000    0.000    0.000    0.000 BmpImagePlugin.py:1(<module>)
+        1    0.000    0.000    0.000    0.000 _ops.py:447(__getattr__)
+        2    0.000    0.000    0.000    0.000 dataloader.py:428(__iter__)
+       11    0.000    0.000    0.000    0.000 pathlib.py:957(__new__)
+       22    0.000    0.000    0.000    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+        2    0.000    0.000    0.000    0.000 dataloader.py:383(_get_iterator)
+       12    0.000    0.000    0.000    0.000 pathlib.py:589(_from_parts)
+        1    0.000    0.000    0.000    0.000 {built-in method _ctypes.dlopen}
+        2    0.000    0.000    0.000    0.000 dataloader.py:661(__init__)
+        4    0.000    0.000    0.000    0.000 {method 'tolist' of 'torch._C._TensorBase' objects}
+       53    0.000    0.000    0.000    0.000 posixpath.py:71(join)
+       13    0.000    0.000    0.000    0.000 pathlib.py:569(_parse_args)
+      706    0.000    0.000    0.000    0.000 {built-in method torch._C._has_torch_function_unary}
+      2/1    0.000    0.000    0.000    0.000 typing.py:401(__getitem__)
+        2    0.000    0.000    0.000    0.000 pathlib.py:1092(stat)
+        1    0.000    0.000    0.000    0.000 pathlib.py:1285(exists)
+        1    0.000    0.000    0.000    0.000 typing.py:523(Optional)
+      400    0.000    0.000    0.000    0.000 __init__.py:98(_tensor_or_tensors_to_tuple)
+        2    0.000    0.000    0.000    0.000 dataloader.py:567(__init__)
+      400    0.000    0.000    0.000    0.000 {built-in method torch._C._has_torch_function}
+     1117    0.000    0.000    0.000    0.000 {built-in method builtins.iter}
+       10    0.000    0.000    0.000    0.000 emitter.py:409(expect_block_mapping_simple_value)
+       20    0.000    0.000    0.000    0.000 emitter.py:266(expect_scalar)
+       13    0.000    0.000    0.000    0.000 pathlib.py:56(parse_parts)
+       10    0.000    0.000    0.000    0.000 emitter.py:437(check_simple_key)
+     1042    0.000    0.000    0.000    0.000 {method 'values' of 'collections.OrderedDict' objects}
+        1    0.000    0.000    0.000    0.000 {built-in method torch._C._get_operation_overload}
+       11    0.000    0.000    0.000    0.000 {method 'numpy' of 'torch._C._TensorBase' objects}
+        1    0.000    0.000    0.000    0.000 {built-in method torch._C._cuda_init}
+       18    0.000    0.000    0.000    0.000 {built-in method torch.empty}
+        7    0.000    0.000    0.000    0.000 container.py:97(__init__)
+        3    0.000    0.000    0.000    0.000 utils.py:117(get_gpus_list)
+       10    0.000    0.000    0.000    0.000 {method 'flush' of '_io.BufferedRandom' objects}
+        2    0.000    0.000    0.000    0.000 rendezvous.py:114(_file_rendezvous_handler)
+       10    0.000    0.000    0.000    0.000 {method 'max' of 'numpy.ndarray' objects}
+       10    0.000    0.000    0.000    0.000 cm.py:595(set_cmap)
+       20    0.000    0.000    0.000    0.000 emitter.py:626(analyze_scalar)
+       20    0.000    0.000    0.000    0.000 emitter.py:515(process_scalar)
+       10    0.000    0.000    0.000    0.000 cm.py:719(_ensure_cmap)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:564(module_from_spec)
+        2    0.000    0.000    0.000    0.000 fromnumeric.py:2979(prod)
+       10    0.000    0.000    0.000    0.000 _methods.py:39(_amax)
+        1    0.000    0.000    0.000    0.000 enum.py:180(__new__)
+      300    0.000    0.000    0.000    0.000 _reduction.py:7(get_enum)
+      314    0.000    0.000    0.000    0.000 {built-in method torch._C._has_torch_function_variadic}
+       20    0.000    0.000    0.000    0.000 emitter.py:1080(write_plain)
+        9    0.000    0.000    0.000    0.000 __init__.py:94(is_available)
+        2    0.000    0.000    0.000    0.000 fromnumeric.py:71(_wrapreduction)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:492(_init_module_attrs)
+        3    0.000    0.000    0.000    0.000 typing.py:146(_type_check)
+        2    0.000    0.000    0.000    0.000 utils.py:128(get_gpu)
+       10    0.000    0.000    0.000    0.000 cbook.py:215(connect)
+     21/1    0.000    0.000    0.000    0.000 representer.py:33(represent_data)
+       84    0.000    0.000    0.000    0.000 module.py:2167(children)
+        1    0.000    0.000    0.000    0.000 representer.py:206(represent_dict)
+       28    0.000    0.000    0.000    0.000 module.py:799(compute_should_use_set_data)
+       21    0.000    0.000    0.000    0.000 emitter.py:469(process_tag)
+       10    0.000    0.000    0.000    0.000 PngImagePlugin.py:1084(write)
+        1    0.000    0.000    0.000    0.000 representer.py:103(represent_mapping)
+      802    0.000    0.000    0.000    0.000 typing.py:1737(cast)
+      100    0.000    0.000    0.000    0.000 PngImagePlugin.py:154(_crc32)
+        5    0.000    0.000    0.000    0.000 {method 'extend' of 'list' objects}
+       84    0.000    0.000    0.000    0.000 grad_mode.py:149(__init__)
+        1    0.000    0.000    0.000    0.000 rendezvous.py:92(rendezvous)
+       42    0.000    0.000    0.000    0.000 grad_mode.py:57(__exit__)
+        3    0.000    0.000    0.000    0.000 typing.py:137(_type_convert)
+        9    0.000    0.000    0.000    0.000 __init__.py:91(_nvml_based_avail)
+        1    0.000    0.000    0.000    0.000 typing.py:483(Union)
+       42    0.000    0.000    0.000    0.000 grad_mode.py:53(__enter__)
+        1    0.000    0.000    0.000    0.000 utils.py:107(count_gpus)
+        1    0.000    0.000    0.000    0.000 transforms.py:337(__init__)
+       14    0.000    0.000    0.000    0.000 parameter.py:30(__new__)
+        1    0.000    0.000    0.000    0.000 rendezvous.py:59(_rendezvous_helper)
+        2    0.000    0.000    0.000    0.000 dataloader.py:98(_get_distributed_settings)
+       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:380(cache_from_source)
+       13    0.000    0.000    0.000    0.000 module.py:585(add_module)
+       10    0.000    0.000    0.000    0.000 weakref.py:54(_cb)
+        1    0.000    0.000    0.000    0.000 typing.py:664(__init__)
+       11    0.000    0.000    0.000    0.000 _collections_abc.py:828(__contains__)
+       10    0.000    0.000    0.000    0.000 colors.py:1222(__init__)
+       20    0.000    0.000    0.000    0.000 cm.py:89(__getitem__)
+        5    0.000    0.000    0.000    0.000 activation.py:98(__init__)
+       14    0.000    0.000    0.000    0.000 module.py:539(register_parameter)
+       10    0.000    0.000    0.000    0.000 Image.py:608(_ensure_mutable)
+       20    0.000    0.000    0.000    0.000 emitter.py:494(choose_scalar_style)
+       51    0.000    0.000    0.000    0.000 {built-in method sys.intern}
+       10    0.000    0.000    0.000    0.000 os.py:772(getenv)
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.compile}
+        4    0.000    0.000    0.000    0.000 {method 'random_' of 'torch._C._TensorBase' objects}
+      140    0.000    0.000    0.000    0.000 _binary.py:101(o32be)
+       10    0.000    0.000    0.000    0.000 Image.py:602(_copy)
+       14    0.000    0.000    0.000    0.000 {built-in method _make_subclass}
+       84    0.000    0.000    0.000    0.000 module.py:2176(named_children)
+        1    0.000    0.000    0.000    0.000 emitter.py:392(expect_first_block_mapping_key)
+       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:391(cached)
+       10    0.000    0.000    0.000    0.000 emitter.py:580(prepare_tag)
+       42    0.000    0.000    0.000    0.000 grad_mode.py:48(__init__)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:169(__enter__)
+       13    0.000    0.000    0.000    0.000 _collections_abc.py:821(get)
+        1    0.000    0.000    0.000    0.000 PpmImagePlugin.py:1(<module>)
+       14    0.000    0.000    0.000    0.000 init.py:284(_calculate_fan_in_and_fan_out)
+       10    0.000    0.000    0.000    0.000 {method 'min' of 'numpy.ndarray' objects}
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:510(_get_cached)
+       10    0.000    0.000    0.000    0.000 __init__.py:64(check_isinstance)
+       37    0.000    0.000    0.000    0.000 parameter.py:8(__instancecheck__)
+       10    0.000    0.000    0.000    0.000 cbook.py:241(_remove_proxy)
+      100    0.000    0.000    0.000    0.000 {built-in method zlib.crc32}
+       28    0.000    0.000    0.000    0.000 {built-in method torch._has_compatible_shallow_copy_type}
+       10    0.000    0.000    0.000    0.000 cbook.py:110(_weak_or_strong_ref)
+        7    0.000    0.000    0.000    0.000 {method 'hexdigest' of '_hashlib.HASH' objects}
+       30    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:126(_path_join)
+       20    0.000    0.000    0.000    0.000 colors.py:953(copy)
+        2    0.000    0.000    0.000    0.000 parse.py:380(urlparse)
+       10    0.000    0.000    0.000    0.000 _methods.py:43(_amin)
+       14    0.000    0.000    0.000    0.000 os.py:675(__getitem__)
+       10    0.000    0.000    0.000    0.000 PngImagePlugin.py:325(add_text)
+       41    0.000    0.000    0.000    0.000 resolver.py:143(resolve)
+        7    0.000    0.000    0.000    0.000 {built-in method _hashlib.openssl_md5}
+        4    0.000    0.000    0.000    0.000 {built-in method torch._C._nn._parse_to}
+        1    0.000    0.000    0.000    0.000 typing.py:1016(__init__)
+       20    0.000    0.000    0.000    0.000 __init__.py:741(__getitem__)
+      107    0.000    0.000    0.000    0.000 _collections_abc.py:315(__subclasshook__)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1531(_get_spec)
+       52    0.000    0.000    0.000    0.000 emitter.py:120(need_more_events)
+        7    0.000    0.000    0.000    0.000 init.py:356(_calculate_correct_fan)
+        7    0.000    0.000    0.000    0.000 enum.py:89(__setitem__)
+       10    0.000    0.000    0.000    0.000 pathlib.py:718(suffix)
+        1    0.000    0.000    0.000    0.000 enum.py:165(__prepare__)
+       10    0.000    0.000    0.000    0.000 {method 'detach' of 'torch._C._TensorBase' objects}
+        2    0.000    0.000    0.000    0.000 parse.py:456(urlsplit)
+       10    0.000    0.000    0.000    0.000 posixpath.py:117(splitext)
+       57    0.000    0.000    0.000    0.000 posixpath.py:41(_get_sep)
+        1    0.000    0.000    0.000    0.000 _ops.py:239(__init__)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:179(_get_module_lock)
+       20    0.000    0.000    0.000    0.000 colors.py:771(__copy__)
+       20    0.000    0.000    0.000    0.000 cbook.py:181(__init__)
+        1    0.000    0.000    0.000    0.000 dumper.py:47(__init__)
+        2    0.000    0.000    0.000    0.000 __init__.py:384(__getattr__)
+       10    0.000    0.000    0.000    0.000 {method 'copy' of 'ImagingCore' objects}
+        3    0.000    0.000    0.000    0.000 distributed_c10d.py:1180(get_world_size)
+        3    0.000    0.000    0.000    0.000 __init__.py:653(get_arch_list)
+      140    0.000    0.000    0.000    0.000 {built-in method _struct.pack}
+        1    0.000    0.000    0.000    0.000 GifImagePlugin.py:39(LoadingStrategy)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:721(spec_from_file_location)
+        7    0.000    0.000    0.000    0.000 init.py:67(calculate_gain)
+       10    0.000    0.000    0.000    0.000 {method 'astype' of 'numpy.ndarray' objects}
+       53    0.000    0.000    0.000    0.000 {built-in method __new__ of type object at 0x743500}
+       10    0.000    0.000    0.000    0.000 weakref.py:47(__new__)
+       99    0.000    0.000    0.000    0.000 {built-in method posix.fspath}
+        1    0.000    0.000    0.000    0.000 enum.py:222(<setcomp>)
+      160    0.000    0.000    0.000    0.000 {method 'write' of '_io.BufferedRandom' objects}
+      100    0.000    0.000    0.000    0.000 worker.py:89(get_worker_info)
+       31    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:404(parent)
+        1    0.000    0.000    0.000    0.000 __init__.py:154(_check_cubins)
+        3    0.000    0.000    0.000    0.000 distributed_c10d.py:571(_get_group_size)
+       30    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:128(<listcomp>)
+    20/19    0.000    0.000    0.000    0.000 dataloader.py:418(__setattr__)
+       10    0.000    0.000    0.000    0.000 core.py:6677(is_masked)
+        2    0.000    0.000    0.000    0.000 __init__.py:391(__getitem__)
+        1    0.000    0.000    0.000    0.000 transforms.py:262(__init__)
+       10    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:132(_path_split)
+       20    0.000    0.000    0.000    0.000 __init__.py:690(_get)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:173(__exit__)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:585(_classify_pyc)
+       16    0.000    0.000    0.000    0.000 os.py:755(encode)
+        2    0.000    0.000    0.000    0.000 utils.py:93(vectors_to_images)
+       10    0.000    0.000    0.000    0.000 cm.py:559(set_clim)
+        1    0.000    0.000    0.000    0.000 serializer.py:27(open)
+        1    0.000    0.000    0.000    0.000 __init__.py:491(_parse_visible_devices)
+        7    0.000    0.000    0.000    0.000 distributed_c10d.py:683(is_initialized)
+        1    0.000    0.000    0.000    0.000 GANs_abstract_object.py:123(optimizer_initialize)
+        6    0.000    0.000    0.000    0.000 {built-in method builtins.min}
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:125(release)
+      102    0.000    0.000    0.000    0.000 {method '__exit__' of 'torch._C.DisableTorchFunctionSubclass' objects}
+       10    0.000    0.000    0.000    0.000 genericpath.py:121(_splitext)
+       56    0.000    0.000    0.000    0.000 {method 'split' of 'str' objects}
+      126    0.000    0.000    0.000    0.000 {built-in method torch.is_grad_enabled}
+        8    0.000    0.000    0.000    0.000 typing.py:986(__setattr__)
+       10    0.000    0.000    0.000    0.000 {built-in method PIL._imaging.map_buffer}
+        2    0.000    0.000    0.000    0.000 __init__.py:1467(info)
+      102    0.000    0.000    0.000    0.000 __init__.py:89(annotate)
+       10    0.000    0.000    0.000    0.000 {built-in method PIL._imaging.zip_encoder}
+        1    0.000    0.000    0.000    0.000 emitter.py:38(__init__)
+        1    0.000    0.000    0.000    0.000 pathlib.py:853(__truediv__)
+       15    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:84(_unpack_uint32)
+       20    0.000    0.000    0.000    0.000 representer.py:77(represent_scalar)
+        1    0.000    0.000    0.000    0.000 emitter.py:226(expect_document_root)
+       10    0.000    0.000    0.000    0.000 {built-in method numpy.empty}
+       19    0.000    0.000    0.000    0.000 distributed_c10d.py:403(WORLD)
+        1    0.000    0.000    0.000    0.000 pathlib.py:615(_make_child)
+       13    0.000    0.000    0.000    0.000 representer.py:147(represent_str)
+        1    0.000    0.000    0.000    0.000 typing.py:947(__init__)
+     21/1    0.000    0.000    0.000    0.000 serializer.py:60(anchor_node)
+        3    0.000    0.000    0.000    0.000 pathlib.py:631(__fspath__)
+       74    0.000    0.000    0.000    0.000 {method 'endswith' of 'str' objects}
+       11    0.000    0.000    0.000    0.000 emitter.py:814(write_indent)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:71(__init__)
+        1    0.000    0.000    0.000    0.000 representer.py:171(represent_float)
+        1    0.000    0.000    0.000    0.000 optimizers.py:304(__init__)
+        2    0.000    0.000    0.000    0.000 dataloader.py:74(create_fetcher)
+       13    0.000    0.000    0.000    0.000 pathlib.py:239(splitroot)
+       21    0.000    0.000    0.000    0.000 emitter.py:146(increase_indent)
+        1    0.000    0.000    0.000    0.000 posixpath.py:377(abspath)
+       21    0.000    0.000    0.000    0.000 representer.py:136(ignore_aliases)
+        1    0.000    0.000    0.000    0.000 {built-in method torch._C._get_schema}
+        1    0.000    0.000    0.000    0.000 shape_base.py:81(atleast_2d)
+       56    0.000    0.000    0.000    0.000 {method 'join' of 'str' objects}
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:100(acquire)
+       37    0.000    0.000    0.000    0.000 {function _ParameterMeta.__instancecheck__ at 0x1539ce2f0430}
+        3    0.000    0.000    0.000    0.000 pathlib.py:621(__str__)
+       36    0.000    0.000    0.000    0.000 {method 'encode' of 'str' objects}
+        8    0.000    0.000    0.000    0.000 enum.py:470(__setattr__)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:618(_validate_timestamp_pyc)
+        2    0.000    0.000    0.000    0.000 enum.py:579(_get_mixins_)
+       56    0.000    0.000    0.000    0.000 {method 'rpartition' of 'str' objects}
+       24    0.000    0.000    0.000    0.000 __init__.py:150(<genexpr>)
+       20    0.000    0.000    0.000    0.000 {method 'update' of 'dict' objects}
+       11    0.000    0.000    0.000    0.000 {method 'transpose' of 'numpy.ndarray' objects}
+        2    0.000    0.000    0.000    0.000 __init__.py:1724(isEnabledFor)
+       12    0.000    0.000    0.000    0.000 {method 'match' of 're.Pattern' objects}
+        5    0.000    0.000    0.000    0.000 Image.py:3407(register_open)
+       35    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:244(_verbose_message)
+        6    0.000    0.000    0.000    0.000 emitter.py:133(need_events)
+       10    0.000    0.000    0.000    0.000 {method 'sort' of 'list' objects}
+       10    0.000    0.000    0.000    0.000 core.py:1362(getmask)
+       10    0.000    0.000    0.000    0.000 emitter.py:800(write_indicator)
+       20    0.000    0.000    0.000    0.000 emitter.py:18(__init__)
+       10    0.000    0.000    0.000    0.000 pathlib.py:710(name)
+        1    0.000    0.000    0.000    0.000 vision.py:30(__init__)
+       40    0.000    0.000    0.000    0.000 {method 'rfind' of 'str' objects}
+        4    0.000    0.000    0.000    0.000 posixpath.py:60(isabs)
+       10    0.000    0.000    0.000    0.000 PngImagePlugin.py:282(add)
+       10    0.000    0.000    0.000    0.000 __init__.py:87(_is_compiled)
+       10    0.000    0.000    0.000    0.000 __init__.py:99(check_in_list)
+       12    0.000    0.000    0.000    0.000 {built-in method builtins.setattr}
+       33    0.000    0.000    0.000    0.000 ImageMode.py:25(__init__)
+       21    0.000    0.000    0.000    0.000 module.py:1618(remove_from)
+        2    0.000    0.000    0.000    0.000 rendezvous.py:55(_query_to_dict)
+        1    0.000    0.000    0.000    0.000 typing.py:267(_remove_dups_flatten)
+        1    0.000    0.000    0.000    0.000 transforms.py:88(__init__)
+        2    0.000    0.000    0.000    0.000 emitter.py:178(expect_document_start)
+        1    0.000    0.000    0.000    0.000 posixpath.py:338(normpath)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:198(cb)
+       10    0.000    0.000    0.000    0.000 _util.py:5(is_path)
+        1    0.000    0.000    0.000    0.000 sampler.py:95(__init__)
+       84    0.000    0.000    0.000    0.000 {built-in method torch._C._set_grad_enabled}
+        3    0.000    0.000    0.000    0.000 typing.py:515(<genexpr>)
+       10    0.000    0.000    0.000    0.000 emitter.py:827(write_line_break)
+        1    0.000    0.000    0.000    0.000 enum.py:626(_find_new_)
+       11    0.000    0.000    0.000    0.000 Image.py:3457(register_extension)
+        1    0.000    0.000    0.000    0.000 emitter.py:214(expect_document_end)
+        1    0.000    0.000    0.000    0.000 os.py:683(__setitem__)
+       11    0.000    0.000    0.000    0.000 {built-in method builtins.sorted}
+        1    0.000    0.000    0.000    0.000 emitter.py:175(expect_first_document_start)
+        1    0.000    0.000    0.000    0.000 typing_extensions.py:126(_collect_type_vars)
+       42    0.000    0.000    0.000    0.000 {method 'lower' of 'str' objects}
+       40    0.000    0.000    0.000    0.000 __init__.py:78(<genexpr>)
+        1    0.000    0.000    0.000    0.000 optimizers.py:34(__init__)
+       35    0.000    0.000    0.000    0.000 {built-in method math.sqrt}
+       20    0.000    0.000    0.000    0.000 events.py:65(__init__)
+        5    0.000    0.000    0.000    0.000 distributed_c10d.py:702(_get_default_group)
+        2    0.000    0.000    0.000    0.000 enum.py:590(_find_data_type)
+        2    0.000    0.000    0.000    0.000 Image.py:3468(register_extensions)
+       28    0.000    0.000    0.000    0.000 {method 'dim' of 'torch._C._TensorBase' objects}
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.repr}
+        9    0.000    0.000    0.000    0.000 {built-in method torch._C._cuda_getDeviceCount}
+       68    0.000    0.000    0.000    0.000 {method 'pop' of 'list' objects}
+       20    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:893(__enter__)
+       13    0.000    0.000    0.000    0.000 typing.py:705(__eq__)
+       20    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:897(__exit__)
+        8    0.000    0.000    0.000    0.000 typing.py:935(_is_dunder)
+        2    0.000    0.000    0.000    0.000 emitter.py:788(flush_stream)
+        1    0.000    0.000    0.000    0.000 representer.py:18(__init__)
+       20    0.000    0.000    0.000    0.000 {function RcParams.__getitem__ at 0x153ad4349cf0}
+        2    0.000    0.000    0.000    0.000 distributed_c10d.py:1152(get_rank)
+        1    0.000    0.000    0.000    0.000 shape_base.py:215(_vhstack_dispatcher)
+       20    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:134(<genexpr>)
+       41    0.000    0.000    0.000    0.000 {method 'setdefault' of 'dict' objects}
+        7    0.000    0.000    0.000    0.000 enum.py:44(_is_private)
+        1    0.000    0.000    0.000    0.000 serializer.py:36(close)
+       41    0.000    0.000    0.000    0.000 {method 'partition' of 'str' objects}
+        1    0.000    0.000    0.000    0.000 JpegPresets.py:1(<module>)
+       20    0.000    0.000    0.000    0.000 nodes.py:27(__init__)
+       52    0.000    0.000    0.000    0.000 {method 'items' of 'dict' objects}
+        7    0.000    0.000    0.000    0.000 {built-in method _stat.S_ISREG}
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:542(_check_name_wrapper)
+        1    0.000    0.000    0.000    0.000 parse.py:519(urlunparse)
+        2    0.000    0.000    0.000    0.000 distributed_c10d.py:179(__new__)
+        1    0.000    0.000    0.000    0.000 GifImagePlugin.py:63(GifImageFile)
+        6    0.000    0.000    0.000    0.000 sampler.py:110(num_samples)
+        6    0.000    0.000    0.000    0.000 parse.py:123(_coerce_args)
+       19    0.000    0.000    0.000    0.000 distributed_c10d.py:323(default_pg)
+        2    0.000    0.000    0.000    0.000 parse.py:419(_splitnetloc)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:826(find_spec)
+       10    0.000    0.000    0.000    0.000 PngImagePlugin.py:279(__init__)
+        1    0.000    0.000    0.000    0.000 pathlib.py:525(__getitem__)
+       70    0.000    0.000    0.000    0.000 {method 'rstrip' of 'str' objects}
+       50    0.000    0.000    0.000    0.000 {method 'write' of '_io.StringIO' objects}
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1356(_path_importer_cache)
+        1    0.000    0.000    0.000    0.000 BmpImagePlugin.py:62(BmpImageFile)
+        7    0.000    0.000    0.000    0.000 enum.py:22(_is_dunder)
+       12    0.000    0.000    0.000    0.000 {built-in method time.time}
+        1    0.000    0.000    0.000    0.000 enum.py:569(_check_for_existing_members)
+       27    0.000    0.000    0.000    0.000 {method 'pop' of 'dict' objects}
+        1    0.000    0.000    0.000    0.000 pathlib.py:875(parents)
+       49    0.000    0.000    0.000    0.000 {method 'upper' of 'str' objects}
+        3    0.000    0.000    0.000    0.000 pathlib.py:608(_format_parsed_parts)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:48(_new_module)
+       28    0.000    0.000    0.000    0.000 __future__.py:20(get_overwrite_module_params_on_conversion)
+        7    0.000    0.000    0.000    0.000 enum.py:33(_is_sunder)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:180(_path_isabs)
+       10    0.000    0.000    0.000    0.000 PngImagePlugin.py:1080(__init__)
+        2    0.000    0.000    0.000    0.000 __init__.py:7(is_available)
+        1    0.000    0.000    0.000    0.000 PpmImagePlugin.py:53(PpmImageFile)
+        5    0.000    0.000    0.000    0.000 {built-in method _imp._fix_co_filename}
+       20    0.000    0.000    0.000    0.000 colors.py:204(_sanitize_extrema)
+        2    0.000    0.000    0.000    0.000 typing_extensions.py:114(_should_collect_from_parameters)
+        2    0.000    0.000    0.000    0.000 __init__.py:497(_strtoul)
+        4    0.000    0.000    0.000    0.000 representer.py:164(represent_int)
+        5    0.000    0.000    0.000    0.000 __init__.py:89(find_spec)
+        1    0.000    0.000    0.000    0.000 __init__.py:165(<listcomp>)
+       21    0.000    0.000    0.000    0.000 emitter.py:459(process_anchor)
+        1    0.000    0.000    0.000    0.000 pathlib.py:38(_ignore_error)
+       30    0.000    0.000    0.000    0.000 cm.py:609(norm)
+        2    0.000    0.000    0.000    0.000 rendezvous.py:56(<dictcomp>)
+        1    0.000    0.000    0.000    0.000 distributed_c10d.py:227(__init__)
+        2    0.000    0.000    0.000    0.000 {method 'manual_seed' of 'torch._C.Generator' objects}
+        1    0.000    0.000    0.000    0.000 {built-in method torch.set_vital}
+        3    0.000    0.000    0.000    0.000 enum.py:12(_is_descriptor)
+        2    0.000    0.000    0.000    0.000 fromnumeric.py:72(<dictcomp>)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:357(__init__)
+        1    0.000    0.000    0.000    0.000 __init__.py:430(_replace)
+        1    0.000    0.000    0.000    0.000 distributed_c10d.py:264(__repr__)
+       21    0.000    0.000    0.000    0.000 resolver.py:91(descend_resolver)
+       41    0.000    0.000    0.000    0.000 {built-in method _stat.S_ISLNK}
+        2    0.000    0.000    0.000    0.000 fetch.py:8(__init__)
+        1    0.000    0.000    0.000    0.000 enum.py:82(__init__)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1040(__init__)
+        1    0.000    0.000    0.000    0.000 {built-in method torch.distributed.distributed_c10d.get_debug_level}
+        1    0.000    0.000    0.000    0.000 dataloader.py:488(check_worker_number_rationality)
+       21    0.000    0.000    0.000    0.000 resolver.py:114(ascend_resolver)
+        1    0.000    0.000    0.000    0.000 serializer.py:15(__init__)
+        1    0.000    0.000    0.000    0.000 dataloader.py:394(multiprocessing_context)
+       15    0.000    0.000    0.000    0.000 {built-in method from_bytes}
+       30    0.000    0.000    0.000    0.000 {built-in method _imp.acquire_lock}
+        1    0.000    0.000    0.000    0.000 parse.py:530(urlunsplit)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:165(__init__)
+        1    0.000    0.000    0.000    0.000 shape_base.py:207(_arrays_for_stack_dispatcher)
+       30    0.000    0.000    0.000    0.000 {built-in method _imp.release_lock}
+        3    0.000    0.000    0.000    0.000 typing.py:1022(<genexpr>)
+        1    0.000    0.000    0.000    0.000 {built-in method posix.putenv}
+        1    0.000    0.000    0.000    0.000 transforms.py:126(__init__)
+        1    0.000    0.000    0.000    0.000 {method 'reshape' of 'numpy.ndarray' objects}
+       10    0.000    0.000    0.000    0.000 {built-in method _thread.allocate_lock}
+        8    0.000    0.000    0.000    0.000 _utils.py:7(_get_device_index)
+        5    0.000    0.000    0.000    0.000 Image.py:3434(register_save)
+        4    0.000    0.000    0.000    0.000 rendezvous.py:56(<genexpr>)
+       21    0.000    0.000    0.000    0.000 _collections_abc.py:409(__subclasshook__)
+        1    0.000    0.000    0.000    0.000 __init__.py:219(_acquireLock)
+        4    0.000    0.000    0.000    0.000 {method 'lstrip' of 'str' objects}
+        1    0.000    0.000    0.000    0.000 sampler.py:226(__init__)
+       10    0.000    0.000    0.000    0.000 {built-in method sys.is_finalizing}
+        1    0.000    0.000    0.000    0.000 posixpath.py:229(expanduser)
+        1    0.000    0.000    0.000    0.000 typing.py:253(_deduplicate)
+        2    0.000    0.000    0.000    0.000 {built-in method torch._C._cuda_isInBadFork}
+        1    0.000    0.000    0.000    0.000 emitter.py:160(expect_stream_start)
+        3    0.000    0.000    0.000    0.000 {built-in method builtins.any}
+       10    0.000    0.000    0.000    0.000 {method 'cleanup' of 'ImagingEncoder' objects}
+        1    0.000    0.000    0.000    0.000 rendezvous.py:82(<listcomp>)
+        9    0.000    0.000    0.000    0.000 {built-in method builtins.issubclass}
+        5    0.000    0.000    0.000    0.000 Image.py:3423(register_mime)
+       13    0.000    0.000    0.000    0.000 {method 'reverse' of 'list' objects}
+       10    0.000    0.000    0.000    0.000 {method 'islower' of 'bytes' objects}
+        1    0.000    0.000    0.000    0.000 cifar.py:101(<dictcomp>)
+        2    0.000    0.000    0.000    0.000 representer.py:157(represent_bool)
+        1    0.000    0.000    0.000    0.000 emitter.py:388(expect_block_mapping)
+       10    0.000    0.000    0.000    0.000 {method 'discard' of 'set' objects}
+        1    0.000    0.000    0.000    0.000 pathlib.py:512(__init__)
+        9    0.000    0.000    0.000    0.000 __init__.py:176(is_initialized)
+       10    0.000    0.000    0.000    0.000 ImageFile.py:75(_tilesort)
+        2    0.000    0.000    0.000    0.000 os.py:759(decode)
+       11    0.000    0.000    0.000    0.000 {method '__exit__' of '_thread.lock' objects}
+        5    0.000    0.000    0.000    0.000 {built-in method _imp.is_frozen}
+        1    0.000    0.000    0.000    0.000 __init__.py:420(_make)
+        1    0.000    0.000    0.000    0.000 enum.py:423(__getattr__)
+       10    0.000    0.000    0.000    0.000 {built-in method _thread.get_ident}
+        2    0.000    0.000    0.000    0.000 typing.py:714(__hash__)
+        1    0.000    0.000    0.000    0.000 {method 'getvalue' of '_io.StringIO' objects}
+       11    0.000    0.000    0.000    0.000 {method 'keys' of 'dict' objects}
+        1    0.000    0.000    0.000    0.000 pathlib.py:94(join_parsed_parts)
+        2    0.000    0.000    0.000    0.000 __init__.py:169(<listcomp>)
+        1    0.000    0.000    0.000    0.000 events.py:22(__init__)
+        1    0.000    0.000    0.000    0.000 emitter.py:430(check_empty_document)
+        2    0.000    0.000    0.000    0.000 pathlib.py:600(_from_parsed_parts)
+        8    0.000    0.000    0.000    0.000 {method 'find' of 'str' objects}
+        5    0.000    0.000    0.000    0.000 distributed_c10d.py:481(_rank_not_in_group)
+        1    0.000    0.000    0.000    0.000 events.py:37(__init__)
+        5    0.000    0.000    0.000    0.000 dataloader.py:443(_auto_collation)
+        1    0.000    0.000    0.000    0.000 __init__.py:228(_releaseLock)
+        2    0.000    0.000    0.000    0.000 fromnumeric.py:2974(_prod_dispatcher)
+        2    0.000    0.000    0.000    0.000 {method 'flush' of '_io._IOBase' objects}
+        1    0.000    0.000    0.000    0.000 JpegImagePlugin.py:346(JpegImageFile)
+        1    0.000    0.000    0.000    0.000 nodes.py:36(__init__)
+        1    0.000    0.000    0.000    0.000 distributed_c10d.py:728(_update_default_pg)
+        6    0.000    0.000    0.000    0.000 {built-in method builtins.vars}
+        8    0.000    0.000    0.000    0.000 {method 'get' of 'mappingproxy' objects}
+        1    0.000    0.000    0.000    0.000 __init__.py:1710(getEffectiveLevel)
+        2    0.000    0.000    0.000    0.000 dataloader.py:447(_index_sampler)
+        3    0.000    0.000    0.000    0.000 distributed_c10d.py:266(<genexpr>)
+        1    0.000    0.000    0.000    0.000 resolver.py:21(__init__)
+        2    0.000    0.000    0.000    0.000 <string>:1(<lambda>)
+        2    0.000    0.000    0.000    0.000 pathlib.py:519(__len__)
+       12    0.000    0.000    0.000    0.000 {method 'replace' of 'str' objects}
+        1    0.000    0.000    0.000    0.000 __init__.py:368(_FuncPtr)
+        1    0.000    0.000    0.000    0.000 emitter.py:797(write_stream_end)
+        3    0.000    0.000    0.000    0.000 Image.py:3489(register_decoder)
+        3    0.000    0.000    0.000    0.000 {built-in method torch._C._cuda_getArchFlags}
+        5    0.000    0.000    0.000    0.000 {built-in method numpy.asanyarray}
+        1    0.000    0.000    0.000    0.000 emitter.py:426(check_empty_mapping)
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+        3    0.000    0.000    0.000    0.000 enum.py:245(<genexpr>)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:746(find_spec)
+        1    0.000    0.000    0.000    0.000 PpmImagePlugin.py:148(PpmPlainDecoder)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1065(get_filename)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:71(_relax_case)
+        2    0.000    0.000    0.000    0.000 events.py:5(__init__)
+        1    0.000    0.000    0.000    0.000 enum.py:198(<dictcomp>)
+        1    0.000    0.000    0.000    0.000 {built-in method _ctypes.byref}
+        1    0.000    0.000    0.000    0.000 __init__.py:1307(disable)
+        1    0.000    0.000    0.000    0.000 events.py:46(__init__)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:412(has_location)
+        1    0.000    0.000    0.000    0.000 vision.py:88(__init__)
+        1    0.000    0.000    0.000    0.000 events.py:55(__init__)
+        1    0.000    0.000    0.000    0.000 {method 'acquire' of '_thread.RLock' objects}
+        1    0.000    0.000    0.000    0.000 BmpImagePlugin.py:361(DibImageFile)
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.delattr}
+        1    0.000    0.000    0.000    0.000 emitter.py:792(write_stream_start)
+        6    0.000    0.000    0.000    0.000 parse.py:112(_noop)
+        5    0.000    0.000    0.000    0.000 {method 'items' of 'mappingproxy' objects}
+        1    0.000    0.000    0.000    0.000 typing.py:380(__repr__)
+        1    0.000    0.000    0.000    0.000 Image.py:3445(register_save_all)
+        2    0.000    0.000    0.000    0.000 distributed_c10d.py:347(pg_names)
+        5    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:874(create_module)
+        4    0.000    0.000    0.000    0.000 {method 'strip' of 'str' objects}
+        1    0.000    0.000    0.000    0.000 {built-in method torch._C._cuda_getCompiledVersion}
+        1    0.000    0.000    0.000    0.000 __init__.py:61(get_calls)
+        2    0.000    0.000    0.000    0.000 {method 'decode' of 'bytes' objects}
+        1    0.000    0.000    0.000    0.000 distributed_c10d.py:919(<dictcomp>)
+        3    0.000    0.000    0.000    0.000 distributed_c10d.py:268(get_device_backend_map)
+        1    0.000    0.000    0.000    0.000 BmpImagePlugin.py:287(BmpRleDecoder)
+        3    0.000    0.000    0.000    0.000 distributed_c10d.py:375(group_count)
+        2    0.000    0.000    0.000    0.000 distributed_c10d.py:335(pg_map)
+        1    0.000    0.000    0.000    0.000 emitter.py:106(dispose)
+        2    0.000    0.000    0.000    0.000 parse.py:427(_checknetloc)
+        1    0.000    0.000    0.000    0.000 multiarray.py:153(concatenate)
+        2    0.000    0.000    0.000    0.000 {method 'values' of 'dict' objects}
+        1    0.000    0.000    0.000    0.000 distributed_c10d.py:331(default_pg)
+        1    0.000    0.000    0.000    0.000 distributed_c10d.py:385(group_count)
+        1    0.000    0.000    0.000    0.000 PpmImagePlugin.py:279(PpmDecoder)
+        1    0.000    0.000    0.000    0.000 distributed_c10d.py:662(is_nccl_available)
+        2    0.000    0.000    0.000    0.000 {method 'isdigit' of 'str' objects}
+        1    0.000    0.000    0.000    0.000 distributed_c10d.py:366(pg_backend_config)
+        1    0.000    0.000    0.000    0.000 {method 'mro' of 'type' objects}
+        2    0.000    0.000    0.000    0.000 {method 'pop' of 'set' objects}
+        1    0.000    0.000    0.000    0.000 shape_base.py:77(_atleast_2d_dispatcher)
+        1    0.000    0.000    0.000    0.000 {method 'release' of '_thread.RLock' objects}
+        1    0.000    0.000    0.000    0.000 distributed_c10d.py:357(pg_group_ranks)
+
+
