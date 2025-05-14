@@ -1,7 +1,8 @@
 #!/bin/bash
 #SBATCH -N 1                            # Request 1 node
+#SBATCH -n 2 
 #SBATCH -p gpu                          # Use the GPU partition
-#SBATCH --gres=gpu:a100:2       # Request 2 GPUs
+#SBATCH --gres=gpu:a100:4       # Request 2 GPUs
 #SBATCH --mem=128G
 #SBATCH -A cmsc714-class               # Your account
 #SBATCH -J DistGAN                     # Job name
@@ -23,6 +24,8 @@ export PATH=$HOME/miniconda/envs/distgan/bin:$PATH
 
 # Recommended environment variables for NCCL and debugging
 export OMP_NUM_THREADS=4
+export MKL_NUM_THREADS=4
+export NUMEXPR_NUM_THREADS=4
 export NCCL_DEBUG=warn
 export PYTHONFAULTHANDLER=1
 
@@ -35,12 +38,16 @@ echo "Using CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES"
 #     torchrun --nproc_per_node=2 main_GANs.py -e 2 -m MLP
 
 # Rank 0 (profiled)
-CUDA_VISIBLE_DEVICES=0 \
-nsys profile -o nsys_rank0 --trace=cuda,nvtx \
-python main_GANs.py --rank 0 --local_rank 0 --world_size 2 -e 2 -m MLP &
+# CUDA_VISIBLE_DEVICES=0 \
+# nsys profile --force-overwrite true -o nsys_rank0 --trace=cuda,nvtx \
+python main_GANs.py --rank 0 --local_rank 0 --world_size 4 --config input.cfg &
 
 # Rank 1 (not profiled)
-CUDA_VISIBLE_DEVICES=1 \
-python main_GANs.py --rank 1 --local_rank 1 --world_size 2 -e 2 -m MLP &
+# CUDA_VISIBLE_DEVICES=1 \
+python main_GANs.py --rank 1 --local_rank 1 --world_size 4 --config input.cfg &
+
+python main_GANs.py --rank 2 --local_rank 2 --world_size 4 --config input.cfg &
+
+python main_GANs.py --rank 3 --local_rank 3 --world_size 4 --config input.cfg &
 
 wait

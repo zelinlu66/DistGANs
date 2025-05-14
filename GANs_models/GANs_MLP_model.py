@@ -23,7 +23,7 @@ import GANs_abstract_object
 from models import *
 from optimizers import *
 from utils import *
-
+import psutil
 
 class GANs_MLP_model(GANs_abstract_object.GANs_model):
     model_name = 'MLP'
@@ -64,6 +64,7 @@ class GANs_MLP_model(GANs_abstract_object.GANs_model):
             self.data = [
                 i for i in self.data if i[1] == torch.tensor(single_number)
             ]
+            print(f"[Rank {single_number}] Training data size: {len(self.data)}")
             self.data_loader = torch.utils.data.DataLoader(
                 self.data, batch_size=100, shuffle=True
             )
@@ -89,6 +90,10 @@ class GANs_MLP_model(GANs_abstract_object.GANs_model):
         )
         start = time.time()
         for e in range(num_epochs):
+            
+            start_epoch = time.time()
+            print(f"[Rank {single_number}] epoch {e} Training starts: {start_epoch}")
+            
             self.print_verbose(
                 "######################################################"
             )
@@ -160,5 +165,10 @@ class GANs_MLP_model(GANs_abstract_object.GANs_model):
             self.print_verbose(
                 "######################################################"
             )
+
+            end_epoch = time.time()
+            print(f"[Rank {single_number}] CPU usage: {psutil.cpu_percent(interval=1)}%")
+            print(f"[Rank {single_number}] epoch {e} Training ends: {end_epoch}")
+
         end = time.time()
         self.print_verbose('Total Time[s]: ', str(end - start))

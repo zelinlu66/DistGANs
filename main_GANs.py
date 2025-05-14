@@ -46,7 +46,9 @@ import numpy as np
 import subprocess
 import time
 import argparse
-
+import cProfile
+import pstats
+import psutil
 # mpi4py.rc.initialize = False
 # mpi4py.rc.finalize = False
 # from mpi4py import MPI
@@ -114,54 +116,71 @@ def gather_and_compute_std(value: float, device: torch.device):
     else:
         return None
 
-if __name__ == '__main__':
-    config = get_options()
+def get_options_profile():
+    parser = argparse.ArgumentParser(description="DistGAN Training Configuration")
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--rank', type=int)
-    parser.add_argument('--local_rank', type=int)
-    parser.add_argument('--world_size', type=int)
+    # DDP runtime args (required for torch.distributed)
+    parser.add_argument('--rank', type=int, required=True, help='Global rank of the process')
+    parser.add_argument('--local_rank', type=int, required=True, help='Local rank on the node')
+    parser.add_argument('--world_size', type=int, required=True, help='Total number of processes')
+
+    # Training config file (YAML)
+    parser.add_argument('--config', type=str, required=True, help='Path to input.cfg YAML file')
+
     args = parser.parse_args()
 
-    # mpi_comm_size = MPI.COMM_WORLD.Get_size()
-    # mpi_rank = MPI.COMM_WORLD.Get_rank()
-    # if int(os.environ.get("RANK", 0)) == 0:
-    #     import nvidia_dlprof_pytorch_nvtx
+    # Load YAML config
+    with open(args.config, 'r') as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
 
+    # Add DDP args to config
+    config['rank'] = args.rank
+    config['local_rank'] = args.local_rank
+    config['world_size'] = args.world_size
+
+    return config
+
+if __name__ == '__main__':
+    'original setting'
+    # config = get_options()
+    config = get_options_profile()
+    profiler = cProfile.Profile()
+    profiler.enable()
+
+
+    # if 'RANK' in os.environ:
+    'original setting'
+    # local_rank = int(os.environ.get('LOCAL_RANK', 0))
+    # world_size = int(os.environ.get('WORLD_SIZE', 1))
+
+    'profile setting'
+    local_rank = config['local_rank']
+    world_size = config['world_size']
+    mpi_rank = local_rank
+    mpi_comm_size = world_size
+    init_file = "/tmp/ddp_init"
+    # world_size = int(os.environ["WORLD_SIZE"])
+
+
+    dist.init_process_group(
+        backend="nccl",
+        init_method=f"file://{init_file}",
+        world_size=world_size,
+        rank=local_rank
+    )
+    
+    
+    # Print for debugging
+    print(f"[Rank {local_rank}] Local rank: {local_rank}")
+    print(f"[Rank {local_rank}] CUDA_VISIBLE_DEVICES: {os.environ.get('CUDA_VISIBLE_DEVICES')}")
+    print(f"[Rank {local_rank}] torch.cuda.device_count(): {torch.cuda.device_count()}")
+    print(f"[Rank {local_rank}] Selected device name: {torch.cuda.get_device_name(0)}")
     
 
-    if 'RANK' in os.environ:
-        # original setting
-        # local_rank = int(os.environ.get('LOCAL_RANK', 0))
-        # world_size = int(os.environ.get('WORLD_SIZE', 1))
-
-        # profile setting
-        local_rank = args.local_rank
-        world_size = args.world_size
-        mpi_rank = local_rank
-        mpi_comm_size = world_size
-        init_file = "/tmp/ddp_init"
-        world_size = int(os.environ["WORLD_SIZE"])
-
-
-        dist.init_process_group(
-            backend="nccl",
-            init_method=f"file://{init_file}",
-            world_size=world_size,
-            rank=int(os.environ["RANK"])
-        )
-        
-        
-        # Print for debugging
-        print(f"[Rank {local_rank}] Local rank: {local_rank}")
-        print(f"[Rank {local_rank}] CUDA_VISIBLE_DEVICES: {os.environ.get('CUDA_VISIBLE_DEVICES')}")
-        print(f"[Rank {local_rank}] torch.cuda.device_count(): {torch.cuda.device_count()}")
-        print(f"[Rank {local_rank}] Selected device name: {torch.cuda.get_device_name(0)}")
-
-        torch.cuda.set_device(local_rank)
-        device = torch.device(f"cuda:{local_rank}")
-    else:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    torch.cuda.set_device(local_rank)
+    device = torch.device(f"cuda:{local_rank}")
+    # else:
+    #     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     if mpi_rank == 0:
         print('-----------------')
@@ -214,8 +233,9 @@ if __name__ == '__main__':
         single_number=assigned_label,
         repeat_iterations=1,
     )
+    print(f"[Rank {local_rank}] CPU usage: {psutil.cpu_percent(interval=1)}%")
     end = time.time()
-    print(f"[Rank {local_rank}] Training ends: {end}")
+    print(f"[Rank {local_rank}] Training takes time: {end-start}s")
 
     if mpi_rank == 0:
         if config['save']:
@@ -356,3 +376,8 @@ if __name__ == '__main__':
             plt.savefig('average_cost_report.png')
 
 # MPI.Finalize()
+profiler.disable()
+
+with open(f"train_profile_world{world_size}_rank{local_rank}.txt", "w") as f:
+    stats = pstats.Stats(profiler, stream=f)
+    stats.strip_dirs().sort_stats("cumtime").print_stats()
